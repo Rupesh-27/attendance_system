@@ -114,7 +114,7 @@ class ApiService {
   // - Localhost / Web / Desktop: "http://localhost:8080/api/v1"
   // static String baseUrl = "http://192.168.31.91:8080/api/v1";
 
-  static String baseUrl = "http://127.0.0.1:8080/api/v1";
+  static String baseUrl = "https://attendancesystem-production-8ce5.up.railway.app/api/v1";
 
 
 
