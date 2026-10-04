@@ -1,0 +1,1318 @@
+import 'dart:async';
+import 'dart:math' as math;
+import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+
+import '../services/api_service.dart';
+import 'attendance_history_screen.dart';
+import 'profile_screen.dart';
+
+class TechQuote {
+  final String text;
+  final String author;
+
+  const TechQuote({required this.text, required this.author});
+}
+
+class DashboardScreen extends StatefulWidget {
+  const DashboardScreen({super.key});
+
+  static const List<TechQuote> techQuotes = [
+    TechQuote(
+      text: 'Any sufficiently advanced technology is indistinguishable from magic.',
+      author: 'Arthur C. Clarke',
+    ),
+    TechQuote(
+      text: 'Part of the inhumanity of the computer is that, once it is competently programmed, it is completely honest.',
+      author: 'Isaac Asimov',
+    ),
+    TechQuote(
+      text: 'The sky above the port was the color of television, tuned to a dead channel.',
+      author: 'William Gibson',
+    ),
+    TechQuote(
+      text: 'Once men turned their thinking over to machines in the hope that this would set them free.',
+      author: 'Frank Herbert',
+    ),
+    TechQuote(
+      text: 'We are stuck with technology when what we really want is just stuff that works.',
+      author: 'Douglas Adams',
+    ),
+    TechQuote(
+      text: 'The computer communicates with him into a computer-generated universe.',
+      author: 'Neal Stephenson',
+    ),
+    TechQuote(
+      text: 'Never let your sense of morals prevent you from doing what is right.',
+      author: 'Isaac Asimov',
+    ),
+    TechQuote(
+      text: 'A common mistake people make designing something foolproof is underestimating the ingenuity of fools.',
+      author: 'Douglas Adams',
+    ),
+    TechQuote(
+      text: 'The real problem is not whether machines think, but whether men do.',
+      author: 'B. F. Skinner',
+    ),
+    TechQuote(
+      text: 'The future is already here — it\'s just not evenly distributed.',
+      author: 'William Gibson',
+    ),
+    TechQuote(
+      text: 'Technology is a useful servant but a dangerous master.',
+      author: 'Christian Lous Lange',
+    ),
+    TechQuote(
+      text: 'How dangerous is the acquirement of knowledge, and how much happier is he who aspires within bounds.',
+      author: 'Mary Shelley',
+    ),
+    TechQuote(
+      text: 'Technological power is always the result of hardware, someone else\'s work, easily bought.',
+      author: 'Michael Crichton',
+    ),
+    TechQuote(
+      text: 'Machines who think? They\'re almost as terrifying as men who don\'t.',
+      author: 'Isaac Asimov',
+    ),
+    TechQuote(
+      text: 'We need not to be let alone. We need to be really bothered once in a while about something real.',
+      author: 'Ray Bradbury',
+    ),
+  ];
+
+  static TechQuote? currentQuote;
+
+  static void pickNewQuote() {
+    final random = math.Random();
+    int newIndex;
+    do {
+      newIndex = random.nextInt(techQuotes.length);
+    } while (techQuotes.length > 1 && techQuotes[newIndex] == currentQuote);
+    currentQuote = techQuotes[newIndex];
+  }
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  static const Color primaryColor = Color(0xFF0F9D8A);
+
+  bool _isLoading = true;
+  bool _isCheckedIn = false;
+  bool _isSubmittingAttendance = false;
+  bool _isTodayLogExpanded = false;
+
+  // Dynamic Location Status (Confirmed upon Check-in)
+  String _locationStatus = 'Not Checked In';
+  String _locationStatusBadge = 'Pending';
+  String _locationStatusSubtext = 'Location will be validated upon Check-in';
+  Color _locationStatusColor = const Color(0xFF64748B);
+  Color _locationStatusBg = const Color(0xFFF1F5F9);
+  Color _locationStatusBorder = const Color(0xFFCBD5E1);
+  IconData _locationStatusIcon = Icons.location_on_outlined;
+
+  // Real-time 24-hour clock (runs continuously 24/7)
+  Timer? _liveTimer;
+  String _currentTimeString = '00:00:00';
+
+  // Work session timer state (inner circle & Daily Effort)
+  int _accumulatedSeconds = 0;
+  int _totalWorkSeconds = 0;
+  DateTime? _currentSessionCheckIn;
+
+  // Effort & Break metrics
+  int _monthlyWorkSeconds = 0;
+  int _monthlyAccumulatedSeconds = 0;
+  int _totalBreakSeconds = 0;
+  int _completedBreakSeconds = 0;
+  DateTime? _lastCheckOutTime;
+
+  // Today's sessions for "View Swipes" and "Today Attendance Log"
+  List<AttendanceRecord> _todaySessions = [];
+
+  @override
+  void initState() {
+    super.initState();
+    if (DashboardScreen.currentQuote == null) {
+      DashboardScreen.pickNewQuote();
+    }
+    _currentTimeString = _getRealTimeClock();
+    _startLiveTimer();
+    _loadDashboardData();
+  }
+
+  @override
+  void dispose() {
+    _liveTimer?.cancel();
+    super.dispose();
+  }
+
+  String _getRealTimeClock() {
+    final now = DateTime.now();
+    final h = now.hour.toString().padLeft(2, '0');
+    final m = now.minute.toString().padLeft(2, '0');
+    final s = now.second.toString().padLeft(2, '0');
+    return '$h:$m:$s';
+  }
+
+  void _startLiveTimer() {
+    _liveTimer?.cancel();
+    _liveTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          // 24-hour real-time clock runs continuously regardless of checkin status
+          _currentTimeString = _getRealTimeClock();
+
+          // Work duration timer updates only while actively checked in
+          if (_isCheckedIn && _currentSessionCheckIn != null) {
+            final currentElapsed =
+                DateTime.now().difference(_currentSessionCheckIn!).inSeconds;
+            final activeSec = currentElapsed > 0 ? currentElapsed : 0;
+            _totalWorkSeconds = _accumulatedSeconds + activeSec;
+            _monthlyWorkSeconds = _monthlyAccumulatedSeconds + activeSec;
+          } else if (!_isCheckedIn && _lastCheckOutTime != null) {
+            final ongoingBreak =
+                DateTime.now().difference(_lastCheckOutTime!).inSeconds;
+            _totalBreakSeconds =
+                _completedBreakSeconds + (ongoingBreak > 0 ? ongoingBreak : 0);
+          }
+        });
+      }
+    });
+  }
+
+  Future<void> _loadDashboardData() async {
+    setState(() => _isLoading = true);
+
+    try {
+      // 1. Refresh profile & office if not yet populated
+      await Future.wait([
+        ApiService.getProfile(),
+        ApiService.getAssignedOffice(),
+      ]);
+
+      // 2. Fetch recent attendance history
+      final history = await ApiService.getHistory();
+
+      final now = DateTime.now();
+      final List<AttendanceRecord> todaySessions = [];
+      int accumulatedSec = 0;
+      AttendanceRecord? activeSession;
+
+      int monthlyAccumulated = 0;
+
+      for (final r in history) {
+        final d = r.checkInTime.toLocal();
+        // Today sessions
+        if (d.year == now.year && d.month == now.month && d.day == now.day) {
+          todaySessions.add(r);
+
+          if (r.status == 'CHECKED_IN' && r.checkOutTime == null) {
+            activeSession = r;
+          } else if (r.status == 'CHECKED_OUT' || r.checkOutTime != null) {
+            if (r.durationSeconds != null && r.durationSeconds! > 0) {
+              accumulatedSec += r.durationSeconds!;
+            } else if (r.checkOutTime != null) {
+              accumulatedSec +=
+                  r.checkOutTime!.difference(r.checkInTime).inSeconds;
+            }
+          }
+        }
+
+        // Monthly effort accumulation
+        if (d.year == now.year && d.month == now.month) {
+          if (r.durationSeconds != null && r.durationSeconds! > 0) {
+            monthlyAccumulated += r.durationSeconds!;
+          } else if (r.checkOutTime != null) {
+            monthlyAccumulated +=
+                r.checkOutTime!.difference(r.checkInTime).inSeconds;
+          }
+        }
+      }
+
+      // Calculate breaks between sessions today
+      final sortedToday = List<AttendanceRecord>.from(todaySessions)
+        ..sort((a, b) => a.checkInTime.compareTo(b.checkInTime));
+
+      int completedBreak = 0;
+      DateTime? latestCheckOut;
+
+      for (int i = 0; i < sortedToday.length - 1; i++) {
+        final currentOut = sortedToday[i].checkOutTime;
+        final nextIn = sortedToday[i + 1].checkInTime;
+        if (currentOut != null) {
+          final gap = nextIn.difference(currentOut).inSeconds;
+          if (gap > 0) {
+            completedBreak += gap;
+          }
+        }
+      }
+
+      if (sortedToday.isNotEmpty && sortedToday.last.checkOutTime != null) {
+        latestCheckOut = sortedToday.last.checkOutTime!.toLocal();
+      }
+
+      int totalBreak = completedBreak;
+      if (activeSession == null && latestCheckOut != null) {
+        final ongoing = now.difference(latestCheckOut).inSeconds;
+        if (ongoing > 0) {
+          totalBreak += ongoing;
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _todaySessions = todaySessions;
+          _accumulatedSeconds = accumulatedSec;
+          _monthlyAccumulatedSeconds = monthlyAccumulated;
+          _completedBreakSeconds = completedBreak;
+          _lastCheckOutTime = latestCheckOut;
+          _totalBreakSeconds = totalBreak;
+
+          if (activeSession != null) {
+            _isCheckedIn = true;
+            _currentSessionCheckIn = activeSession.checkInTime.toLocal();
+            final currentElapsed =
+                DateTime.now().difference(_currentSessionCheckIn!).inSeconds;
+            final activeSec = currentElapsed > 0 ? currentElapsed : 0;
+            _totalWorkSeconds = _accumulatedSeconds + activeSec;
+            _monthlyWorkSeconds = _monthlyAccumulatedSeconds + activeSec;
+          } else {
+            _isCheckedIn = false;
+            _currentSessionCheckIn = null;
+            _totalWorkSeconds = _accumulatedSeconds;
+            _monthlyWorkSeconds = _monthlyAccumulatedSeconds;
+          }
+
+          _isLoading = false;
+        });
+      }
+
+      // Sync location status with verified attendance state (no unconfirmed 'Available' before check-in)
+      _syncLocationStatusWithSession();
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  /// Sets Location Status according to server-verified attendance sessions.
+  /// Before check-in, displays 'Not Checked In' / 'Pending' (never 'Available' or 'In Office').
+  void _syncLocationStatusWithSession() {
+    final office = ApiService.assignedOffice;
+    final officeName = office?.name ?? 'Assigned Office';
+
+    if (_isCheckedIn) {
+      // Confirmed active session verified by backend
+      setState(() {
+        _locationStatus = 'Available';
+        _locationStatusBadge = 'In Office';
+        _locationStatusSubtext = 'Checked in • Within $officeName';
+        _locationStatusColor = const Color(0xFF15803D);
+        _locationStatusBg = const Color(0xFFDCFCE7);
+        _locationStatusBorder = const Color(0xFF86EFAC);
+        _locationStatusIcon = Icons.location_on;
+      });
+    } else if (_todaySessions.isNotEmpty &&
+        _todaySessions.any((s) => s.checkOutTime != null)) {
+      // Session was completed today
+      setState(() {
+        _locationStatus = 'Checked Out';
+        _locationStatusBadge = 'Completed';
+        _locationStatusSubtext = 'Check in again to validate location';
+        _locationStatusColor = const Color(0xFF475569);
+        _locationStatusBg = const Color(0xFFF1F5F9);
+        _locationStatusBorder = const Color(0xFFCBD5E1);
+        _locationStatusIcon = Icons.logout;
+      });
+    } else {
+      // Has not checked in yet -> strictly Pending / Not Checked In
+      setState(() {
+        _locationStatus = 'Not Checked In';
+        _locationStatusBadge = 'Pending';
+        _locationStatusSubtext = 'Location will be validated upon Check-in';
+        _locationStatusColor = const Color(0xFF64748B);
+        _locationStatusBg = const Color(0xFFF1F5F9);
+        _locationStatusBorder = const Color(0xFFCBD5E1);
+        _locationStatusIcon = Icons.location_on_outlined;
+      });
+    }
+  }
+
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good Morning';
+    if (hour < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  }
+
+  String _formatTime(DateTime dt) {
+    final local = dt.toLocal();
+    final hour = local.hour;
+    final minute = local.minute.toString().padLeft(2, '0');
+    final period = hour >= 12 ? 'PM' : 'AM';
+    final formattedHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour);
+    return '$formattedHour:$minute $period';
+  }
+
+  String _getDayName(DateTime dt) {
+    const days = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday'
+    ];
+    return days[dt.weekday - 1];
+  }
+
+  String _formatMonthDayYear(DateTime dt) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
+    return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
+  }
+
+
+
+  String _formatEffortHM(int totalSec) {
+    if (totalSec < 0) totalSec = 0;
+    final h = (totalSec ~/ 3600).toString().padLeft(2, '0');
+    final m = ((totalSec % 3600) ~/ 60).toString().padLeft(2, '0');
+    return '${h}h ${m}m';
+  }
+
+  Future<void> _handleAttendanceAction() async {
+    if (_isSubmittingAttendance) return;
+
+    setState(() => _isSubmittingAttendance = true);
+
+    try {
+      // 1. Check if location services are enabled
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Please enable GPS / Location services on your phone.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        setState(() => _isSubmittingAttendance = false);
+        return;
+      }
+
+      // 2. Check location permissions
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Location permission is required for attendance.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        setState(() => _isSubmittingAttendance = false);
+        return;
+      }
+
+      // 3. Acquire high-accuracy GPS position
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
+      );
+
+      // 4. Submit to backend
+      final result = _isCheckedIn
+          ? await ApiService.checkOut(
+              latitude: position.latitude,
+              longitude: position.longitude,
+              accuracyMeters: position.accuracy,
+            )
+          : await ApiService.checkIn(
+              latitude: position.latitude,
+              longitude: position.longitude,
+              accuracyMeters: position.accuracy,
+            );
+
+      if (mounted) {
+        if (result['success'] == true) {
+          if (!_isCheckedIn) {
+            // Check-in succeeded: only now confirmed Available & In Office
+            setState(() {
+              _locationStatus = 'Available';
+              _locationStatusBadge = 'In Office';
+              _locationStatusSubtext = 'Check-in verified by server';
+              _locationStatusColor = const Color(0xFF15803D);
+              _locationStatusBg = const Color(0xFFDCFCE7);
+              _locationStatusBorder = const Color(0xFF86EFAC);
+              _locationStatusIcon = Icons.location_on;
+            });
+          } else {
+            // Check-out succeeded
+            setState(() {
+              _locationStatus = 'Checked Out';
+              _locationStatusBadge = 'Completed';
+              _locationStatusSubtext = 'Check-out verified by server';
+              _locationStatusColor = const Color(0xFF475569);
+              _locationStatusBg = const Color(0xFFF1F5F9);
+              _locationStatusBorder = const Color(0xFFCBD5E1);
+              _locationStatusIcon = Icons.logout;
+            });
+          }
+
+          final actionName = _isCheckedIn ? 'Checked out' : 'Checked in';
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('$actionName successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          _loadDashboardData();
+        } else {
+          final actionAttempted = _isCheckedIn ? 'Check-out' : 'Check-in';
+
+          // Rejected outside radius
+          setState(() {
+            _locationStatus = 'Unavailable';
+            _locationStatusBadge = 'Outside Radius';
+            _locationStatusSubtext =
+                result['message'] ?? '$actionAttempted rejected: Outside office radius';
+            _locationStatusColor = const Color(0xFFDC2626);
+            _locationStatusBg = const Color(0xFFFEE2E2);
+            _locationStatusBorder = const Color(0xFFFCA5A5);
+            _locationStatusIcon = Icons.location_off;
+          });
+
+          final errorMsg =
+              result['message'] ?? '$actionAttempted verification failed.';
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorMsg),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmittingAttendance = false);
+      }
+    }
+  }
+
+
+  Future<void> _navigateToHistory() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const AttendanceHistoryScreen(),
+      ),
+    );
+    if (mounted) {
+      _loadDashboardData();
+    }
+  }
+
+
+  Future<void> _navigateToProfile() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const ProfileScreen()),
+    );
+    if (mounted) {
+      _loadDashboardData();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final employeeName = ApiService.currentEmployee?.fullName ?? 'Employee';
+    final officeName = ApiService.assignedOffice?.name ?? 'BrandCrock Office';
+    final quote = DashboardScreen.currentQuote ?? DashboardScreen.techQuotes.first;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F7F9),
+
+      appBar: AppBar(
+        backgroundColor: primaryColor,
+        foregroundColor: Colors.white,
+        title: const Text(
+          'BrandHRMS',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        actions: [
+          IconButton(
+            onPressed: _isLoading ? null : _loadDashboardData,
+            icon: _isLoading
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.refresh),
+            tooltip: 'Refresh',
+          ),
+          IconButton(
+            onPressed: () {},
+            icon: const Icon(Icons.notifications_none),
+          ),
+        ],
+      ),
+
+      body: RefreshIndicator(
+        onRefresh: _loadDashboardData,
+        color: primaryColor,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${_getGreeting()}, $employeeName',
+                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+
+              const SizedBox(height: 6),
+
+              Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: '“${quote.text}” ',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontStyle: FontStyle.italic,
+                        color: Colors.grey.shade700,
+                        height: 1.35,
+                      ),
+                    ),
+                    TextSpan(
+                      text: '— ${quote.author}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Actions card matching the reference image layout
+              _attendanceCard(context),
+
+              const SizedBox(height: 14),
+
+              // Daily Effort, Monthly Effort, Total Break Hours
+              _effortMetricsRow(),
+
+              const SizedBox(height: 16),
+
+              _officeCard(officeName),
+
+              const SizedBox(height: 16),
+
+              _locationCard(),
+
+              const SizedBox(height: 16),
+
+              // Today Attendance Log (displays View Swipes details when clicked)
+              _todayAttendanceLogCard(),
+
+              const SizedBox(height: 30),
+            ],
+          ),
+        ),
+      ),
+
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: 0,
+
+        onDestinationSelected: (index) {
+          if (index == 1) _navigateToHistory();
+          if (index == 2) _navigateToProfile();
+        },
+
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.dashboard_outlined),
+            selectedIcon: Icon(Icons.dashboard),
+            label: 'Dashboard',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.access_time_outlined),
+            selectedIcon: Icon(Icons.access_time),
+            label: 'Attendance',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person),
+            label: 'Profile',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _attendanceCard(BuildContext context) {
+    final now = DateTime.now();
+    final dayName = _getDayName(now);
+    final dateStr = _formatMonthDayYear(now);
+
+    final hours = _totalWorkSeconds ~/ 3600;
+    final mins = (_totalWorkSeconds % 3600) ~/ 60;
+
+    return _card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // 1. Actions Header
+          const Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              'Actions',
+              style: TextStyle(
+                fontSize: 19,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1E293B),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+          const Divider(height: 1, thickness: 0.8, color: Color(0xFFECEFF1)),
+          const SizedBox(height: 14),
+
+          // 2. Date and Shift Info
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '$dayName | $dateStr',
+                style: TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.blueGrey.shade700,
+                ),
+              ),
+              Text(
+                '10:00 AM - 7:00 PM',
+                style: TextStyle(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.blueGrey.shade800,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 22),
+
+          // 3. Circular Dial with Radial Tick Marks (Unchanged Work Hours)
+          SizedBox(
+            width: 140,
+            height: 140,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                CustomPaint(
+                  size: const Size(140, 140),
+                  painter: RadialTicksPainter(
+                    activeRatio: (_totalWorkSeconds / (9 * 3600)).clamp(0.0, 1.0),
+                    activeColor: const Color(0xFFFF6565),
+                    inactiveColor: const Color(0xFFCFD8DC),
+                  ),
+                ),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '${hours}hr',
+                      style: const TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFFF6565), // Coral from reference image
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '$mins mins',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 18),
+
+          // 4. Real-time 24-Hour Digital Clock (Updates every second 24/7)
+          Text(
+            _currentTimeString,
+            style: const TextStyle(
+              fontSize: 34,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.5,
+              color: Color(0xFF263238),
+            ),
+          ),
+
+          const SizedBox(height: 4),
+
+          // 5. Timezone subtitle
+          const Text(
+            'Asia/Calcutta',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF90A4AE),
+            ),
+          ),
+
+          const SizedBox(height: 22),
+
+          // 6. Action Button (Check-in / Check-out)
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: FilledButton.icon(
+              onPressed:
+                  _isSubmittingAttendance ? null : _handleAttendanceAction,
+              icon: _isSubmittingAttendance
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Icon(
+                      _isCheckedIn ? Icons.logout : Icons.login,
+                      size: 20,
+                    ),
+              label: Text(
+                _isSubmittingAttendance
+                    ? 'Verifying Location...'
+                    : (_isCheckedIn ? 'Check-out' : 'Check-in'),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              style: FilledButton.styleFrom(
+                backgroundColor: _isCheckedIn
+                    ? const Color(0xFFE53935) // Red for Check-out
+                    : const Color(0xFF1E88E5), // Blue for Check-in
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _effortMetricsRow() {
+    return Row(
+      children: [
+        Expanded(
+          child: _effortCard(
+            icon: Icons.access_time_outlined,
+            iconColor: const Color(0xFF00BFA5),
+            iconBg: const Color(0xFFE0F7F4),
+            title: 'Daily Effort',
+            value: _formatEffortHM(_totalWorkSeconds),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _effortCard(
+            icon: Icons.calendar_month_outlined,
+            iconColor: const Color(0xFF1E88E5),
+            iconBg: const Color(0xFFE3F2FD),
+            title: 'Monthly Effort',
+            value: _formatEffortHM(_monthlyWorkSeconds),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _effortCard(
+            icon: Icons.local_cafe_outlined,
+            iconColor: const Color(0xFFFF5252),
+            iconBg: const Color(0xFFFFEBEE),
+            title: 'Total Break Hours',
+            value: _formatEffortHM(_totalBreakSeconds),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _effortCard({
+    required IconData icon,
+    required Color iconColor,
+    required Color iconBg,
+    required String title,
+    required String value,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: iconBg,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, size: 14, color: iconColor),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.blueGrey.shade700,
+                    height: 1.15,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Center(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.2,
+                color: Color(0xFF1E293B),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _officeCard(String officeName) {
+    return _card(
+      child: Row(
+        children: [
+          const Icon(Icons.business, color: primaryColor, size: 35),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Assigned Office', style: TextStyle(color: Colors.grey)),
+                const SizedBox(height: 4),
+                Text(
+                  officeName,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _locationCard() {
+    return _card(
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: _locationStatusBg,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              _locationStatusIcon,
+              color: _locationStatusColor,
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Location Status',
+                  style: TextStyle(color: Colors.grey, fontSize: 13),
+                ),
+                const SizedBox(height: 3),
+                Row(
+                  children: [
+                    Text(
+                      _locationStatus,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: _locationStatusColor,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: _locationStatusBg,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: _locationStatusBorder,
+                        ),
+                      ),
+                      child: Text(
+                        _locationStatusBadge,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: _locationStatusColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                if (_locationStatusSubtext.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    _locationStatusSubtext,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: 11.5,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _todayAttendanceLogCard() {
+    return _card(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () {
+              setState(() {
+                _isTodayLogExpanded = !_isTodayLogExpanded;
+              });
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  const Icon(Icons.event_note, color: primaryColor, size: 30),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Today Login Status',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1E293B),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          _todaySessions.isEmpty
+                              ? 'Tap to view today\'s swipe details'
+                              : '${_todaySessions.length} swipe${_todaySessions.length > 1 ? 's' : ''} recorded today',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(
+                    _isTodayLogExpanded
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
+                    color: Colors.grey.shade700,
+                    size: 26,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (_isTodayLogExpanded) ...[
+            const SizedBox(height: 12),
+            const Divider(height: 1),
+            const SizedBox(height: 12),
+            if (_todaySessions.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Center(
+                  child: Column(
+                    children: [
+                      Icon(Icons.history,
+                          size: 40, color: Colors.grey.shade400),
+                      const SizedBox(height: 6),
+                      Text(
+                        'No swipes recorded today yet.',
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _todaySessions.length,
+                separatorBuilder: (context, index) =>
+                    const Divider(height: 16),
+                itemBuilder: (context, index) {
+                  final session = _todaySessions[index];
+                  final isCurrent = session.status == 'CHECKED_IN' &&
+                      session.checkOutTime == null;
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            'Session #${_todaySessions.length - index}',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const Spacer(),
+                          if (isCurrent)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.green.shade50,
+                                borderRadius: BorderRadius.circular(12),
+                                border:
+                                    Border.all(color: Colors.green.shade300),
+                              ),
+                              child: const Text(
+                                'Active Now',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green,
+                                ),
+                              ),
+                            )
+                          else
+                            Text(
+                              session.durationSeconds != null
+                                  ? 'Duration: ${session.durationSeconds! ~/ 60}m ${session.durationSeconds! % 60}s'
+                                  : '',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          const Icon(Icons.login,
+                              size: 16, color: Colors.green),
+                          const SizedBox(width: 6),
+                          const Text(
+                            'Check-in: ',
+                            style: TextStyle(
+                                fontWeight: FontWeight.w600, fontSize: 13),
+                          ),
+                          Text(
+                            _formatTime(session.checkInTime),
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                          const Spacer(),
+                          Text(
+                            session.officeSnapshotName,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey.shade500,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (session.checkOutTime != null) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const Icon(Icons.logout,
+                                size: 16, color: Colors.orange),
+                            const SizedBox(width: 6),
+                            const Text(
+                              'Check-out: ',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.w600, fontSize: 13),
+                            ),
+                            Text(
+                              _formatTime(session.checkOutTime!),
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  );
+                },
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _card({required Widget child}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: child,
+    );
+  }
+}
+
+/// Custom painter for the radial tick marks around the circular work hours dial
+class RadialTicksPainter extends CustomPainter {
+  final double activeRatio;
+  final Color activeColor;
+  final Color inactiveColor;
+
+  RadialTicksPainter({
+    required this.activeRatio,
+    required this.activeColor,
+    required this.inactiveColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2;
+    const totalTicks = 48;
+    final activeTicks = (activeRatio * totalTicks).round();
+
+    final paint = Paint()
+      ..strokeWidth = 2.5
+      ..strokeCap = StrokeCap.round;
+
+    for (int i = 0; i < totalTicks; i++) {
+      final angle = (i * 2 * math.pi / totalTicks) - (math.pi / 2);
+      final isTickActive = i < activeTicks;
+      paint.color = isTickActive ? activeColor : inactiveColor;
+
+      final innerPoint = Offset(
+        center.dx + (radius - 12) * math.cos(angle),
+        center.dy + (radius - 12) * math.sin(angle),
+      );
+      final outerPoint = Offset(
+        center.dx + (radius - 2) * math.cos(angle),
+        center.dy + (radius - 2) * math.sin(angle),
+      );
+
+      canvas.drawLine(innerPoint, outerPoint, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant RadialTicksPainter oldDelegate) {
+    return oldDelegate.activeRatio != activeRatio ||
+        oldDelegate.activeColor != activeColor ||
+        oldDelegate.inactiveColor != inactiveColor;
+  }
+}

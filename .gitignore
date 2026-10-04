@@ -1,0 +1,13 @@
+# Environment & secrets
+.env
+
+# Compiled Go binaries
+*.exe
+server
+
+# Database dumps
+attendance_backup.sql
+
+# Flutter build artifacts
+brandhrms_attendance/build/
+brandhrms_attendance/.dart_tool/
