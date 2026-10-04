@@ -3,7 +3,7 @@
 
 # Compiled Go binaries
 *.exe
-server
+/server
 
 # Database dumps
 attendance_backup.sql
