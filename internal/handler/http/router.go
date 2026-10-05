@@ -54,6 +54,7 @@ func SetupRouter(cfg RouterConfig) *gin.Engine {
 				attGroup.POST("/check-in", cfg.AttendanceHandler.CheckIn)
 				attGroup.POST("/check-out", cfg.AttendanceHandler.CheckOut)
 				attGroup.GET("/me", cfg.AttendanceHandler.GetMyAttendance)
+				attGroup.GET("/today-status", cfg.AttendanceHandler.GetTodayStatus)
 			}
 		}
 	}

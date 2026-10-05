@@ -114,7 +114,7 @@ func (m *MockAttendanceRepo) GetActiveSession(ctx context.Context, employeeID uu
 	defer m.RUnlock()
 
 	for _, s := range m.sessions {
-		if s.EmployeeID == employeeID && s.Status == domain.StatusCheckedIn {
+		if s.EmployeeID == employeeID && (s.Status == domain.StatusCheckedIn || s.Status == domain.StatusCarriedOver) {
 			cp := *s
 			return &cp, nil
 		}
@@ -126,10 +126,10 @@ func (m *MockAttendanceRepo) CreateSession(ctx context.Context, session *domain.
 	m.Lock()
 	defer m.Unlock()
 
-	// Enforce DB partial unique index constraint: WHERE status = 'CHECKED_IN'
-	if session.Status == domain.StatusCheckedIn {
+	// Enforce DB partial unique index constraint: WHERE status IN ('CHECKED_IN', 'CARRIED_OVER')
+	if session.Status == domain.StatusCheckedIn || session.Status == domain.StatusCarriedOver {
 		for _, s := range m.sessions {
-			if s.EmployeeID == session.EmployeeID && s.Status == domain.StatusCheckedIn {
+			if s.EmployeeID == session.EmployeeID && (s.Status == domain.StatusCheckedIn || s.Status == domain.StatusCarriedOver) {
 				return domain.ErrActiveSessionExists
 			}
 		}
@@ -152,6 +152,34 @@ func (m *MockAttendanceRepo) UpdateSession(ctx context.Context, session *domain.
 	m.sessions[session.ID] = &cp
 	return nil
 }
+
+func (m *MockAttendanceRepo) UpdateSessionStatus(ctx context.Context, sessionID uuid.UUID, status domain.AttendanceStatus) error {
+	m.Lock()
+	defer m.Unlock()
+
+	s, ok := m.sessions[sessionID]
+	if !ok {
+		return domain.ErrNoActiveSession
+	}
+
+	s.Status = status
+	return nil
+}
+
+func (m *MockAttendanceRepo) GetSessionsByAttendanceDay(ctx context.Context, employeeID uuid.UUID, attendanceDay string) ([]*domain.AttendanceSession, error) {
+	m.RLock()
+	defer m.RUnlock()
+
+	var sessions []*domain.AttendanceSession
+	for _, s := range m.sessions {
+		if s.EmployeeID == employeeID && s.AttendanceDay == attendanceDay {
+			cp := *s
+			sessions = append(sessions, &cp)
+		}
+	}
+	return sessions, nil
+}
+
 
 func (m *MockAttendanceRepo) GetHistoryByEmployeeID(
 	ctx context.Context,

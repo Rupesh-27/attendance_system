@@ -28,12 +28,13 @@ func (r *attendanceRepo) GetActiveSession(ctx context.Context, employeeID uuid.U
 			office_snapshot_name, office_snapshot_lat, office_snapshot_lon, office_snapshot_radius,
 			check_in_time, check_in_latitude, check_in_longitude, check_in_accuracy_meters, check_in_captured_at, check_in_distance_meters,
 			check_out_time, check_out_latitude, check_out_longitude, check_out_accuracy_meters, check_out_captured_at, check_out_distance_meters,
-			duration_seconds, status, created_at, updated_at
+			duration_seconds, status, attendance_day, created_at, updated_at
 		FROM attendance_sessions
-		WHERE employee_id = $1 AND status = 'CHECKED_IN'
+		WHERE employee_id = $1 AND status IN ('CHECKED_IN', 'CARRIED_OVER')
 		LIMIT 1
 	`
 	var s domain.AttendanceSession
+	var attDay time.Time
 	err := r.db.Pool.QueryRow(ctx, query, employeeID).Scan(
 		&s.ID,
 		&s.EmployeeID,
@@ -56,6 +57,7 @@ func (r *attendanceRepo) GetActiveSession(ctx context.Context, employeeID uuid.U
 		&s.CheckOutDistanceMeters,
 		&s.DurationSeconds,
 		&s.Status,
+		&attDay,
 		&s.CreatedAt,
 		&s.UpdatedAt,
 	)
@@ -65,6 +67,7 @@ func (r *attendanceRepo) GetActiveSession(ctx context.Context, employeeID uuid.U
 		}
 		return nil, err
 	}
+	s.AttendanceDay = attDay.Format("2006-01-02")
 
 	return &s, nil
 }
@@ -75,19 +78,30 @@ func (r *attendanceRepo) CreateSession(ctx context.Context, s *domain.Attendance
 			id, employee_id, office_id,
 			office_snapshot_name, office_snapshot_lat, office_snapshot_lon, office_snapshot_radius,
 			check_in_time, check_in_latitude, check_in_longitude, check_in_accuracy_meters, check_in_captured_at, check_in_distance_meters,
-			status, created_at, updated_at
+			status, attendance_day, created_at, updated_at
 		) VALUES (
 			$1, $2, $3,
 			$4, $5, $6, $7,
 			$8, $9, $10, $11, $12, $13,
-			$14, $15, $16
+			$14, $15, $16, $17
 		)
 	`
+	var attDay time.Time
+	if s.AttendanceDay != "" {
+		if parsed, err := time.Parse("2006-01-02", s.AttendanceDay); err == nil {
+			attDay = parsed
+		} else {
+			attDay = s.CheckInTime
+		}
+	} else {
+		attDay = s.CheckInTime
+	}
+
 	_, err := r.db.Pool.Exec(ctx, query,
 		s.ID, s.EmployeeID, s.OfficeID,
 		s.OfficeSnapshotName, s.OfficeSnapshotLat, s.OfficeSnapshotLon, s.OfficeSnapshotRadius,
 		s.CheckInTime, s.CheckInLatitude, s.CheckInLongitude, s.CheckInAccuracyMeters, s.CheckInCapturedAt, s.CheckInDistanceMeters,
-		s.Status, s.CreatedAt, s.UpdatedAt,
+		s.Status, attDay, s.CreatedAt, s.UpdatedAt,
 	)
 	if err != nil {
 		var pgErr *pgconn.PgError
@@ -137,6 +151,80 @@ func (r *attendanceRepo) UpdateSession(ctx context.Context, s *domain.Attendance
 	return nil
 }
 
+func (r *attendanceRepo) UpdateSessionStatus(ctx context.Context, sessionID uuid.UUID, status domain.AttendanceStatus) error {
+	query := `
+		UPDATE attendance_sessions
+		SET status = $1, updated_at = NOW()
+		WHERE id = $2
+	`
+	cmdTag, err := r.db.Pool.Exec(ctx, query, status, sessionID)
+	if err != nil {
+		return err
+	}
+	if cmdTag.RowsAffected() == 0 {
+		return domain.ErrNoActiveSession
+	}
+	return nil
+}
+
+func (r *attendanceRepo) GetSessionsByAttendanceDay(ctx context.Context, employeeID uuid.UUID, attendanceDay string) ([]*domain.AttendanceSession, error) {
+	query := `
+		SELECT 
+			id, employee_id, office_id, 
+			office_snapshot_name, office_snapshot_lat, office_snapshot_lon, office_snapshot_radius,
+			check_in_time, check_in_latitude, check_in_longitude, check_in_accuracy_meters, check_in_captured_at, check_in_distance_meters,
+			check_out_time, check_out_latitude, check_out_longitude, check_out_accuracy_meters, check_out_captured_at, check_out_distance_meters,
+			duration_seconds, status, attendance_day, created_at, updated_at
+		FROM attendance_sessions
+		WHERE employee_id = $1 AND attendance_day = $2
+		ORDER BY check_in_time ASC
+	`
+	rows, err := r.db.Pool.Query(ctx, query, employeeID, attendanceDay)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var sessions []*domain.AttendanceSession
+	for rows.Next() {
+		var s domain.AttendanceSession
+		var attDay time.Time
+		err := rows.Scan(
+			&s.ID,
+			&s.EmployeeID,
+			&s.OfficeID,
+			&s.OfficeSnapshotName,
+			&s.OfficeSnapshotLat,
+			&s.OfficeSnapshotLon,
+			&s.OfficeSnapshotRadius,
+			&s.CheckInTime,
+			&s.CheckInLatitude,
+			&s.CheckInLongitude,
+			&s.CheckInAccuracyMeters,
+			&s.CheckInCapturedAt,
+			&s.CheckInDistanceMeters,
+			&s.CheckOutTime,
+			&s.CheckOutLatitude,
+			&s.CheckOutLongitude,
+			&s.CheckOutAccuracyMeters,
+			&s.CheckOutCapturedAt,
+			&s.CheckOutDistanceMeters,
+			&s.DurationSeconds,
+			&s.Status,
+			&attDay,
+			&s.CreatedAt,
+			&s.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		s.AttendanceDay = attDay.Format("2006-01-02")
+		sessions = append(sessions, &s)
+	}
+
+	return sessions, nil
+}
+
 func (r *attendanceRepo) GetHistoryByEmployeeID(
 	ctx context.Context,
 	employeeID uuid.UUID,
@@ -161,7 +249,7 @@ func (r *attendanceRepo) GetHistoryByEmployeeID(
 			office_snapshot_name, office_snapshot_lat, office_snapshot_lon, office_snapshot_radius,
 			check_in_time, check_in_latitude, check_in_longitude, check_in_accuracy_meters, check_in_captured_at, check_in_distance_meters,
 			check_out_time, check_out_latitude, check_out_longitude, check_out_accuracy_meters, check_out_captured_at, check_out_distance_meters,
-			duration_seconds, status, created_at, updated_at
+			duration_seconds, status, attendance_day, created_at, updated_at
 		FROM attendance_sessions
 		WHERE employee_id = $1
 		  AND ($2::timestamptz IS NULL OR check_in_time >= $2)
@@ -178,6 +266,7 @@ func (r *attendanceRepo) GetHistoryByEmployeeID(
 	var sessions []*domain.AttendanceSession
 	for rows.Next() {
 		var s domain.AttendanceSession
+		var attDay time.Time
 		err := rows.Scan(
 			&s.ID,
 			&s.EmployeeID,
@@ -200,14 +289,17 @@ func (r *attendanceRepo) GetHistoryByEmployeeID(
 			&s.CheckOutDistanceMeters,
 			&s.DurationSeconds,
 			&s.Status,
+			&attDay,
 			&s.CreatedAt,
 			&s.UpdatedAt,
 		)
 		if err != nil {
 			return nil, 0, err
 		}
+		s.AttendanceDay = attDay.Format("2006-01-02")
 		sessions = append(sessions, &s)
 	}
 
 	return sessions, total, nil
 }
+

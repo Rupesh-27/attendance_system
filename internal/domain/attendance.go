@@ -9,8 +9,9 @@ import (
 type AttendanceStatus string
 
 const (
-	StatusCheckedIn AttendanceStatus = "CHECKED_IN"
-	StatusCompleted AttendanceStatus = "COMPLETED"
+	StatusCheckedIn   AttendanceStatus = "CHECKED_IN"
+	StatusCarriedOver AttendanceStatus = "CARRIED_OVER"
+	StatusCompleted   AttendanceStatus = "COMPLETED"
 )
 
 type AttendanceSource string
@@ -23,11 +24,11 @@ const (
 
 // AttendanceSession represents a single mobile check-in to check-out session
 type AttendanceSession struct {
-	ID         uuid.UUID        `json:"id"`
-	EmployeeID uuid.UUID        `json:"employeeId"`
-	OfficeID   uuid.UUID        `json:"officeId"`
-	Source     AttendanceSource `json:"source"`
-
+	ID            uuid.UUID        `json:"id"`
+	EmployeeID    uuid.UUID        `json:"employeeId"`
+	OfficeID      uuid.UUID        `json:"officeId"`
+	Source        AttendanceSource `json:"source"`
+	AttendanceDay string           `json:"attendanceDay"` // Format: YYYY-MM-DD (shifts across midnight anchor to this day)
 
 	// Decision Snapshot of Assigned Office at Check-In
 	OfficeSnapshotName   string  `json:"officeSnapshotName"`
@@ -59,13 +60,18 @@ type AttendanceSession struct {
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
-// CompleteCheckout transitions the session from CHECKED_IN to COMPLETED
+// IsActive returns true if the session is currently ongoing (either fresh checked-in or carried over across midnight)
+func (s *AttendanceSession) IsActive() bool {
+	return s.Status == StatusCheckedIn || s.Status == StatusCarriedOver
+}
+
+// CompleteCheckout transitions the session from CHECKED_IN or CARRIED_OVER to COMPLETED
 func (s *AttendanceSession) CompleteCheckout(
 	serverTime time.Time,
 	gps GPSLocation,
 	distanceMeters float64,
 ) error {
-	if s.Status != StatusCheckedIn {
+	if !s.IsActive() {
 		return ErrSessionAlreadyEnded
 	}
 

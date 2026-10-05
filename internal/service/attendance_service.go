@@ -89,7 +89,14 @@ func (s *attendanceService) CheckIn(
 		return nil, domain.ErrOutsideOfficeRadius
 	}
 
-	// 7. Construct new session with immutable decision snapshots
+	// 7. Determine attendance day in IST (Asia/Kolkata)
+	loc, err := time.LoadLocation("Asia/Kolkata")
+	if err != nil {
+		loc = time.UTC
+	}
+	attendanceDay := serverTime.In(loc).Format("2006-01-02")
+
+	// 8. Construct new session with immutable decision snapshots
 	session := &domain.AttendanceSession{
 		ID:                    uuid.New(),
 		EmployeeID:            emp.ID,
@@ -104,13 +111,14 @@ func (s *attendanceService) CheckIn(
 		CheckInAccuracyMeters: gps.AccuracyMeters,
 		CheckInCapturedAt:     gps.CapturedAt,
 		CheckInDistanceMeters: distance,
+		AttendanceDay:         attendanceDay,
 		Source:                domain.SourceGPSMobile,
 		Status:                domain.StatusCheckedIn,
 		CreatedAt:             serverTime,
 		UpdatedAt:             serverTime,
 	}
 
-	// 8. Persist session (protected by DB partial unique index against race conditions)
+	// 9. Persist session (protected by DB partial unique index against race conditions)
 	if err := s.attendanceRepo.CreateSession(ctx, session); err != nil {
 		return nil, err
 	}
@@ -130,7 +138,7 @@ func (s *attendanceService) CheckOut(
 		return nil, err
 	}
 
-	// 2. Active Session check: must have an open session to check out
+	// 2. Active Session check: must have an open session (CHECKED_IN or CARRIED_OVER) to check out
 	session, err := s.attendanceRepo.GetActiveSession(ctx, employeeID)
 	if err != nil {
 		if errors.Is(err, domain.ErrNoActiveSession) {
@@ -161,7 +169,7 @@ func (s *attendanceService) CheckOut(
 		return nil, domain.ErrOutsideOfficeRadius
 	}
 
-	// 6. Complete transition and calculate working duration
+	// 6. Complete transition and calculate working duration (handles overnight shifts)
 	if err := session.CompleteCheckout(serverTime, gps, distance); err != nil {
 		return nil, err
 	}
@@ -173,6 +181,71 @@ func (s *attendanceService) CheckOut(
 
 	return session, nil
 }
+
+func (s *attendanceService) GetTodayStatus(
+	ctx context.Context,
+	employeeID uuid.UUID,
+) (*TodayAttendanceStatus, error) {
+	serverTime := s.clock()
+	loc, err := time.LoadLocation("Asia/Kolkata")
+	if err != nil {
+		loc = time.UTC
+	}
+	currentDate := serverTime.In(loc).Format("2006-01-02")
+
+	// 1. Check for active session (CHECKED_IN or CARRIED_OVER)
+	activeSession, err := s.attendanceRepo.GetActiveSession(ctx, employeeID)
+	if err != nil && !errors.Is(err, domain.ErrNoActiveSession) {
+		return nil, err
+	}
+
+	var targetAttendanceDay string
+	isCarriedOver := false
+
+	if activeSession != nil {
+		// Active session found! Check if its attendanceDay is prior to currentDate
+		if activeSession.AttendanceDay < currentDate {
+			// Midnight rollover condition: Employee remained checked in past midnight!
+			isCarriedOver = true
+			if activeSession.Status != domain.StatusCarriedOver {
+				activeSession.Status = domain.StatusCarriedOver
+				// Persist status transition to database
+				_ = s.attendanceRepo.UpdateSessionStatus(ctx, activeSession.ID, domain.StatusCarriedOver)
+			}
+		}
+		targetAttendanceDay = activeSession.AttendanceDay
+	} else {
+		targetAttendanceDay = currentDate
+	}
+
+	// 2. Load all sessions for targetAttendanceDay
+	sessions, err := s.attendanceRepo.GetSessionsByAttendanceDay(ctx, employeeID, targetAttendanceDay)
+	if err != nil {
+		return nil, err
+	}
+
+	// 3. Compute total accumulated work seconds for this attendance day
+	var totalWorkSeconds int64
+	for _, sess := range sessions {
+		if sess.DurationSeconds != nil && *sess.DurationSeconds > 0 {
+			totalWorkSeconds += *sess.DurationSeconds
+		} else if sess.IsActive() {
+			elapsed := int64(serverTime.Sub(sess.CheckInTime).Seconds())
+			if elapsed > 0 {
+				totalWorkSeconds += elapsed
+			}
+		}
+	}
+
+	return &TodayAttendanceStatus{
+		AttendanceDay:    targetAttendanceDay,
+		IsCarriedOver:    isCarriedOver,
+		ActiveSession:    activeSession,
+		TodaySessions:    sessions,
+		TotalWorkSeconds: totalWorkSeconds,
+	}, nil
+}
+
 
 func (s *attendanceService) GetMyHistory(
 	ctx context.Context,

@@ -431,3 +431,67 @@ func TestAttendance_History_BelongsOnlyToAuthenticatedEmployee(t *testing.T) {
 	assert.Equal(t, int64(1), histToday.Total)
 	require.Len(t, histToday.Sessions, 1)
 }
+
+func TestAttendanceService_GetTodayStatus_MidnightRollover(t *testing.T) {
+	empRepo, officeRepo, attRepo, emp, _ := setupTestEnvironment()
+
+	// Indian Standard Time location (+05:30)
+	loc, err := time.LoadLocation("Asia/Kolkata")
+	require.NoError(t, err)
+
+	// Step 1: Employee checks in on 2026-10-05 at 22:00 IST (16:30 UTC)
+	checkInTime := time.Date(2026, 10, 5, 22, 0, 0, 0, loc).UTC()
+	currentTime := checkInTime
+	attSvc := service.NewAttendanceService(empRepo, officeRepo, attRepo, func() time.Time { return currentTime })
+
+	gps := domain.GPSLocation{
+		Latitude:       13.000000,
+		Longitude:      80.000000,
+		AccuracyMeters: 5.0,
+		CapturedAt:     checkInTime,
+	}
+
+	session, err := attSvc.CheckIn(context.Background(), emp.ID, gps)
+	require.NoError(t, err)
+	assert.Equal(t, domain.StatusCheckedIn, session.Status)
+	assert.Equal(t, "2026-10-05", session.AttendanceDay)
+
+	// Step 2: Time advances past midnight to 2026-10-06 at 00:30 IST (19:00 UTC)
+	currentTime = time.Date(2026, 10, 6, 0, 30, 0, 0, loc).UTC()
+
+	// Query TodayStatus
+	status, err := attSvc.GetTodayStatus(context.Background(), emp.ID)
+	require.NoError(t, err)
+	assert.True(t, status.IsCarriedOver, "Session should be identified as CARRIED_OVER across midnight")
+	assert.Equal(t, "2026-10-05", status.AttendanceDay, "AttendanceDay should anchor to the original shift day")
+	require.NotNil(t, status.ActiveSession)
+	assert.Equal(t, domain.StatusCarriedOver, status.ActiveSession.Status)
+	// Duration: 2h 30m = 9000 seconds
+	assert.Equal(t, int64(9000), status.TotalWorkSeconds)
+
+	// Step 3: Employee checks out at 2026-10-06 at 01:30 IST (20:00 UTC)
+	currentTime = time.Date(2026, 10, 6, 1, 30, 0, 0, loc).UTC()
+	outGps := domain.GPSLocation{
+		Latitude:       13.000000,
+		Longitude:      80.000000,
+		AccuracyMeters: 5.0,
+		CapturedAt:     currentTime,
+	}
+
+	completedSession, err := attSvc.CheckOut(context.Background(), emp.ID, outGps)
+	require.NoError(t, err)
+	assert.Equal(t, domain.StatusCompleted, completedSession.Status)
+	assert.Equal(t, "2026-10-05", completedSession.AttendanceDay)
+	// Total duration: 3.5 hours = 12600 seconds
+	require.NotNil(t, completedSession.DurationSeconds)
+	assert.Equal(t, int64(12600), *completedSession.DurationSeconds)
+
+	// Step 4: Query TodayStatus after checkout -> should reset for 2026-10-06 fresh!
+	statusAfterOut, err := attSvc.GetTodayStatus(context.Background(), emp.ID)
+	require.NoError(t, err)
+	assert.False(t, statusAfterOut.IsCarriedOver)
+	assert.Nil(t, statusAfterOut.ActiveSession, "Active session should be nil after checkout")
+	assert.Equal(t, "2026-10-06", statusAfterOut.AttendanceDay, "TodayStatus should now point to current date")
+	assert.Empty(t, statusAfterOut.TodaySessions, "Today's sessions should be fresh/empty for the new day")
+}
+

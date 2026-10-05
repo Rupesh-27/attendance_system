@@ -22,12 +22,16 @@ type OfficeRepository interface {
 
 // AttendanceRepository defines persistence operations for AttendanceSession entities
 type AttendanceRepository interface {
-	// GetActiveSession returns the active (CHECKED_IN) session for an employee, or domain.ErrNoActiveSession
+	// GetActiveSession returns the active (CHECKED_IN or CARRIED_OVER) session for an employee, or domain.ErrNoActiveSession
 	GetActiveSession(ctx context.Context, employeeID uuid.UUID) (*domain.AttendanceSession, error)
-	// CreateSession records a new CHECKED_IN session. Returns domain.ErrActiveSessionExists if one is already open
+	// CreateSession records a new session. Returns domain.ErrActiveSessionExists if one is already open
 	CreateSession(ctx context.Context, session *domain.AttendanceSession) error
 	// UpdateSession persists checkout completion details for an existing session
 	UpdateSession(ctx context.Context, session *domain.AttendanceSession) error
+	// UpdateSessionStatus transitions a session's status (e.g., from CHECKED_IN to CARRIED_OVER)
+	UpdateSessionStatus(ctx context.Context, sessionID uuid.UUID, status domain.AttendanceStatus) error
+	// GetSessionsByAttendanceDay returns all sessions belonging to a specific attendance day (e.g. 2026-10-05)
+	GetSessionsByAttendanceDay(ctx context.Context, employeeID uuid.UUID, attendanceDay string) ([]*domain.AttendanceSession, error)
 	// GetHistoryByEmployeeID returns paginated attendance history belonging exclusively to the employee, optionally filtered by date range
 	GetHistoryByEmployeeID(ctx context.Context, employeeID uuid.UUID, from, to *time.Time, limit, offset int) ([]*domain.AttendanceSession, int64, error)
 }

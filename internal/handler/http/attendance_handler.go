@@ -146,6 +146,24 @@ func (h *AttendanceHandler) GetMyAttendance(c *gin.Context) {
 	SendSuccess(c, http.StatusOK, history)
 }
 
+func (h *AttendanceHandler) GetTodayStatus(c *gin.Context) {
+	empIDVal, exists := c.Get(middleware.ContextKeyEmployeeID)
+	if !exists {
+		SendError(c, http.StatusUnauthorized, "AUTH_INVALID", "User not authenticated", nil)
+		return
+	}
+	empID := empIDVal.(uuid.UUID)
+
+	status, err := h.attendanceService.GetTodayStatus(c.Request.Context(), empID)
+	if err != nil {
+		MapDomainError(c, err)
+		return
+	}
+
+	SendSuccess(c, http.StatusOK, status)
+}
+
+
 func parseDateFilter(s string, isEndOfDay bool) (time.Time, error) {
 	// Try RFC3339 first
 	if t, err := time.Parse(time.RFC3339, s); err == nil {
