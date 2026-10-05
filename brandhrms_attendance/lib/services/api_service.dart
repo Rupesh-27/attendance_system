@@ -76,6 +76,7 @@ class AttendanceRecord {
   final double? checkOutDistanceMeters;
   final int? durationSeconds;
   final String status;
+  final String? attendanceDay;
 
   AttendanceRecord({
     required this.id,
@@ -88,6 +89,7 @@ class AttendanceRecord {
     this.checkOutDistanceMeters,
     this.durationSeconds,
     required this.status,
+    this.attendanceDay,
   });
 
   factory AttendanceRecord.fromJson(Map<String, dynamic> json) {
@@ -102,9 +104,42 @@ class AttendanceRecord {
       checkOutDistanceMeters: (json['checkOutDistanceMeters'] as num?)?.toDouble(),
       durationSeconds: json['durationSeconds'] as int?,
       status: json['status'] ?? 'CHECKED_IN',
+      attendanceDay: json['attendanceDay'],
     );
   }
 }
+
+/// Data model representing the authoritative server status for the current attendance day
+class TodayStatusResult {
+  final String attendanceDay;
+  final bool isCarriedOver;
+  final AttendanceRecord? activeSession;
+  final List<AttendanceRecord> todaySessions;
+  final int totalWorkSeconds;
+
+  TodayStatusResult({
+    required this.attendanceDay,
+    required this.isCarriedOver,
+    this.activeSession,
+    required this.todaySessions,
+    required this.totalWorkSeconds,
+  });
+
+  factory TodayStatusResult.fromJson(Map<String, dynamic> json) {
+    return TodayStatusResult(
+      attendanceDay: json['attendanceDay'] ?? '',
+      isCarriedOver: json['isCarriedOver'] ?? false,
+      activeSession: json['activeSession'] != null
+          ? AttendanceRecord.fromJson(json['activeSession'])
+          : null,
+      todaySessions: (json['todaySessions'] as List? ?? [])
+          .map((s) => AttendanceRecord.fromJson(s))
+          .toList(),
+      totalWorkSeconds: (json['totalWorkSeconds'] as num?)?.toInt() ?? 0,
+    );
+  }
+}
+
 
 /// Centralized API service for communicating with the Go backend
 class ApiService {
@@ -321,10 +356,29 @@ class ApiService {
     return [];
   }
 
-  /// 7. Logout and Clear Session
+  /// 7. Fetch Today's Attendance Status with Midnight Rollover Support
+  static Future<TodayStatusResult?> getTodayStatus() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/attendance/today-status'),
+        headers: _authHeaders,
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['data'] != null) {
+          return TodayStatusResult.fromJson(data['data']);
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  /// 8. Logout and Clear Session
   static void logout() {
     authToken = null;
     currentEmployee = null;
     assignedOffice = null;
   }
 }
+

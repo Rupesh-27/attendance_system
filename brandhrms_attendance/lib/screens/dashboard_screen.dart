@@ -130,6 +130,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   // Today's sessions for "View Swipes" and "Today Attendance Log"
   List<AttendanceRecord> _todaySessions = [];
+  bool _isCarriedOver = false;
+  String _attendanceDay = '';
 
   @override
   void initState() {
@@ -192,35 +194,66 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ApiService.getAssignedOffice(),
       ]);
 
-      // 2. Fetch recent attendance history
-      final history = await ApiService.getHistory();
+      // 2. Fetch authoritative today-status (supports midnight rollover) and history
+      final results = await Future.wait([
+        ApiService.getTodayStatus(),
+        ApiService.getHistory(),
+      ]);
+
+      final todayStatus = results[0] as TodayStatusResult?;
+      final history = (results[1] as List<AttendanceRecord>?) ?? [];
 
       final now = DateTime.now();
-      final List<AttendanceRecord> todaySessions = [];
+      List<AttendanceRecord> todaySessions = [];
       int accumulatedSec = 0;
       AttendanceRecord? activeSession;
+      bool isCarriedOver = false;
+      String attendanceDay = '';
 
       int monthlyAccumulated = 0;
 
-      for (final r in history) {
-        final d = r.checkInTime.toLocal();
-        // Today sessions
-        if (d.year == now.year && d.month == now.month && d.day == now.day) {
-          todaySessions.add(r);
+      if (todayStatus != null) {
+        // Authoritative server-driven rollover state
+        todaySessions = todayStatus.todaySessions;
+        activeSession = todayStatus.activeSession;
+        isCarriedOver = todayStatus.isCarriedOver;
+        attendanceDay = todayStatus.attendanceDay;
 
-          if (r.status == 'CHECKED_IN' && r.checkOutTime == null) {
-            activeSession = r;
-          } else if (r.status == 'CHECKED_OUT' || r.checkOutTime != null) {
+        for (final r in todaySessions) {
+          if (r.checkOutTime != null) {
             if (r.durationSeconds != null && r.durationSeconds! > 0) {
               accumulatedSec += r.durationSeconds!;
-            } else if (r.checkOutTime != null) {
+            } else {
               accumulatedSec +=
                   r.checkOutTime!.difference(r.checkInTime).inSeconds;
             }
           }
         }
+      } else {
+        // Fallback to local date calculation if server today-status unavailable
+        for (final r in history) {
+          final d = r.checkInTime.toLocal();
+          if (d.year == now.year && d.month == now.month && d.day == now.day) {
+            todaySessions.add(r);
 
-        // Monthly effort accumulation
+            if ((r.status == 'CHECKED_IN' || r.status == 'CARRIED_OVER') &&
+                r.checkOutTime == null) {
+              activeSession = r;
+            } else if (r.status == 'CHECKED_OUT' || r.checkOutTime != null) {
+              if (r.durationSeconds != null && r.durationSeconds! > 0) {
+                accumulatedSec += r.durationSeconds!;
+              } else if (r.checkOutTime != null) {
+                accumulatedSec +=
+                    r.checkOutTime!.difference(r.checkInTime).inSeconds;
+              }
+            }
+          }
+        }
+      }
+
+      // Monthly effort accumulation from history
+      for (final r in history) {
+        final d = r.checkInTime.toLocal();
         if (d.year == now.year && d.month == now.month) {
           if (r.durationSeconds != null && r.durationSeconds! > 0) {
             monthlyAccumulated += r.durationSeconds!;
@@ -269,6 +302,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _completedBreakSeconds = completedBreak;
           _lastCheckOutTime = latestCheckOut;
           _totalBreakSeconds = totalBreak;
+          _isCarriedOver = isCarriedOver;
+          _attendanceDay = attendanceDay;
 
           if (activeSession != null) {
             _isCheckedIn = true;
@@ -289,9 +324,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         });
       }
 
-      // Sync location status with verified attendance state (no unconfirmed 'Available' before check-in)
+      // Sync location status with verified attendance state
       _syncLocationStatusWithSession();
     } catch (_) {
+
       if (mounted) {
         setState(() => _isLoading = false);
       }
@@ -1096,12 +1132,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          _todaySessions.isEmpty
-                              ? 'Tap to view today\'s swipe details'
-                              : '${_todaySessions.length} swipe${_todaySessions.length > 1 ? 's' : ''} recorded today',
+                          _isCarriedOver
+                              ? 'Active overnight shift carried over from $_attendanceDay'
+                              : (_todaySessions.isEmpty
+                                  ? 'Tap to view today\'s swipe details'
+                                  : '${_todaySessions.length} swipe${_todaySessions.length > 1 ? 's' : ''} recorded today'),
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey.shade600,
+                            color: _isCarriedOver
+                                ? Colors.amber.shade900
+                                : Colors.grey.shade600,
+                            fontWeight: _isCarriedOver
+                                ? FontWeight.w600
+                                : FontWeight.normal,
                           ),
                         ),
                       ],
@@ -1151,8 +1194,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     const Divider(height: 16),
                 itemBuilder: (context, index) {
                   final session = _todaySessions[index];
-                  final isCurrent = session.status == 'CHECKED_IN' &&
+                  final isCurrent = (session.status == 'CHECKED_IN' ||
+                          session.status == 'CARRIED_OVER') &&
                       session.checkOutTime == null;
+                  final isSessionCarriedOver =
+                      session.status == 'CARRIED_OVER' ||
+                          (isCurrent && _isCarriedOver);
 
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1175,23 +1222,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 vertical: 3,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.green.shade50,
+                                color: isSessionCarriedOver
+                                    ? Colors.amber.shade50
+                                    : Colors.green.shade50,
                                 borderRadius: BorderRadius.circular(12),
-                                border:
-                                    Border.all(color: Colors.green.shade300),
+                                border: Border.all(
+                                  color: isSessionCarriedOver
+                                      ? Colors.amber.shade400
+                                      : Colors.green.shade300,
+                                ),
                               ),
-                              child: const Text(
-                                'Active Now',
+                              child: Text(
+                                isSessionCarriedOver
+                                    ? 'Carried Over Shift'
+                                    : 'Active Now',
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.green,
+                                  color: isSessionCarriedOver
+                                      ? Colors.amber.shade900
+                                      : Colors.green,
                                 ),
                               ),
                             )
                           else
                             Text(
                               session.durationSeconds != null
+
                                   ? 'Duration: ${session.durationSeconds! ~/ 60}m ${session.durationSeconds! % 60}s'
                                   : '',
                               style: TextStyle(

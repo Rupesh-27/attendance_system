@@ -87,13 +87,19 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
   }
 
   List<AttendanceRecord> _getRecordsForDay(DateTime day) {
+    final dayStr =
+        '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
     return _records.where((r) {
+      if (r.attendanceDay != null && r.attendanceDay!.isNotEmpty) {
+        return r.attendanceDay == dayStr;
+      }
       final local = r.checkInTime.toLocal();
       return local.year == day.year &&
           local.month == day.month &&
           local.day == day.day;
     }).toList();
   }
+
 
   // Comprehensive Tamil Nadu & National Government Public Holidays
   static const Map<String, String> _govtHolidays = {
