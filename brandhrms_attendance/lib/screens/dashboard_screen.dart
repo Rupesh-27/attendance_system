@@ -294,9 +294,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
         }
       }
 
+      // Sort today sessions newest first for display (Option B: Latest session on top)
+      final displayTodaySessions = List<AttendanceRecord>.from(todaySessions)
+        ..sort((a, b) => b.checkInTime.compareTo(a.checkInTime));
+
       if (mounted) {
         setState(() {
-          _todaySessions = todaySessions;
+          _todaySessions = displayTodaySessions;
           _accumulatedSeconds = accumulatedSec;
           _monthlyAccumulatedSeconds = monthlyAccumulated;
           _completedBreakSeconds = completedBreak;
