@@ -106,4 +106,3 @@ func MapDomainError(c *gin.Context, err error) {
 		SendError(c, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", "An unexpected error occurred", nil)
 	}
 }
-

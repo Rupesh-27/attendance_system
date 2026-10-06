@@ -27,7 +27,6 @@ func TestJWT_GenerateAndValidate(t *testing.T) {
 	assert.NotEmpty(t, tokenStr)
 	assert.True(t, exp.After(time.Now()))
 
-	// Validate valid token
 	claims, err := jwt.ValidateToken(tokenStr, secret)
 	require.NoError(t, err)
 	assert.Equal(t, emp.ID, claims.EmployeeID)
@@ -44,7 +43,7 @@ func TestJWT_ExpiredToken(t *testing.T) {
 	}
 
 	secret := "secret-key"
-	// Expired 10 seconds ago
+
 	tokenStr, _, err := jwt.GenerateToken(emp, secret, -10*time.Second)
 	require.NoError(t, err)
 

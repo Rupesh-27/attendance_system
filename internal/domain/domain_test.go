@@ -18,8 +18,7 @@ func TestHaversine_IdenticalCoordinates(t *testing.T) {
 }
 
 func TestHaversine_KnownDistance(t *testing.T) {
-	// London (51.5074, -0.1278) to Paris (48.8566, 2.3522)
-	// Geodesic distance ~ 343.5 km (allow 0.5% variance due to spherical approximation)
+
 	dist := domain.CalculateHaversineDistance(51.5074, -0.1278, 48.8566, 2.3522)
 	expectedKm := 343.5
 	actualKm := dist / 1000.0
@@ -36,13 +35,10 @@ func TestOffice_RadiusBoundaries(t *testing.T) {
 		IsActive:     true,
 	}
 
-	// 9.99m -> inside
 	assert.True(t, office.IsWithinRadius(9.99))
 
-	// 10.00m -> exact boundary (inside)
 	assert.True(t, office.IsWithinRadius(10.00))
 
-	// 10.01m -> outside
 	assert.False(t, office.IsWithinRadius(10.01))
 }
 
@@ -236,9 +232,8 @@ func TestAttendanceSession_CheckoutTransition(t *testing.T) {
 	assert.NotNil(t, session.CheckOutTime)
 	assert.Equal(t, checkOutTime, *session.CheckOutTime)
 	assert.NotNil(t, session.DurationSeconds)
-	assert.Equal(t, int64(7200), *session.DurationSeconds) // 2 hours = 7200 seconds
+	assert.Equal(t, int64(7200), *session.DurationSeconds)
 
-	// Second checkout attempt must fail
 	errAgain := session.CompleteCheckout(checkOutTime.Add(1*time.Minute), gps, 4.5)
 	assert.ErrorIs(t, errAgain, domain.ErrSessionAlreadyEnded)
 }

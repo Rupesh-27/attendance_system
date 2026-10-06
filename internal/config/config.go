@@ -23,7 +23,7 @@ func LoadConfig() *Config {
 	port := getEnv("PORT", "8080")
 	dbURL := getEnv("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/attendance_db?sslmode=disable")
 	jwtSecret := getEnv("JWT_SECRET", "super-secret-attendance-key-change-in-production")
-	
+
 	jwtExpHours, _ := strconv.Atoi(getEnv("JWT_EXPIRATION_HOURS", "24"))
 	if jwtExpHours <= 0 {
 		jwtExpHours = 24
@@ -34,8 +34,8 @@ func LoadConfig() *Config {
 		DatabaseURL:    dbURL,
 		JWTSecret:      jwtSecret,
 		JWTExpiration:  time.Duration(jwtExpHours) * time.Hour,
-		RateLimitLogin: 1.0, // 1 req/sec
-		RateLimitBurst: 5,   // burst of 5
+		RateLimitLogin: 1.0,
+		RateLimitBurst: 5,
 	}
 }
 

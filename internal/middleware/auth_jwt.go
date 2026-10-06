@@ -71,7 +71,6 @@ func JWTAuth(jwtSecret string) gin.HandlerFunc {
 			return
 		}
 
-		// Inject authenticated identity into Gin context
 		c.Set(ContextKeyEmployeeID, claims.EmployeeID)
 		c.Set(ContextKeyEmployeeCode, claims.EmployeeCode)
 		c.Set(ContextKeyEmployeeRole, claims.Role)
@@ -79,4 +78,3 @@ func JWTAuth(jwtSecret string) gin.HandlerFunc {
 		c.Next()
 	}
 }
-

@@ -49,7 +49,6 @@ func (h *AttendanceHandler) CheckIn(c *gin.Context) {
 		return
 	}
 
-	// BrandHRMS Guide Page 8 response schema
 	c.JSON(http.StatusOK, AttendanceCheckInResponse{
 		Success:             true,
 		AttendanceID:        session.ID.String(),
@@ -96,7 +95,6 @@ func (h *AttendanceHandler) CheckOut(c *gin.Context) {
 		distance = math.Round(*session.CheckOutDistanceMeters*10) / 10
 	}
 
-	// BrandHRMS Guide Page 8 response schema
 	c.JSON(http.StatusOK, AttendanceCheckOutResponse{
 		Success:             true,
 		AttendanceID:        session.ID.String(),
@@ -163,13 +161,12 @@ func (h *AttendanceHandler) GetTodayStatus(c *gin.Context) {
 	SendSuccess(c, http.StatusOK, status)
 }
 
-
 func parseDateFilter(s string, isEndOfDay bool) (time.Time, error) {
-	// Try RFC3339 first
+
 	if t, err := time.Parse(time.RFC3339, s); err == nil {
 		return t.UTC(), nil
 	}
-	// Try date only YYYY-MM-DD
+
 	if t, err := time.Parse("2006-01-02", s); err == nil {
 		if isEndOfDay {
 			t = time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 999999999, time.UTC)

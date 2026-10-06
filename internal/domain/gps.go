@@ -38,12 +38,10 @@ func (g *GPSLocation) Validate(serverTime time.Time) error {
 		return ErrAccuracyTooLow
 	}
 
-	// Future timestamp check: capturedAt cannot be later than serverTime
 	if g.CapturedAt.After(serverTime.Add(15 * time.Second)) {
 		return ErrCaptureTimeInFuture
 	}
 
-	// Freshness check: age must be within 30 seconds (30s boundary is valid)
 	age := serverTime.Sub(g.CapturedAt)
 	if age > time.Duration(MaxGPSCaptureAgeSeconds)*time.Second {
 		return ErrCaptureTimeStale

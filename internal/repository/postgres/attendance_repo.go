@@ -23,8 +23,8 @@ func NewAttendanceRepository(db *DB) repository.AttendanceRepository {
 
 func (r *attendanceRepo) GetActiveSession(ctx context.Context, employeeID uuid.UUID) (*domain.AttendanceSession, error) {
 	query := `
-		SELECT 
-			id, employee_id, office_id, 
+		SELECT
+			id, employee_id, office_id,
 			office_snapshot_name, office_snapshot_lat, office_snapshot_lon, office_snapshot_radius,
 			check_in_time, check_in_latitude, check_in_longitude, check_in_accuracy_meters, check_in_captured_at, check_in_distance_meters,
 			check_out_time, check_out_latitude, check_out_longitude, check_out_accuracy_meters, check_out_captured_at, check_out_distance_meters,
@@ -105,7 +105,7 @@ func (r *attendanceRepo) CreateSession(ctx context.Context, s *domain.Attendance
 	)
 	if err != nil {
 		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.Code == "23505" { // unique_violation
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
 			return domain.ErrActiveSessionExists
 		}
 		return err
@@ -117,7 +117,7 @@ func (r *attendanceRepo) CreateSession(ctx context.Context, s *domain.Attendance
 func (r *attendanceRepo) UpdateSession(ctx context.Context, s *domain.AttendanceSession) error {
 	query := `
 		UPDATE attendance_sessions
-		SET 
+		SET
 			check_out_time = $1,
 			check_out_latitude = $2,
 			check_out_longitude = $3,
@@ -169,8 +169,8 @@ func (r *attendanceRepo) UpdateSessionStatus(ctx context.Context, sessionID uuid
 
 func (r *attendanceRepo) GetSessionsByAttendanceDay(ctx context.Context, employeeID uuid.UUID, attendanceDay string) ([]*domain.AttendanceSession, error) {
 	query := `
-		SELECT 
-			id, employee_id, office_id, 
+		SELECT
+			id, employee_id, office_id,
 			office_snapshot_name, office_snapshot_lat, office_snapshot_lon, office_snapshot_radius,
 			check_in_time, check_in_latitude, check_in_longitude, check_in_accuracy_meters, check_in_captured_at, check_in_distance_meters,
 			check_out_time, check_out_latitude, check_out_longitude, check_out_accuracy_meters, check_out_captured_at, check_out_distance_meters,
@@ -244,8 +244,8 @@ func (r *attendanceRepo) GetHistoryByEmployeeID(
 	}
 
 	selectQuery := `
-		SELECT 
-			id, employee_id, office_id, 
+		SELECT
+			id, employee_id, office_id,
 			office_snapshot_name, office_snapshot_lat, office_snapshot_lon, office_snapshot_radius,
 			check_in_time, check_in_latitude, check_in_longitude, check_in_accuracy_meters, check_in_captured_at, check_in_distance_meters,
 			check_out_time, check_out_latitude, check_out_longitude, check_out_accuracy_meters, check_out_captured_at, check_out_distance_meters,
@@ -302,4 +302,3 @@ func (r *attendanceRepo) GetHistoryByEmployeeID(
 
 	return sessions, total, nil
 }
-

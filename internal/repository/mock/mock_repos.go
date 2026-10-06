@@ -126,7 +126,6 @@ func (m *MockAttendanceRepo) CreateSession(ctx context.Context, session *domain.
 	m.Lock()
 	defer m.Unlock()
 
-	// Enforce DB partial unique index constraint: WHERE status IN ('CHECKED_IN', 'CARRIED_OVER')
 	if session.Status == domain.StatusCheckedIn || session.Status == domain.StatusCarriedOver {
 		for _, s := range m.sessions {
 			if s.EmployeeID == session.EmployeeID && (s.Status == domain.StatusCheckedIn || s.Status == domain.StatusCarriedOver) {
@@ -180,7 +179,6 @@ func (m *MockAttendanceRepo) GetSessionsByAttendanceDay(ctx context.Context, emp
 	return sessions, nil
 }
 
-
 func (m *MockAttendanceRepo) GetHistoryByEmployeeID(
 	ctx context.Context,
 	employeeID uuid.UUID,
@@ -204,7 +202,6 @@ func (m *MockAttendanceRepo) GetHistoryByEmployeeID(
 		}
 	}
 
-	// Sort descending by CheckInTime
 	sort.Slice(employeeSessions, func(i, j int) bool {
 		return employeeSessions[i].CheckInTime.After(employeeSessions[j].CheckInTime)
 	})

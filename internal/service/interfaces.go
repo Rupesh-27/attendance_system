@@ -45,4 +45,3 @@ type AttendanceService interface {
 	GetTodayStatus(ctx context.Context, employeeID uuid.UUID) (*TodayAttendanceStatus, error)
 	GetMyHistory(ctx context.Context, employeeID uuid.UUID, from, to *time.Time, page, pageSize int) (*AttendanceHistoryResult, error)
 }
-

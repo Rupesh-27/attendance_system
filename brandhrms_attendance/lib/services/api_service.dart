@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-/// Data model representing an authenticated employee
 class EmployeeProfile {
   final String id;
   final String employeeCode;
@@ -34,7 +33,6 @@ class EmployeeProfile {
   }
 }
 
-/// Data model representing an assigned office and its geofence
 class AssignedOffice {
   final String id;
   final String name;
@@ -64,7 +62,6 @@ class AssignedOffice {
   }
 }
 
-/// Data model representing an attendance record from the database
 class AttendanceRecord {
   final String id;
   final String employeeId;
@@ -109,7 +106,6 @@ class AttendanceRecord {
   }
 }
 
-/// Data model representing the authoritative server status for the current attendance day
 class TodayStatusResult {
   final String attendanceDay;
   final bool isCarriedOver;
@@ -140,31 +136,19 @@ class TodayStatusResult {
   }
 }
 
-
-/// Centralized API service for communicating with the Go backend
 class ApiService {
-  // Configurable base URL:
-  // - Physical Device on Wi-Fi: "http://192.168.31.91:8080/api/v1"
-  // - Android Emulator: "http://10.0.2.2:8080/api/v1"
-  // - Localhost / Web / Desktop: "http://localhost:8080/api/v1"
-  // static String baseUrl = "http://192.168.31.91:8080/api/v1";
 
   static String baseUrl = "https://attendancesystem-production-8ce5.up.railway.app/api/v1";
 
-
-
-  // In-memory active session state
   static String? authToken;
   static EmployeeProfile? currentEmployee;
   static AssignedOffice? assignedOffice;
 
-  // Helper for auth headers
   static Map<String, String> get _authHeaders => {
         'Content-Type': 'application/json',
         if (authToken != null) 'Authorization': 'Bearer $authToken',
       };
 
-  /// 1. Employee Login: supports either employeeCode OR email
   static Future<Map<String, dynamic>> login(String identifier, String password) async {
     try {
       final response = await http.post(
@@ -200,7 +184,6 @@ class ApiService {
     }
   }
 
-  /// 2. Fetch User Profile
   static Future<EmployeeProfile?> getProfile() async {
     try {
       final response = await http.get(
@@ -219,7 +202,6 @@ class ApiService {
     return null;
   }
 
-  /// 3. Fetch Assigned Office and Geofence Radius
   static Future<AssignedOffice?> getAssignedOffice() async {
     try {
       final response = await http.get(
@@ -238,7 +220,6 @@ class ApiService {
     return null;
   }
 
-  /// 4. Submit Check-In with Live GPS Telemetry
   static Future<Map<String, dynamic>> checkIn({
     required double latitude,
     required double longitude,
@@ -283,7 +264,6 @@ class ApiService {
     }
   }
 
-  /// 5. Submit Check-Out with Live GPS Telemetry
   static Future<Map<String, dynamic>> checkOut({
     required double latitude,
     required double longitude,
@@ -329,7 +309,6 @@ class ApiService {
     }
   }
 
-  /// 6. Fetch Employee Attendance History
   static Future<List<AttendanceRecord>> getHistory({String? from, String? to}) async {
     try {
       String endpoint = '$baseUrl/attendance/me';
@@ -356,7 +335,6 @@ class ApiService {
     return [];
   }
 
-  /// 7. Fetch Today's Attendance Status with Midnight Rollover Support
   static Future<TodayStatusResult?> getTodayStatus() async {
     try {
       final response = await http.get(
@@ -374,11 +352,9 @@ class ApiService {
     return null;
   }
 
-  /// 8. Logout and Clear Session
   static void logout() {
     authToken = null;
     currentEmployee = null;
     assignedOffice = null;
   }
 }
-

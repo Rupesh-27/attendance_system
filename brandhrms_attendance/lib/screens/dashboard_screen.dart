@@ -103,7 +103,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _isSubmittingAttendance = false;
   bool _isTodayLogExpanded = false;
 
-  // Dynamic Location Status (Confirmed upon Check-in)
   String _locationStatus = 'Not Checked In';
   String _locationStatusBadge = 'Pending';
   String _locationStatusSubtext = 'Location will be validated upon Check-in';
@@ -112,23 +111,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Color _locationStatusBorder = const Color(0xFFCBD5E1);
   IconData _locationStatusIcon = Icons.location_on_outlined;
 
-  // Real-time 24-hour clock (runs continuously 24/7)
   Timer? _liveTimer;
   String _currentTimeString = '00:00:00';
 
-  // Work session timer state (inner circle & Daily Effort)
   int _accumulatedSeconds = 0;
   int _totalWorkSeconds = 0;
   DateTime? _currentSessionCheckIn;
 
-  // Effort & Break metrics
   int _monthlyWorkSeconds = 0;
   int _monthlyAccumulatedSeconds = 0;
   int _totalBreakSeconds = 0;
   int _completedBreakSeconds = 0;
   DateTime? _lastCheckOutTime;
 
-  // Today's sessions for "View Swipes" and "Today Attendance Log"
   List<AttendanceRecord> _todaySessions = [];
   bool _isCarriedOver = false;
   String _attendanceDay = '';
@@ -163,10 +158,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _liveTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (mounted) {
         setState(() {
-          // 24-hour real-time clock runs continuously regardless of checkin status
+
           _currentTimeString = _getRealTimeClock();
 
-          // Work duration timer updates only while actively checked in
           if (_isCheckedIn && _currentSessionCheckIn != null) {
             final currentElapsed =
                 DateTime.now().difference(_currentSessionCheckIn!).inSeconds;
@@ -188,13 +182,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // 1. Refresh profile & office if not yet populated
+
       await Future.wait([
         ApiService.getProfile(),
         ApiService.getAssignedOffice(),
       ]);
 
-      // 2. Fetch authoritative today-status (supports midnight rollover) and history
       final results = await Future.wait([
         ApiService.getTodayStatus(),
         ApiService.getHistory(),
@@ -213,7 +206,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       int monthlyAccumulated = 0;
 
       if (todayStatus != null) {
-        // Authoritative server-driven rollover state
+
         todaySessions = todayStatus.todaySessions;
         activeSession = todayStatus.activeSession;
         isCarriedOver = todayStatus.isCarriedOver;
@@ -230,7 +223,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           }
         }
       } else {
-        // Fallback to local date calculation if server today-status unavailable
+
         for (final r in history) {
           final d = r.checkInTime.toLocal();
           if (d.year == now.year && d.month == now.month && d.day == now.day) {
@@ -251,7 +244,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         }
       }
 
-      // Monthly effort accumulation from history
       for (final r in history) {
         final d = r.checkInTime.toLocal();
         if (d.year == now.year && d.month == now.month) {
@@ -264,7 +256,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         }
       }
 
-      // Calculate breaks between sessions today
       final sortedToday = List<AttendanceRecord>.from(todaySessions)
         ..sort((a, b) => a.checkInTime.compareTo(b.checkInTime));
 
@@ -294,7 +285,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         }
       }
 
-      // Sort today sessions newest first for display (Option B: Latest session on top)
       final displayTodaySessions = List<AttendanceRecord>.from(todaySessions)
         ..sort((a, b) => b.checkInTime.compareTo(a.checkInTime));
 
@@ -328,7 +318,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         });
       }
 
-      // Sync location status with verified attendance state
       _syncLocationStatusWithSession();
     } catch (_) {
 
@@ -338,14 +327,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  /// Sets Location Status according to server-verified attendance sessions.
-  /// Before check-in, displays 'Not Checked In' / 'Pending' (never 'Available' or 'In Office').
   void _syncLocationStatusWithSession() {
     final office = ApiService.assignedOffice;
     final officeName = office?.name ?? 'Assigned Office';
 
     if (_isCheckedIn) {
-      // Confirmed active session verified by backend
+
       setState(() {
         _locationStatus = 'Available';
         _locationStatusBadge = 'In Office';
@@ -357,7 +344,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       });
     } else if (_todaySessions.isNotEmpty &&
         _todaySessions.any((s) => s.checkOutTime != null)) {
-      // Session was completed today
+
       setState(() {
         _locationStatus = 'Checked Out';
         _locationStatusBadge = 'Completed';
@@ -368,7 +355,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _locationStatusIcon = Icons.logout;
       });
     } else {
-      // Has not checked in yet -> strictly Pending / Not Checked In
+
       setState(() {
         _locationStatus = 'Not Checked In';
         _locationStatusBadge = 'Pending';
@@ -428,8 +415,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
   }
 
-
-
   String _formatEffortHM(int totalSec) {
     if (totalSec < 0) totalSec = 0;
     final h = (totalSec ~/ 3600).toString().padLeft(2, '0');
@@ -443,7 +428,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     setState(() => _isSubmittingAttendance = true);
 
     try {
-      // 1. Check if location services are enabled
+
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         if (mounted) {
@@ -458,7 +443,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         return;
       }
 
-      // 2. Check location permissions
       var permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
@@ -477,14 +461,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
         return;
       }
 
-      // 3. Acquire high-accuracy GPS position
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.high,
         ),
       );
 
-      // 4. Submit to backend
       final result = _isCheckedIn
           ? await ApiService.checkOut(
               latitude: position.latitude,
@@ -500,7 +482,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (mounted) {
         if (result['success'] == true) {
           if (!_isCheckedIn) {
-            // Check-in succeeded: only now confirmed Available & In Office
+
             setState(() {
               _locationStatus = 'Available';
               _locationStatusBadge = 'In Office';
@@ -511,7 +493,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               _locationStatusIcon = Icons.location_on;
             });
           } else {
-            // Check-out succeeded
+
             setState(() {
               _locationStatus = 'Checked Out';
               _locationStatusBadge = 'Completed';
@@ -534,7 +516,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         } else {
           final actionAttempted = _isCheckedIn ? 'Check-out' : 'Check-in';
 
-          // Rejected outside radius
           setState(() {
             _locationStatus = 'Unavailable';
             _locationStatusBadge = 'Outside Radius';
@@ -572,7 +553,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-
   Future<void> _navigateToHistory() async {
     await Navigator.push(
       context,
@@ -584,7 +564,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _loadDashboardData();
     }
   }
-
 
   Future<void> _navigateToProfile() async {
     await Navigator.push(
@@ -676,12 +655,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
               const SizedBox(height: 20),
 
-              // Actions card matching the reference image layout
               _attendanceCard(context),
 
               const SizedBox(height: 14),
 
-              // Daily Effort, Monthly Effort, Total Break Hours
               _effortMetricsRow(),
 
               const SizedBox(height: 16),
@@ -694,7 +671,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
               const SizedBox(height: 16),
 
-              // Today Attendance Log (displays View Swipes details when clicked)
               _todayAttendanceLogCard(),
 
               const SizedBox(height: 30),
@@ -744,7 +720,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // 1. Actions Header
+
           const Align(
             alignment: Alignment.centerLeft,
             child: Text(
@@ -761,7 +737,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const Divider(height: 1, thickness: 0.8, color: Color(0xFFECEFF1)),
           const SizedBox(height: 14),
 
-          // 2. Date and Shift Info
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -773,20 +748,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   color: Colors.blueGrey.shade700,
                 ),
               ),
-              Text(
-                '10:00 AM - 7:00 PM',
-                style: TextStyle(
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.blueGrey.shade800,
-                ),
-              ),
+
             ],
           ),
 
           const SizedBox(height: 22),
 
-          // 3. Circular Dial with Radial Tick Marks (Unchanged Work Hours)
           SizedBox(
             width: 140,
             height: 140,
@@ -809,7 +776,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       style: const TextStyle(
                         fontSize: 26,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFFFF6565), // Coral from reference image
+                        color: Color(0xFFFF6565),
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -829,7 +796,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
           const SizedBox(height: 18),
 
-          // 4. Real-time 24-Hour Digital Clock (Updates every second 24/7)
           Text(
             _currentTimeString,
             style: const TextStyle(
@@ -842,7 +808,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
           const SizedBox(height: 4),
 
-          // 5. Timezone subtitle
           const Text(
             'Asia/Calcutta',
             style: TextStyle(
@@ -854,7 +819,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
           const SizedBox(height: 22),
 
-          // 6. Action Button (Check-in / Check-out)
           SizedBox(
             width: double.infinity,
             height: 50,
@@ -885,8 +849,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               style: FilledButton.styleFrom(
                 backgroundColor: _isCheckedIn
-                    ? const Color(0xFFE53935) // Red for Check-out
-                    : const Color(0xFF1E88E5), // Blue for Check-in
+                    ? const Color(0xFFE53935)
+                    : const Color(0xFF1E88E5),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -1139,8 +1103,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           _isCarriedOver
                               ? 'Active overnight shift carried over from $_attendanceDay'
                               : (_todaySessions.isEmpty
-                                  ? 'Tap to view today\'s swipe details'
-                                  : '${_todaySessions.length} swipe${_todaySessions.length > 1 ? 's' : ''} recorded today'),
+                                  ? 'Tap to view today\'s Logs'
+                                  : '${_todaySessions.length} Log${_todaySessions.length > 1 ? 's' : ''} recorded today'),
                           style: TextStyle(
                             fontSize: 12,
                             color: _isCarriedOver
@@ -1179,7 +1143,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           size: 40, color: Colors.grey.shade400),
                       const SizedBox(height: 6),
                       Text(
-                        'No swipes recorded today yet.',
+                        'No Logs recorded today yet.',
                         style: TextStyle(
                           color: Colors.grey.shade600,
                           fontSize: 13,
@@ -1329,7 +1293,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 }
 
-/// Custom painter for the radial tick marks around the circular work hours dial
 class RadialTicksPainter extends CustomPainter {
   final double activeRatio;
   final Color activeColor;

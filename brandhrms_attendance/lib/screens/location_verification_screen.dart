@@ -87,7 +87,6 @@ class _LocationVerificationScreenState
             'Validating with backend server...';
       });
 
-      // Submit coordinates to backend
       final result = widget.isCheckOut
           ? await ApiService.checkOut(
               latitude: position.latitude,
@@ -195,8 +194,8 @@ class _LocationVerificationScreenState
         actions: [
           FilledButton(
             onPressed: () {
-              Navigator.pop(ctx); // Close dialog
-              Navigator.pop(context, true); // Return to dashboard with success
+              Navigator.pop(ctx);
+              Navigator.pop(context, true);
             },
             style: FilledButton.styleFrom(
               backgroundColor: primaryColor,

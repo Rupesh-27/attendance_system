@@ -43,12 +43,10 @@ func (s *authService) Login(ctx context.Context, employeeCode, password string) 
 		return nil, err
 	}
 
-	// Verify password hash
 	if err := bcrypt.CompareHashAndPassword([]byte(emp.PasswordHash), []byte(password)); err != nil {
 		return nil, domain.ErrInvalidCredentials
 	}
 
-	// Check if employee is active and role is EMPLOYEE
 	if err := emp.CanAuthenticate(); err != nil {
 		return nil, err
 	}

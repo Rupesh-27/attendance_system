@@ -88,17 +88,14 @@ func main() {
 		attRepo = postgres.NewAttendanceRepository(db)
 	}
 
-	// 2. Initialize Services
 	authSvc := service.NewAuthService(empRepo, cfg.JWTSecret, cfg.JWTExpiration)
 	empSvc := service.NewEmployeeService(empRepo, offRepo)
 	attSvc := service.NewAttendanceService(empRepo, offRepo, attRepo, nil)
 
-	// 3. Initialize HTTP Handlers
 	authHandler := handler.NewAuthHandler(authSvc)
 	empHandler := handler.NewEmployeeHandler(empSvc)
 	attHandler := handler.NewAttendanceHandler(attSvc)
 
-	// 4. Initialize HTTP Router
 	router := handler.SetupRouter(handler.RouterConfig{
 		AuthHandler:       authHandler,
 		EmployeeHandler:   empHandler,
@@ -106,7 +103,6 @@ func main() {
 		JWTSecret:         cfg.JWTSecret,
 	})
 
-	// 5. Start HTTP Server with Graceful Shutdown
 	srv := &http.Server{
 		Addr:         ":" + cfg.Port,
 		Handler:      router,
@@ -122,7 +118,6 @@ func main() {
 		}
 	}()
 
-	// Listen for termination signals
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit

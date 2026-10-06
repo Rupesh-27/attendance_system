@@ -28,7 +28,6 @@ func NewIPRateLimiter(r rate.Limit, b int) *ipRateLimiter {
 		burst:    b,
 	}
 
-	// Periodically clean up stale client limiters
 	go func() {
 		for {
 			time.Sleep(5 * time.Minute)

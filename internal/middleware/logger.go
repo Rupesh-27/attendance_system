@@ -25,7 +25,6 @@ func RequestLogger() gin.HandlerFunc {
 			path = path + "?" + raw
 		}
 
-		// Security: Logs HTTP metadata only, without dumping raw request bodies containing GPS/passwords
 		log.Printf("[HTTP] %d | %13v | %15s | %-7s %s",
 			statusCode,
 			latency,

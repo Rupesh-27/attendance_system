@@ -16,10 +16,8 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
   bool _isLoading = true;
   List<AttendanceRecord> _records = [];
 
-  // Current active calendar month view
   late DateTime _currentMonth;
 
-  // Selected date on the calendar (defaults to today)
   late DateTime _selectedDay;
 
   @override
@@ -31,7 +29,6 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     _fetchHistory();
   }
 
-  /// Fetches attendance records for the selected month directly from the backend
   Future<void> _fetchHistory() async {
     setState(() => _isLoading = true);
 
@@ -100,10 +97,8 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     }).toList();
   }
 
-
-  // Comprehensive Tamil Nadu & National Government Public Holidays
   static const Map<String, String> _govtHolidays = {
-    // 2026 Public Holidays
+
     '2026-01-01': "New Year's Day",
     '2026-01-14': 'Pongal',
     '2026-01-15': 'Thiruvalluvar Day',
@@ -124,7 +119,6 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     '2026-11-08': 'Deepavali',
     '2026-12-25': 'Christmas',
 
-    // 2025 Public Holidays
     '2025-01-01': "New Year's Day",
     '2025-01-14': 'Pongal',
     '2025-01-15': 'Thiruvalluvar Day',
@@ -143,7 +137,6 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     '2025-11-01': 'Deepavali',
     '2025-12-25': 'Christmas',
 
-    // 2027 Public Holidays
     '2027-01-01': "New Year's Day",
     '2027-01-14': 'Pongal',
     '2027-01-15': 'Thiruvalluvar Day',
@@ -169,7 +162,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
       return {
         'status': 'PRESENT',
         'label': 'Present',
-        'color': const Color(0xFF1E88E5), // Blue/Teal
+        'color': const Color(0xFF1E88E5),
         'bgColor': const Color(0xFFEBF5FB),
         'borderColor': const Color(0xFF64B5F6),
         'icon': Icons.business,
@@ -183,10 +176,10 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
         'status': 'HOLIDAY',
         'label': 'Holiday',
         'holidayName': holidayName,
-        'color': const Color(0xFF4338CA), // Indigo/lavender
+        'color': const Color(0xFF4338CA),
         'bgColor': const Color(0xFFEEF2FF),
         'borderColor': const Color(0xFFC7D2FE),
-        'icon': Icons.ac_unit, // Snowflake icon matching reference design
+        'icon': Icons.ac_unit,
         'sessions': <AttendanceRecord>[],
       };
     }
@@ -284,12 +277,11 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. Calendar Header Card with Month Selector (< October 2026 >)
+
               _buildCalendarCard(),
 
               const SizedBox(height: 16),
 
-              // 2. Selected Date Attendance Details Card
               _buildDateDetailsCard(),
 
               const SizedBox(height: 30),
@@ -306,8 +298,6 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     final firstDayOfMonth =
         DateTime(_currentMonth.year, _currentMonth.month, 1);
 
-    // Sunday-first weekday offset:
-    // Sunday (7 % 7 = 0), Monday (1 % 7 = 1), ..., Saturday (6 % 7 = 6)
     final startingOffset = firstDayOfMonth.weekday % 7;
     final totalGridCells = startingOffset + daysInMonth;
 
@@ -328,7 +318,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Row: "Attendance Calendar" & "< Month Year >"
+
           Row(
             children: [
               const Expanded(
@@ -379,7 +369,6 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
           const Divider(height: 1, color: Color(0xFFECEFF1)),
           const SizedBox(height: 12),
 
-          // Weekday Columns (SUN to SAT - 7 days included)
           Row(
             children: const [
               _WeekdayHeader('SUN'),
@@ -394,7 +383,6 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
 
           const SizedBox(height: 10),
 
-          // Calendar Grid
           if (_isLoading)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 60),
@@ -414,7 +402,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                 childAspectRatio: 0.82,
               ),
               itemBuilder: (context, index) {
-                // Empty padding cells before Day 1 of the month
+
                 if (index < startingOffset) {
                   return const SizedBox.shrink();
                 }
@@ -478,7 +466,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: isSelected
-                ? const Color(0xFF2563EB) // Selected blue ring
+                ? const Color(0xFF2563EB)
                 : (isToday ? primaryColor : borderColor),
             width: isSelected ? 2.0 : (isToday ? 1.5 : 0.8),
           ),
@@ -496,7 +484,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            // Top Row: Day Number & Shift badge
+
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -523,7 +511,6 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
               ],
             ),
 
-            // Center: Status Icon
             if (icon != null)
               Icon(
                 icon,
@@ -533,7 +520,6 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
             else
               const SizedBox(height: 16),
 
-            // Bottom: Status Label
             if (label.isNotEmpty)
               Text(
                 label,
@@ -553,7 +539,6 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     );
   }
 
-  /// Displays the First Check-in and Last Check-out details for the selected date
   Widget _buildDateDetailsCard() {
     final statusInfo = _getDayStatus(_selectedDay);
     final List<AttendanceRecord> daySessions =
@@ -567,7 +552,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     int totalDurationSec = 0;
 
     if (daySessions.isNotEmpty) {
-      // Sessions are ordered from backend
+
       final earliest = daySessions.last;
       firstCheckIn = _formatTime(earliest.checkInTime);
       officeName = earliest.officeSnapshotName;
@@ -613,7 +598,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Date Header & Status Badge
+
           Row(
             children: [
               Container(
@@ -705,7 +690,6 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
           const Divider(height: 1, color: Color(0xFFECEFF1)),
           const SizedBox(height: 16),
 
-          // Check-in & Check-out Details
           Row(
             children: [
               Expanded(
@@ -728,7 +712,6 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
             ],
           ),
 
-          // Total duration row if recorded
           if (totalDurationSec > 0) ...[
             const SizedBox(height: 12),
             Container(
@@ -768,7 +751,6 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     );
   }
 
-  /// Displays the full swipes breakdown in a modal sheet when clicking the eye (View) icon
   void _showSwipesBreakdownModal({
     required DateTime date,
     required String officeName,
@@ -857,7 +839,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          '${sessions.length} Swipe Session${sessions.length > 1 ? 's' : ''}',
+                          '${sessions.length} Log Session${sessions.length > 1 ? 's' : ''}',
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,

@@ -132,13 +132,11 @@ func TestHandler_Auth_Login_Failure(t *testing.T) {
 func TestHandler_Attendance_CheckIn_And_CheckOut(t *testing.T) {
 	router, emp, office, secret := setupTestRouter()
 
-	// Generate valid JWT
 	token, _, err := jwt.GenerateToken(emp, secret, 1*time.Hour)
 	require.NoError(t, err)
 
 	now := time.Date(2026, 9, 23, 12, 0, 0, 0, time.UTC)
 
-	// 1. Check-In inside office radius
 	checkInBody := handler.GPSRequest{
 		Latitude:       office.Latitude,
 		Longitude:      office.Longitude,
@@ -162,7 +160,6 @@ func TestHandler_Attendance_CheckIn_And_CheckOut(t *testing.T) {
 	assert.NotEmpty(t, checkInResp.AttendanceID)
 	assert.Equal(t, 10.0, checkInResp.AllowedRadiusMeters)
 
-	// 2. Duplicate Check-In attempt should fail with 409 Conflict
 	wDup := httptest.NewRecorder()
 	reqDup, _ := http.NewRequest(http.MethodPost, "/api/v1/attendance/check-in", bytes.NewBuffer(jsonBody))
 	reqDup.Header.Set("Content-Type", "application/json")
@@ -171,7 +168,6 @@ func TestHandler_Attendance_CheckIn_And_CheckOut(t *testing.T) {
 
 	assert.Equal(t, http.StatusConflict, wDup.Code)
 
-	// 3. Check-Out inside office radius
 	checkOutBody := handler.GPSRequest{
 		Latitude:       office.Latitude,
 		Longitude:      office.Longitude,
@@ -194,7 +190,6 @@ func TestHandler_Attendance_CheckIn_And_CheckOut(t *testing.T) {
 	assert.Equal(t, "COMPLETED", checkOutResp.Status)
 	assert.NotEmpty(t, checkOutResp.AttendanceID)
 
-	// 4. Query Attendance History with from & to filters
 	reqHist, _ := http.NewRequest(http.MethodGet, "/api/v1/attendance/me?from=2026-09-01&to=2026-09-30", nil)
 	reqHist.Header.Set("Authorization", "Bearer "+token)
 	wHist := httptest.NewRecorder()
@@ -215,7 +210,6 @@ func TestHandler_CheckIn_OutsideRadius_Returns422(t *testing.T) {
 
 	now := time.Date(2026, 9, 23, 12, 0, 0, 0, time.UTC)
 
-	// Coordinates 500m away
 	checkInBody := handler.GPSRequest{
 		Latitude:       office.Latitude + 0.005,
 		Longitude:      office.Longitude,
@@ -274,7 +268,6 @@ func TestHandler_GetMe_And_GetAssignedOffice(t *testing.T) {
 	token, _, err := jwt.GenerateToken(emp, secret, 1*time.Hour)
 	require.NoError(t, err)
 
-	// GET /api/v1/me
 	reqMe, _ := http.NewRequest(http.MethodGet, "/api/v1/me", nil)
 	reqMe.Header.Set("Authorization", "Bearer "+token)
 	wMe := httptest.NewRecorder()
@@ -283,7 +276,6 @@ func TestHandler_GetMe_And_GetAssignedOffice(t *testing.T) {
 	assert.Equal(t, http.StatusOK, wMe.Code)
 	assert.Contains(t, wMe.Body.String(), "Alice Wonderland")
 
-	// GET /api/v1/offices/assigned
 	reqOffice, _ := http.NewRequest(http.MethodGet, "/api/v1/offices/assigned", nil)
 	reqOffice.Header.Set("Authorization", "Bearer "+token)
 	wOffice := httptest.NewRecorder()
