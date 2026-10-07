@@ -643,31 +643,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
         color: primaryColor,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 '${_getGreeting()}, $employeeName',
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 3),
               Text.rich(
                 TextSpan(
                   children: [
                     TextSpan(
                       text: '“${quote.text}” ',
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: 11.5,
                         fontStyle: FontStyle.italic,
                         color: Colors.grey.shade700,
-                        height: 1.35,
+                        height: 1.25,
                       ),
                     ),
                     TextSpan(
                       text: '— ${quote.author}',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 11,
                         fontWeight: FontWeight.w600,
                         color: Colors.grey.shade800,
                       ),
@@ -675,17 +675,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 12),
               _attendanceCard(context),
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
               _effortMetricsRow(),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
               _officeCard(officeName),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
               _locationCard(),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
               _todayAttendanceLogCard(),
-              const SizedBox(height: 30),
+              const SizedBox(height: 24),
             ],
           ),
         ),
@@ -702,118 +702,176 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final mins = (_totalWorkSeconds % 3600) ~/ 60;
 
     return _card(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-
-          const Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              'Actions',
-              style: TextStyle(
-                fontSize: 19,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1E293B),
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 12),
-          const Divider(height: 1, thickness: 0.8, color: Color(0xFFECEFF1)),
-          const SizedBox(height: 14),
-
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                '$dayName | $dateStr',
+              const Text(
+                'Actions',
                 style: TextStyle(
-                  fontSize: 13.5,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.blueGrey.shade700,
+                  fontSize: 16.5,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E293B),
                 ),
               ),
-
-            ],
-          ),
-
-          const SizedBox(height: 22),
-
-          SizedBox(
-            width: 140,
-            height: 140,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                CustomPaint(
-                  size: const Size(140, 140),
-                  painter: RadialTicksPainter(
-                    activeRatio: (_totalWorkSeconds / (9 * 3600)).clamp(0.0, 1.0),
-                    activeColor: const Color(0xFFFF6565),
-                    inactiveColor: const Color(0xFFCFD8DC),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Text(
+                  '$dayName | $dateStr',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.blueGrey.shade700,
                   ),
                 ),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Divider(height: 1, thickness: 0.8, color: Color(0xFFECEFF1)),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 88,
+                height: 88,
+                child: Stack(
+                  alignment: Alignment.center,
                   children: [
-                    Text(
-                      '${hours}hr',
-                      style: const TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFFFF6565),
+                    CustomPaint(
+                      size: const Size(88, 88),
+                      painter: RadialTicksPainter(
+                        activeRatio:
+                            (_totalWorkSeconds / (9 * 3600)).clamp(0.0, 1.0),
+                        activeColor: const Color(0xFFFF6565),
+                        inactiveColor: const Color(0xFFCFD8DC),
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '$mins mins',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey.shade600,
-                        fontWeight: FontWeight.w500,
-                      ),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '${hours}hr',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFFFF6565),
+                          ),
+                        ),
+                        Text(
+                          '$mins mins',
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            color: Colors.grey.shade600,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+              Container(
+                height: 58,
+                width: 1,
+                color: const Color(0xFFECEFF1),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _currentTimeString,
+                    style: const TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.2,
+                      color: Color(0xFF263238),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.schedule,
+                          size: 13, color: Colors.blueGrey.shade400),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Asia/Calcutta',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.blueGrey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    margin: const EdgeInsets.only(top: 5),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 2.5),
+                    decoration: BoxDecoration(
+                      color: _isCheckedIn
+                          ? const Color(0xFFE8F5E9)
+                          : const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: _isCheckedIn
+                            ? const Color(0xFFA5D6A7)
+                            : const Color(0xFFCBD5E1),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _isCheckedIn
+                              ? Icons.check_circle
+                              : Icons.radio_button_unchecked,
+                          size: 11,
+                          color: _isCheckedIn
+                              ? const Color(0xFF2E7D32)
+                              : const Color(0xFF64748B),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          _isCheckedIn ? 'Checked In' : 'Not Checked In',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: _isCheckedIn
+                                ? const Color(0xFF2E7D32)
+                                : const Color(0xFF64748B),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-
-          const SizedBox(height: 18),
-
-          Text(
-            _currentTimeString,
-            style: const TextStyle(
-              fontSize: 34,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1.5,
-              color: Color(0xFF263238),
-            ),
-          ),
-
-          const SizedBox(height: 4),
-
-          const Text(
-            'Asia/Calcutta',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF90A4AE),
-            ),
-          ),
-
-          const SizedBox(height: 22),
-
+          const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
-            height: 50,
+            height: 44,
             child: FilledButton.icon(
               onPressed:
                   _isSubmittingAttendance ? null : _handleAttendanceAction,
               icon: _isSubmittingAttendance
                   ? const SizedBox(
-                      width: 20,
-                      height: 20,
+                      width: 18,
+                      height: 18,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
                         color: Colors.white,
@@ -821,14 +879,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     )
                   : Icon(
                       _isCheckedIn ? Icons.logout : Icons.login,
-                      size: 20,
+                      size: 19,
                     ),
               label: Text(
                 _isSubmittingAttendance
                     ? 'Verifying Location...'
                     : (_isCheckedIn ? 'Check-out' : 'Check-in'),
                 style: const TextStyle(
-                  fontSize: 16,
+                  fontSize: 15,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -892,7 +950,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     required String value,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -910,22 +968,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Row(
             children: [
               Container(
-                width: 24,
-                height: 24,
+                width: 22,
+                height: 22,
                 decoration: BoxDecoration(
                   color: iconBg,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, size: 14, color: iconColor),
+                child: Icon(icon, size: 13, color: iconColor),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 5),
               Expanded(
                 child: Text(
                   title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 10.5,
+                    fontSize: 10,
                     fontWeight: FontWeight.w600,
                     color: Colors.blueGrey.shade700,
                     height: 1.15,
@@ -934,12 +992,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 6),
           Center(
             child: Text(
               value,
               style: const TextStyle(
-                fontSize: 16,
+                fontSize: 15,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 0.2,
                 color: Color(0xFF1E293B),
@@ -1265,10 +1323,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _card({required Widget child}) {
+  Widget _card({required Widget child, EdgeInsetsGeometry? padding}) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(18),
+      padding: padding ?? const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
@@ -1293,12 +1351,14 @@ class RadialTicksPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2;
-    const totalTicks = 48;
+    const totalTicks = 40;
     final activeTicks = (activeRatio * totalTicks).round();
 
     final paint = Paint()
-      ..strokeWidth = 2.5
+      ..strokeWidth = (radius / 22).clamp(1.6, 2.4)
       ..strokeCap = StrokeCap.round;
+
+    final tickLength = radius * 0.22;
 
     for (int i = 0; i < totalTicks; i++) {
       final angle = (i * 2 * math.pi / totalTicks) - (math.pi / 2);
@@ -1306,8 +1366,8 @@ class RadialTicksPainter extends CustomPainter {
       paint.color = isTickActive ? activeColor : inactiveColor;
 
       final innerPoint = Offset(
-        center.dx + (radius - 12) * math.cos(angle),
-        center.dy + (radius - 12) * math.sin(angle),
+        center.dx + (radius - tickLength) * math.cos(angle),
+        center.dy + (radius - tickLength) * math.sin(angle),
       );
       final outerPoint = Offset(
         center.dx + (radius - 2) * math.cos(angle),
