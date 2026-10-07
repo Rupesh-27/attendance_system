@@ -9,12 +9,14 @@ import (
 )
 
 type Config struct {
-	Port           string
-	DatabaseURL    string
-	JWTSecret      string
-	JWTExpiration  time.Duration
-	RateLimitLogin float64 // requests per second
-	RateLimitBurst int
+	Port             string
+	DatabaseURL      string
+	JWTSecret        string
+	JWTExpiration    time.Duration
+	RateLimitLogin   float64 // requests per second
+	RateLimitBurst   int
+	TelegramBotToken string
+	TelegramChatID   string
 }
 
 func LoadConfig() *Config {
@@ -23,6 +25,8 @@ func LoadConfig() *Config {
 	port := getEnv("PORT", "8080")
 	dbURL := getEnv("DATABASE_URL", "postgres://postgres:postgres@localhost:5432/attendance_db?sslmode=disable")
 	jwtSecret := getEnv("JWT_SECRET", "super-secret-attendance-key-change-in-production")
+	telegramBotToken := getEnv("TELEGRAM_BOT_TOKEN", "")
+	telegramChatID := getEnv("TELEGRAM_CHAT_ID", "")
 
 	jwtExpHours, _ := strconv.Atoi(getEnv("JWT_EXPIRATION_HOURS", "24"))
 	if jwtExpHours <= 0 {
@@ -30,12 +34,14 @@ func LoadConfig() *Config {
 	}
 
 	return &Config{
-		Port:           port,
-		DatabaseURL:    dbURL,
-		JWTSecret:      jwtSecret,
-		JWTExpiration:  time.Duration(jwtExpHours) * time.Hour,
-		RateLimitLogin: 1.0,
-		RateLimitBurst: 5,
+		Port:             port,
+		DatabaseURL:      dbURL,
+		JWTSecret:        jwtSecret,
+		JWTExpiration:    time.Duration(jwtExpHours) * time.Hour,
+		RateLimitLogin:   1.0,
+		RateLimitBurst:   5,
+		TelegramBotToken: telegramBotToken,
+		TelegramChatID:   telegramChatID,
 	}
 }
 

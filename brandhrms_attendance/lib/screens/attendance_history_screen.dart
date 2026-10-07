@@ -965,6 +965,25 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                       _formatTime(session.checkOutTime!),
                                       style: const TextStyle(fontSize: 13),
                                     ),
+                                    if (session.checkoutReason == 'FORCE_CHECKOUT_OUT_OF_RADIUS') ...[
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.red.shade50,
+                                          borderRadius: BorderRadius.circular(4),
+                                          border: Border.all(color: Colors.red.shade200),
+                                        ),
+                                        child: const Text(
+                                          'Out of Radius',
+                                          style: TextStyle(
+                                            color: Colors.red,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ],
                                 ),
                               ],

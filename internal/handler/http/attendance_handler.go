@@ -106,6 +106,84 @@ func (h *AttendanceHandler) CheckOut(c *gin.Context) {
 	})
 }
 
+func (h *AttendanceHandler) ForceCheckOut(c *gin.Context) {
+	empIDVal, exists := c.Get(middleware.ContextKeyEmployeeID)
+	if !exists {
+		SendError(c, http.StatusUnauthorized, "AUTH_INVALID", "User not authenticated", nil)
+		return
+	}
+	empID := empIDVal.(uuid.UUID)
+
+	var req ForceCheckoutRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		SendError(c, http.StatusBadRequest, "LOCATION_REQUIRED", "Valid latitude, longitude, accuracyMeters and capturedAt are required", nil)
+		return
+	}
+
+	gps := domain.GPSLocation{
+		Latitude:       req.Latitude,
+		Longitude:      req.Longitude,
+		AccuracyMeters: req.AccuracyMeters,
+		CapturedAt:     req.CapturedAt,
+	}
+
+	reason := domain.CheckoutReasonForceOutOfRadius
+	if req.Reason != "" {
+		reason = domain.CheckoutReason(req.Reason)
+	}
+
+	session, err := h.attendanceService.ForceCheckOut(c.Request.Context(), empID, gps, reason, req.BreachedAt)
+	if err != nil {
+		MapDomainError(c, err)
+		return
+	}
+
+	duration := int64(0)
+	if session.DurationSeconds != nil {
+		duration = *session.DurationSeconds
+	}
+	distance := float64(0)
+	if session.CheckOutDistanceMeters != nil {
+		distance = math.Round(*session.CheckOutDistanceMeters*10) / 10
+	}
+
+	c.JSON(http.StatusOK, AttendanceForceCheckOutResponse{
+		Success:             true,
+		AttendanceID:        session.ID.String(),
+		Status:              string(session.Status),
+		CheckoutReason:      string(session.CheckoutReason),
+		DistanceMeters:      distance,
+		AllowedRadiusMeters: session.OfficeSnapshotRadius,
+		DurationSeconds:     duration,
+		ServerTime:          *session.CheckOutTime,
+	})
+}
+
+func (h *AttendanceHandler) RecordBreach(c *gin.Context) {
+	empIDVal, exists := c.Get(middleware.ContextKeyEmployeeID)
+	if !exists {
+		SendError(c, http.StatusUnauthorized, "AUTH_INVALID", "User not authenticated", nil)
+		return
+	}
+	empID := empIDVal.(uuid.UUID)
+
+	var req RecordBreachRequest
+	_ = c.ShouldBindJSON(&req)
+
+	breachTime := req.BreachedAt
+	if breachTime == nil {
+		now := time.Now().UTC()
+		breachTime = &now
+	}
+
+	if err := h.attendanceService.RecordOutOfRadiusBreach(c.Request.Context(), empID, breachTime); err != nil {
+		MapDomainError(c, err)
+		return
+	}
+
+	SendSuccess(c, http.StatusOK, gin.H{"recorded": true, "breachedAt": breachTime})
+}
+
 func (h *AttendanceHandler) GetMyAttendance(c *gin.Context) {
 	empIDVal, exists := c.Get(middleware.ContextKeyEmployeeID)
 	if !exists {

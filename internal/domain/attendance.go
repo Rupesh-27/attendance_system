@@ -22,6 +22,13 @@ const (
 	SourceGPSMobile AttendanceSource = "GPS_MOBILE"
 )
 
+type CheckoutReason string
+
+const (
+	CheckoutReasonManual            CheckoutReason = "MANUAL"
+	CheckoutReasonForceOutOfRadius CheckoutReason = "FORCE_CHECKOUT_OUT_OF_RADIUS"
+)
+
 // AttendanceSession represents a single mobile check-in to check-out session
 type AttendanceSession struct {
 	ID            uuid.UUID        `json:"id"`
@@ -53,8 +60,10 @@ type AttendanceSession struct {
 	CheckOutDistanceMeters *float64   `json:"checkOutDistanceMeters,omitempty"`
 
 	// Calculated Duration in seconds
-	DurationSeconds *int64           `json:"durationSeconds,omitempty"`
-	Status          AttendanceStatus `json:"status"`
+	DurationSeconds      *int64           `json:"durationSeconds,omitempty"`
+	CheckoutReason       CheckoutReason   `json:"checkoutReason,omitempty"`
+	InitialOutOfRadiusAt *time.Time       `json:"initialOutOfRadiusAt,omitempty"`
+	Status               AttendanceStatus `json:"status"`
 
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
@@ -65,11 +74,21 @@ func (s *AttendanceSession) IsActive() bool {
 	return s.Status == StatusCheckedIn || s.Status == StatusCarriedOver
 }
 
-// CompleteCheckout transitions the session from CHECKED_IN or CARRIED_OVER to COMPLETED
+// CompleteCheckout transitions the session from CHECKED_IN or CARRIED_OVER to COMPLETED with MANUAL reason
 func (s *AttendanceSession) CompleteCheckout(
 	serverTime time.Time,
 	gps GPSLocation,
 	distanceMeters float64,
+) error {
+	return s.CompleteCheckoutWithReason(serverTime, gps, distanceMeters, CheckoutReasonManual)
+}
+
+// CompleteCheckoutWithReason transitions the session to COMPLETED with a specific checkout reason
+func (s *AttendanceSession) CompleteCheckoutWithReason(
+	serverTime time.Time,
+	gps GPSLocation,
+	distanceMeters float64,
+	reason CheckoutReason,
 ) error {
 	if !s.IsActive() {
 		return ErrSessionAlreadyEnded
@@ -87,6 +106,11 @@ func (s *AttendanceSession) CompleteCheckout(
 	s.CheckOutCapturedAt = &gps.CapturedAt
 	s.CheckOutDistanceMeters = &distanceMeters
 	s.DurationSeconds = &duration
+	if reason == "" {
+		s.CheckoutReason = CheckoutReasonManual
+	} else {
+		s.CheckoutReason = reason
+	}
 	s.Status = StatusCompleted
 	s.UpdatedAt = serverTime
 

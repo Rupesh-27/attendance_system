@@ -30,8 +30,17 @@ type AttendanceRepository interface {
 	UpdateSession(ctx context.Context, session *domain.AttendanceSession) error
 	// UpdateSessionStatus transitions a session's status (e.g., from CHECKED_IN to CARRIED_OVER)
 	UpdateSessionStatus(ctx context.Context, sessionID uuid.UUID, status domain.AttendanceStatus) error
+	// UpdateInitialOutOfRadiusAt updates the initial breach timestamp for an active session
+	UpdateInitialOutOfRadiusAt(ctx context.Context, sessionID uuid.UUID, breachTime *time.Time) error
 	// GetSessionsByAttendanceDay returns all sessions belonging to a specific attendance day (e.g. 2026-10-05)
 	GetSessionsByAttendanceDay(ctx context.Context, employeeID uuid.UUID, attendanceDay string) ([]*domain.AttendanceSession, error)
 	// GetHistoryByEmployeeID returns paginated attendance history belonging exclusively to the employee, optionally filtered by date range
 	GetHistoryByEmployeeID(ctx context.Context, employeeID uuid.UUID, from, to *time.Time, limit, offset int) ([]*domain.AttendanceSession, int64, error)
 }
+
+// SettingsRepository defines persistence operations for SystemSettings
+type SettingsRepository interface {
+	GetSettings(ctx context.Context) (*domain.SystemSettings, error)
+	UpdateSettings(ctx context.Context, settings *domain.SystemSettings) error
+}
+

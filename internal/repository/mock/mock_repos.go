@@ -165,6 +165,19 @@ func (m *MockAttendanceRepo) UpdateSessionStatus(ctx context.Context, sessionID 
 	return nil
 }
 
+func (m *MockAttendanceRepo) UpdateInitialOutOfRadiusAt(ctx context.Context, sessionID uuid.UUID, breachTime *time.Time) error {
+	m.Lock()
+	defer m.Unlock()
+
+	s, ok := m.sessions[sessionID]
+	if !ok {
+		return domain.ErrNoActiveSession
+	}
+
+	s.InitialOutOfRadiusAt = breachTime
+	return nil
+}
+
 func (m *MockAttendanceRepo) GetSessionsByAttendanceDay(ctx context.Context, employeeID uuid.UUID, attendanceDay string) ([]*domain.AttendanceSession, error) {
 	m.RLock()
 	defer m.RUnlock()
@@ -220,3 +233,41 @@ func (m *MockAttendanceRepo) GetHistoryByEmployeeID(
 }
 
 var _ repository.AttendanceRepository = (*MockAttendanceRepo)(nil)
+
+// MockSettingsRepo is an in-memory thread-safe implementation of repository.SettingsRepository
+type MockSettingsRepo struct {
+	sync.RWMutex
+	settings *domain.SystemSettings
+}
+
+func NewMockSettingsRepo() *MockSettingsRepo {
+	return &MockSettingsRepo{
+		settings: &domain.SystemSettings{
+			ID:                    1,
+			RetryIntervalMinutes:  2,
+			MaxRetries:            1,
+			TelegramAlertsEnabled: true,
+			ForceCheckoutEnabled:  true,
+			UpdatedAt:             time.Now().UTC(),
+		},
+	}
+}
+
+func (m *MockSettingsRepo) GetSettings(ctx context.Context) (*domain.SystemSettings, error) {
+	m.RLock()
+	defer m.RUnlock()
+	cp := *m.settings
+	return &cp, nil
+}
+
+func (m *MockSettingsRepo) UpdateSettings(ctx context.Context, s *domain.SystemSettings) error {
+	m.Lock()
+	defer m.Unlock()
+	cp := *s
+	cp.UpdatedAt = time.Now().UTC()
+	m.settings = &cp
+	return nil
+}
+
+var _ repository.SettingsRepository = (*MockSettingsRepo)(nil)
+

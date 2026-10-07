@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../services/api_service.dart';
+import '../services/location_monitor_service.dart';
 import 'attendance_history_screen.dart';
 import 'profile_screen.dart';
 
@@ -131,6 +132,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
+    LocationMonitorService.instance.addListener(_onLocationMonitorChanged);
     if (DashboardScreen.currentQuote == null) {
       DashboardScreen.pickNewQuote();
     }
@@ -141,8 +143,63 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   void dispose() {
+    LocationMonitorService.instance.removeListener(_onLocationMonitorChanged);
     _liveTimer?.cancel();
     super.dispose();
+  }
+
+  void _onLocationMonitorChanged() {
+    if (!mounted) return;
+    _syncLocationStatusWithSession();
+  }
+
+  void _showForceCheckoutDialog() {
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.red.shade100,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.exit_to_app_rounded, color: Color(0xFFDC2626), size: 24),
+            ),
+            const SizedBox(width: 10),
+            const Expanded(
+              child: Text(
+                'Automatic Check-Out',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+              ),
+            ),
+          ],
+        ),
+        content: const Text(
+          'Your current GPS location is outside the configured office radius. Therefore, the system has automatically checked you out. Please retry check-in once you are within the office radius. For further assistance, please contact HR or your reporting in-charge.',
+          style: TextStyle(fontSize: 13.5, height: 1.45, color: Color(0xFF334155)),
+        ),
+        actions: [
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primaryColor,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              _loadDashboardData();
+            },
+            child: const Text('Understood', style: TextStyle(fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
   }
 
   String _getRealTimeClock() {
@@ -307,11 +364,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
             final activeSec = currentElapsed > 0 ? currentElapsed : 0;
             _totalWorkSeconds = _accumulatedSeconds + activeSec;
             _monthlyWorkSeconds = _monthlyAccumulatedSeconds + activeSec;
+
+            LocationMonitorService.instance.startMonitoring(
+              onForceCheckoutCallback: _showForceCheckoutDialog,
+            );
           } else {
             _isCheckedIn = false;
             _currentSessionCheckIn = null;
             _totalWorkSeconds = _accumulatedSeconds;
             _monthlyWorkSeconds = _monthlyAccumulatedSeconds;
+
+            LocationMonitorService.instance.stopMonitoring();
           }
 
           _isLoading = false;
@@ -330,8 +393,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void _syncLocationStatusWithSession() {
     final office = ApiService.assignedOffice;
     final officeName = office?.name ?? 'Assigned Office';
+    final monitor = LocationMonitorService.instance;
 
     if (_isCheckedIn) {
+      if (monitor.state == BreachState.warning) {
+        final dist = monitor.lastDistanceMeters ?? 0.0;
+        final rad = monitor.allowedRadiusMeters ?? 10.0;
+        setState(() {
+          _locationStatus = 'Warning';
+          _locationStatusBadge = 'Outside Radius';
+          _locationStatusSubtext =
+              'Outside boundary (${dist.toStringAsFixed(1)}m / ${rad.toStringAsFixed(0)}m) • Auto-checkout in ${monitor.formattedCountdown}';
+          _locationStatusColor = const Color(0xFFDC2626);
+          _locationStatusBg = const Color(0xFFFEE2E2);
+          _locationStatusBorder = const Color(0xFFFCA5A5);
+          _locationStatusIcon = Icons.warning_amber_rounded;
+        });
+        return;
+      } else if (monitor.state == BreachState.gpsDisabled) {
+        setState(() {
+          _locationStatus = 'GPS Lost';
+          _locationStatusBadge = 'GPS Off';
+          _locationStatusSubtext = 'Please ensure Location / GPS is turned ON';
+          _locationStatusColor = const Color(0xFFD97706);
+          _locationStatusBg = const Color(0xFFFFFBEB);
+          _locationStatusBorder = const Color(0xFFFCD34D);
+          _locationStatusIcon = Icons.location_disabled_rounded;
+        });
+        return;
+      }
 
       setState(() {
         _locationStatus = 'Available';
@@ -482,7 +572,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (mounted) {
         if (result['success'] == true) {
           if (!_isCheckedIn) {
-
+            LocationMonitorService.instance.startMonitoring(
+              onForceCheckoutCallback: _showForceCheckoutDialog,
+            );
             setState(() {
               _locationStatus = 'Available';
               _locationStatusBadge = 'In Office';
@@ -493,7 +585,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               _locationStatusIcon = Icons.location_on;
             });
           } else {
-
+            LocationMonitorService.instance.stopMonitoring();
             setState(() {
               _locationStatus = 'Checked Out';
               _locationStatusBadge = 'Completed';
@@ -676,6 +768,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
               const SizedBox(height: 12),
+              _buildLocationBreachWarningBanner(context),
               _attendanceCard(context),
               const SizedBox(height: 12),
               _effortMetricsRow(),
@@ -691,6 +784,111 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildLocationBreachWarningBanner(BuildContext context) {
+    final monitor = LocationMonitorService.instance;
+    if (monitor.state == BreachState.warning) {
+      final dist = monitor.lastDistanceMeters ?? 0.0;
+      final radius = monitor.allowedRadiusMeters ?? 10.0;
+      return Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFEF2F2),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFF87171), width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.red.withValues(alpha: 0.08),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.red.shade100,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.warning_amber_rounded, color: Color(0xFFDC2626), size: 22),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Out of Office Radius!',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFB91C1C),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFDC2626),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          monitor.formattedCountdown,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Current distance: ${dist.toStringAsFixed(1)}m (Allowed: ${radius.toStringAsFixed(0)}m). Please return within the office boundary to avoid automatic checkout.',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF7F1D1D),
+                      height: 1.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    } else if (monitor.state == BreachState.gpsDisabled) {
+      return Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFFBEB),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFFCD34D), width: 1.5),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.location_disabled_rounded, color: Color(0xFFD97706), size: 22),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                monitor.lastError ?? 'GPS location disabled. Please ensure Location is enabled on your device.',
+                style: const TextStyle(fontSize: 12, color: Color(0xFF92400E)),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    return const SizedBox.shrink();
   }
 
   Widget _attendanceCard(BuildContext context) {

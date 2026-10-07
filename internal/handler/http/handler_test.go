@@ -294,3 +294,49 @@ func TestHandler_ProtectedEndpoints_WithoutJWT(t *testing.T) {
 
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
 }
+
+func TestHandler_ForceCheckOut_Success(t *testing.T) {
+	router, emp, office, secret := setupTestRouter()
+
+	token, _, err := jwt.GenerateToken(emp, secret, 1*time.Hour)
+	require.NoError(t, err)
+
+	now := time.Date(2026, 9, 23, 12, 0, 0, 0, time.UTC)
+
+	// 1. Check in inside radius
+	checkInBody := handler.GPSRequest{
+		Latitude:       office.Latitude,
+		Longitude:      office.Longitude,
+		AccuracyMeters: 5.0,
+		CapturedAt:     now,
+	}
+	jsonBody, _ := json.Marshal(checkInBody)
+	req, _ := http.NewRequest(http.MethodPost, "/api/v1/attendance/check-in", bytes.NewBuffer(jsonBody))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	// 2. Force check out from outside radius
+	forceBody := handler.ForceCheckoutRequest{
+		Latitude:       office.Latitude + 0.01,
+		Longitude:      office.Longitude + 0.01,
+		AccuracyMeters: 10.0,
+		CapturedAt:     now,
+	}
+	forceJson, _ := json.Marshal(forceBody)
+	reqForce, _ := http.NewRequest(http.MethodPost, "/api/v1/attendance/force-checkout", bytes.NewBuffer(forceJson))
+	reqForce.Header.Set("Content-Type", "application/json")
+	reqForce.Header.Set("Authorization", "Bearer "+token)
+	wForce := httptest.NewRecorder()
+	router.ServeHTTP(wForce, reqForce)
+
+	assert.Equal(t, http.StatusOK, wForce.Code)
+	var resp handler.AttendanceForceCheckOutResponse
+	err = json.Unmarshal(wForce.Body.Bytes(), &resp)
+	require.NoError(t, err)
+	assert.True(t, resp.Success)
+	assert.Equal(t, "FORCE_CHECKOUT_OUT_OF_RADIUS", resp.CheckoutReason)
+}
+

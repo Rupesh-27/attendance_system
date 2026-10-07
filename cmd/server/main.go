@@ -32,8 +32,9 @@ func main() {
 	// 1. Initialize Database Repositories (Auto fallback to in-memory mocks if DB is unavailable)
 	var (
 		empRepo repository.EmployeeRepository
-		offRepo repository.OfficeRepository
-		attRepo repository.AttendanceRepository
+		offRepo      repository.OfficeRepository
+		attRepo      repository.AttendanceRepository
+		settingsRepo repository.SettingsRepository
 	)
 
 	db, err := postgres.NewDB(ctx, cfg.DatabaseURL)
@@ -44,6 +45,7 @@ func main() {
 		mockEmp := mock.NewMockEmployeeRepo()
 		mockOff := mock.NewMockOfficeRepo()
 		mockAtt := mock.NewMockAttendanceRepo()
+		mockSettings := mock.NewMockSettingsRepo()
 
 		officeID := uuid.MustParse("a0000000-0000-0000-0000-000000000001")
 		office := &domain.Office{
@@ -80,26 +82,33 @@ func main() {
 		empRepo = mockEmp
 		offRepo = mockOff
 		attRepo = mockAtt
+		settingsRepo = mockSettings
 	} else {
 		defer db.Close()
 		log.Println("Successfully connected to PostgreSQL database cluster")
 		empRepo = postgres.NewEmployeeRepository(db)
 		offRepo = postgres.NewOfficeRepository(db)
 		attRepo = postgres.NewAttendanceRepository(db)
+		settingsRepo = postgres.NewSettingsRepository(db)
 	}
+
+	telegramSvc := service.NewTelegramService(settingsRepo, cfg.TelegramBotToken, cfg.TelegramChatID)
+	settingsSvc := service.NewSettingsService(settingsRepo)
 
 	authSvc := service.NewAuthService(empRepo, cfg.JWTSecret, cfg.JWTExpiration)
 	empSvc := service.NewEmployeeService(empRepo, offRepo)
-	attSvc := service.NewAttendanceService(empRepo, offRepo, attRepo, nil)
+	attSvc := service.NewAttendanceService(empRepo, offRepo, attRepo, nil, telegramSvc, settingsRepo)
 
 	authHandler := handler.NewAuthHandler(authSvc)
 	empHandler := handler.NewEmployeeHandler(empSvc)
 	attHandler := handler.NewAttendanceHandler(attSvc)
+	settingsHandler := handler.NewSettingsHandler(settingsSvc)
 
 	router := handler.SetupRouter(handler.RouterConfig{
 		AuthHandler:       authHandler,
 		EmployeeHandler:   empHandler,
 		AttendanceHandler: attHandler,
+		SettingsHandler:   settingsHandler,
 		JWTSecret:         cfg.JWTSecret,
 	})
 

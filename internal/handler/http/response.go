@@ -47,6 +47,17 @@ type AttendanceCheckOutResponse struct {
 	ServerTime          time.Time `json:"serverTime"`
 }
 
+type AttendanceForceCheckOutResponse struct {
+	Success             bool      `json:"success"`
+	AttendanceID        string    `json:"attendanceId"`
+	Status              string    `json:"status"`
+	CheckoutReason      string    `json:"checkoutReason"`
+	DistanceMeters      float64   `json:"distanceMeters"`
+	AllowedRadiusMeters float64   `json:"allowedRadiusMeters"`
+	DurationSeconds     int64     `json:"durationSeconds"`
+	ServerTime          time.Time `json:"serverTime"`
+}
+
 func SendSuccess(c *gin.Context, httpStatus int, data interface{}) {
 	c.JSON(httpStatus, APIResponse{
 		Success: true,

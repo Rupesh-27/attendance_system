@@ -62,6 +62,29 @@ class AssignedOffice {
   }
 }
 
+class SystemSettings {
+  final int retryIntervalMinutes;
+  final int maxRetries;
+  final bool telegramAlertsEnabled;
+  final bool forceCheckoutEnabled;
+
+  SystemSettings({
+    required this.retryIntervalMinutes,
+    required this.maxRetries,
+    required this.telegramAlertsEnabled,
+    required this.forceCheckoutEnabled,
+  });
+
+  factory SystemSettings.fromJson(Map<String, dynamic> json) {
+    return SystemSettings(
+      retryIntervalMinutes: (json['retryIntervalMinutes'] as num?)?.toInt() ?? 2,
+      maxRetries: (json['maxRetries'] as num?)?.toInt() ?? 1,
+      telegramAlertsEnabled: json['telegramAlertsEnabled'] ?? true,
+      forceCheckoutEnabled: json['forceCheckoutEnabled'] ?? true,
+    );
+  }
+}
+
 class AttendanceRecord {
   final String id;
   final String employeeId;
@@ -73,6 +96,8 @@ class AttendanceRecord {
   final double? checkOutDistanceMeters;
   final int? durationSeconds;
   final String status;
+  final String? checkoutReason;
+  final DateTime? initialOutOfRadiusAt;
   final String? attendanceDay;
 
   AttendanceRecord({
@@ -86,6 +111,8 @@ class AttendanceRecord {
     this.checkOutDistanceMeters,
     this.durationSeconds,
     required this.status,
+    this.checkoutReason,
+    this.initialOutOfRadiusAt,
     this.attendanceDay,
   });
 
@@ -101,6 +128,10 @@ class AttendanceRecord {
       checkOutDistanceMeters: (json['checkOutDistanceMeters'] as num?)?.toDouble(),
       durationSeconds: json['durationSeconds'] as int?,
       status: json['status'] ?? 'CHECKED_IN',
+      checkoutReason: json['checkoutReason'],
+      initialOutOfRadiusAt: json['initialOutOfRadiusAt'] != null
+          ? DateTime.parse(json['initialOutOfRadiusAt'])
+          : null,
       attendanceDay: json['attendanceDay'],
     );
   }
@@ -307,6 +338,87 @@ class ApiService {
         'message': 'Failed to connect to attendance server. Please retry.',
       };
     }
+  }
+
+  static Future<Map<String, dynamic>> forceCheckOut({
+    required double latitude,
+    required double longitude,
+    required double accuracyMeters,
+    DateTime? breachedAt,
+    String? reason,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/attendance/force-checkout'),
+        headers: _authHeaders,
+        body: jsonEncode({
+          'latitude': latitude,
+          'longitude': longitude,
+          'accuracyMeters': accuracyMeters,
+          'capturedAt': DateTime.now().toUtc().toIso8601String(),
+          if (breachedAt != null) 'breachedAt': breachedAt.toUtc().toIso8601String(),
+          if (reason != null && reason.isNotEmpty) 'reason': reason,
+        }),
+      );
+
+      final Map<String, dynamic> data = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && data['success'] == true) {
+        return {
+          'success': true,
+          'attendanceId': data['attendanceId'],
+          'status': data['status'],
+          'checkoutReason': data['checkoutReason'] ?? 'FORCE_CHECKOUT_OUT_OF_RADIUS',
+          'distanceMeters': (data['distanceMeters'] as num?)?.toDouble() ?? 0.0,
+          'allowedRadiusMeters': (data['allowedRadiusMeters'] as num?)?.toDouble() ?? 10.0,
+          'durationSeconds': data['durationSeconds'] ?? 0,
+          'serverTime': data['serverTime'],
+        };
+      } else {
+        return {
+          'success': false,
+          'code': data['code'] ?? 'FORCE_CHECKOUT_FAILED',
+          'message': data['message'] ?? 'Force check-out failed.',
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'code': 'NETWORK_ERROR',
+        'message': 'Failed to connect to attendance server. Please retry.',
+      };
+    }
+  }
+
+  static Future<bool> recordBreachWarning({DateTime? breachedAt}) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/attendance/breach-warning'),
+        headers: _authHeaders,
+        body: jsonEncode({
+          'breachedAt': (breachedAt ?? DateTime.now()).toUtc().toIso8601String(),
+        }),
+      );
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static Future<SystemSettings?> getSettings() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/settings'),
+        headers: _authHeaders,
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['data'] != null) {
+          return SystemSettings.fromJson(data['data']);
+        }
+      }
+    } catch (_) {}
+    return null;
   }
 
   static Future<List<AttendanceRecord>> getHistory({String? from, String? to}) async {

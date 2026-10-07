@@ -42,6 +42,9 @@ type EmployeeService interface {
 type AttendanceService interface {
 	CheckIn(ctx context.Context, employeeID uuid.UUID, gps domain.GPSLocation) (*domain.AttendanceSession, error)
 	CheckOut(ctx context.Context, employeeID uuid.UUID, gps domain.GPSLocation) (*domain.AttendanceSession, error)
+	ForceCheckOut(ctx context.Context, employeeID uuid.UUID, gps domain.GPSLocation, reason domain.CheckoutReason, breachedAt *time.Time) (*domain.AttendanceSession, error)
+	RecordOutOfRadiusBreach(ctx context.Context, employeeID uuid.UUID, breachTime *time.Time) error
 	GetTodayStatus(ctx context.Context, employeeID uuid.UUID) (*TodayAttendanceStatus, error)
 	GetMyHistory(ctx context.Context, employeeID uuid.UUID, from, to *time.Time, page, pageSize int) (*AttendanceHistoryResult, error)
 }
+

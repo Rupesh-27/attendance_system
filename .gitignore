@@ -11,3 +11,4 @@ attendance_backup.sql
 # Flutter build artifacts
 brandhrms_attendance/build/
 brandhrms_attendance/.dart_tool/
+*.zip

@@ -467,3 +467,48 @@ func TestAttendanceService_GetTodayStatus_MidnightRollover(t *testing.T) {
 	assert.Equal(t, "2026-10-06", statusAfterOut.AttendanceDay, "TodayStatus should now point to current date")
 	assert.Empty(t, statusAfterOut.TodaySessions, "Today's sessions should be fresh/empty for the new day")
 }
+
+func TestAttendance_ForceCheckOut_Success(t *testing.T) {
+	empRepo, officeRepo, attRepo, emp, _ := setupTestEnvironment()
+	mockSettings := mock.NewMockSettingsRepo()
+
+	now := time.Now().UTC()
+	clock := func() time.Time { return now }
+	tgSvc := service.NewTelegramService(mockSettings, "", "")
+	attSvc := service.NewAttendanceService(empRepo, officeRepo, attRepo, clock, tgSvc, mockSettings)
+
+	inGps := domain.GPSLocation{
+		Latitude:       13.000000,
+		Longitude:      80.000000,
+		AccuracyMeters: 5.0,
+		CapturedAt:     now,
+	}
+
+	session, err := attSvc.CheckIn(context.Background(), emp.ID, inGps)
+	require.NoError(t, err)
+	assert.Equal(t, domain.StatusCheckedIn, session.Status)
+
+	// Breach recorded 2 minutes later
+	breachTime := now.Add(2 * time.Minute)
+	err = attSvc.RecordOutOfRadiusBreach(context.Background(), emp.ID, &breachTime)
+	require.NoError(t, err)
+
+	// Out of radius GPS coordinates (1000m away)
+	now = now.Add(4 * time.Minute)
+	outGps := domain.GPSLocation{
+		Latitude:       13.010000,
+		Longitude:      80.010000,
+		AccuracyMeters: 10.0,
+		CapturedAt:     now,
+	}
+
+	forceOutSession, err := attSvc.ForceCheckOut(context.Background(), emp.ID, outGps, domain.CheckoutReasonForceOutOfRadius, &breachTime)
+	require.NoError(t, err)
+	assert.Equal(t, domain.StatusCompleted, forceOutSession.Status)
+	assert.Equal(t, domain.CheckoutReasonForceOutOfRadius, forceOutSession.CheckoutReason)
+	require.NotNil(t, forceOutSession.InitialOutOfRadiusAt)
+	assert.Equal(t, breachTime, *forceOutSession.InitialOutOfRadiusAt)
+	require.NotNil(t, forceOutSession.DurationSeconds)
+	assert.Equal(t, int64(240), *forceOutSession.DurationSeconds)
+}
+

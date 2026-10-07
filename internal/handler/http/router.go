@@ -11,6 +11,7 @@ type RouterConfig struct {
 	AuthHandler       *AuthHandler
 	EmployeeHandler   *EmployeeHandler
 	AttendanceHandler *AttendanceHandler
+	SettingsHandler   *SettingsHandler
 	JWTSecret         string
 }
 
@@ -47,11 +48,22 @@ func SetupRouter(cfg RouterConfig) *gin.Engine {
 			{
 				attGroup.POST("/check-in", cfg.AttendanceHandler.CheckIn)
 				attGroup.POST("/check-out", cfg.AttendanceHandler.CheckOut)
+				attGroup.POST("/force-checkout", cfg.AttendanceHandler.ForceCheckOut)
+				attGroup.POST("/breach-warning", cfg.AttendanceHandler.RecordBreach)
 				attGroup.GET("/me", cfg.AttendanceHandler.GetMyAttendance)
 				attGroup.GET("/today-status", cfg.AttendanceHandler.GetTodayStatus)
+			}
+
+			if cfg.SettingsHandler != nil {
+				settingsGroup := protected.Group("/settings")
+				{
+					settingsGroup.GET("", cfg.SettingsHandler.GetSettings)
+					settingsGroup.PUT("", cfg.SettingsHandler.UpdateSettings)
+				}
 			}
 		}
 	}
 
 	return router
 }
+
