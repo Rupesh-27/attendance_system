@@ -553,38 +553,64 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  Future<void> _navigateToHistory() async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const AttendanceHistoryScreen(),
-      ),
-    );
-    if (mounted) {
-      _loadDashboardData();
-    }
-  }
-
-  Future<void> _navigateToProfile() async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const ProfileScreen()),
-    );
-    if (mounted) {
-      _loadDashboardData();
-    }
-  }
+  int _selectedTabIndex = 0;
+  final GlobalKey<AttendanceHistoryScreenState> _historyKey =
+      GlobalKey<AttendanceHistoryScreenState>();
 
   @override
   Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F7F9),
+      body: IndexedStack(
+        index: _selectedTabIndex,
+        children: [
+          _buildDashboardPage(context),
+          AttendanceHistoryScreen(key: _historyKey),
+          const ProfileScreen(),
+        ],
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _selectedTabIndex,
+        onDestinationSelected: (index) {
+          setState(() {
+            _selectedTabIndex = index;
+          });
+          if (index == 0) {
+            _loadDashboardData();
+          } else if (index == 1) {
+            _historyKey.currentState?.fetchHistory();
+          }
+        },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.dashboard_outlined),
+            selectedIcon: Icon(Icons.dashboard),
+            label: 'Dashboard',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.access_time_outlined),
+            selectedIcon: Icon(Icons.access_time),
+            label: 'Attendance',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline),
+            selectedIcon: Icon(Icons.person),
+            label: 'Profile',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDashboardPage(BuildContext context) {
     final employeeName = ApiService.currentEmployee?.fullName ?? 'Employee';
     final officeName = ApiService.assignedOffice?.name ?? 'BrandCrock Office';
     final quote = DashboardScreen.currentQuote ?? DashboardScreen.techQuotes.first;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7F9),
-
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
         title: const Text(
@@ -612,7 +638,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ],
       ),
-
       body: RefreshIndicator(
         onRefresh: _loadDashboardData,
         color: primaryColor,
@@ -626,9 +651,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 '${_getGreeting()}, $employeeName',
                 style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
-
               const SizedBox(height: 6),
-
               Text.rich(
                 TextSpan(
                   children: [
@@ -652,58 +675,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ],
                 ),
               ),
-
               const SizedBox(height: 20),
-
               _attendanceCard(context),
-
               const SizedBox(height: 14),
-
               _effortMetricsRow(),
-
               const SizedBox(height: 16),
-
               _officeCard(officeName),
-
               const SizedBox(height: 16),
-
               _locationCard(),
-
               const SizedBox(height: 16),
-
               _todayAttendanceLogCard(),
-
               const SizedBox(height: 30),
             ],
           ),
         ),
-      ),
-
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: 0,
-
-        onDestinationSelected: (index) {
-          if (index == 1) _navigateToHistory();
-          if (index == 2) _navigateToProfile();
-        },
-
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard),
-            label: 'Dashboard',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.access_time_outlined),
-            selectedIcon: Icon(Icons.access_time),
-            label: 'Attendance',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
       ),
     );
   }

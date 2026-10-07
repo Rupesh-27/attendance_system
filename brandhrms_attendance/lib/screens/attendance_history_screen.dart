@@ -7,10 +7,10 @@ class AttendanceHistoryScreen extends StatefulWidget {
 
   @override
   State<AttendanceHistoryScreen> createState() =>
-      _AttendanceHistoryScreenState();
+      AttendanceHistoryScreenState();
 }
 
-class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
+class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
   static const Color primaryColor = Color(0xFF0F9D8A);
 
   bool _isLoading = true;
@@ -19,6 +19,10 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
   late DateTime _currentMonth;
 
   late DateTime _selectedDay;
+
+  void fetchHistory() {
+    _fetchHistory();
+  }
 
   @override
   void initState() {
@@ -254,6 +258,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7F9),
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
         title: const Text(
