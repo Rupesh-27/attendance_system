@@ -190,7 +190,7 @@ func (s *attendanceService) ForceCheckOut(
 ) (*domain.AttendanceSession, error) {
 	serverTime := s.clock()
 
-	if err := gps.Validate(serverTime); err != nil {
+	if err := gps.ValidateForForceCheckout(serverTime); err != nil {
 		return nil, err
 	}
 

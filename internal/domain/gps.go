@@ -5,8 +5,9 @@ import (
 )
 
 const (
-	MaxAllowedGPSAccuracyMeters = 20.0
-	MaxGPSCaptureAgeSeconds     = 30.0
+	MaxAllowedGPSAccuracyMeters          = 20.0
+	MaxAllowedForceCheckoutAccuracyMeters = 100.0
+	MaxGPSCaptureAgeSeconds              = 30.0
 )
 
 // GPSLocation represents raw GPS telemetry submitted by the client
@@ -35,6 +36,33 @@ func (g *GPSLocation) Validate(serverTime time.Time) error {
 		return ErrInvalidAccuracy
 	}
 	if g.AccuracyMeters > MaxAllowedGPSAccuracyMeters {
+		return ErrAccuracyTooLow
+	}
+
+	if g.CapturedAt.After(serverTime.Add(15 * time.Second)) {
+		return ErrCaptureTimeInFuture
+	}
+
+	age := serverTime.Sub(g.CapturedAt)
+	if age > time.Duration(MaxGPSCaptureAgeSeconds)*time.Second {
+		return ErrCaptureTimeStale
+	}
+
+	return nil
+}
+
+// ValidateForForceCheckout validates GPS telemetry specifically for force check-outs, allowing relaxed accuracy up to 100m.
+func (g *GPSLocation) ValidateForForceCheckout(serverTime time.Time) error {
+	if g.Latitude < -90.0 || g.Latitude > 90.0 {
+		return ErrInvalidLatitude
+	}
+	if g.Longitude < -180.0 || g.Longitude > 180.0 {
+		return ErrInvalidLongitude
+	}
+	if g.AccuracyMeters <= 0 {
+		return ErrInvalidAccuracy
+	}
+	if g.AccuracyMeters > MaxAllowedForceCheckoutAccuracyMeters {
 		return ErrAccuracyTooLow
 	}
 

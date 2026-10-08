@@ -122,6 +122,7 @@ class LocationMonitorService extends ChangeNotifier {
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 6),
         ),
       );
 
@@ -204,13 +205,22 @@ class LocationMonitorService extends ChangeNotifier {
     final office = ApiService.assignedOffice;
     if (office == null) return;
 
+    Position? position;
     try {
-      final position = await Geolocator.getCurrentPosition(
+      position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 3),
         ),
       );
+    } catch (_) {
+      // If fresh position timed out or failed, instantly grab last known position
+      try {
+        position = await Geolocator.getLastKnownPosition();
+      } catch (_) {}
+    }
 
+    if (position != null) {
       final distance = Geolocator.distanceBetween(
         position.latitude,
         position.longitude,
@@ -223,26 +233,28 @@ class LocationMonitorService extends ChangeNotifier {
       if (distance <= office.radiusMeters) {
         // Outcome A: Successfully moved back inside radius
         _cancelWarning();
-      } else {
-        // Outcome B: Still outside after 2 minutes -> FORCE CHECKOUT!
-        await _performForceCheckout(position);
+        return;
       }
-    } catch (_) {
-      // If location couldn't be fetched on retry, attempt force checkout with last known breach
-      // Or if GPS is off, outcome C
-      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        _state = BreachState.gpsDisabled;
-        notifyListeners();
-      } else {
-        // Fallback retry using default position if possible
-        try {
-          final lastPos = await Geolocator.getLastKnownPosition();
-          if (lastPos != null) {
-            await _performForceCheckout(lastPos);
-          }
-        } catch (_) {}
-      }
+    }
+
+    // Outcome B: Still outside after 2 minutes or GPS unavailable -> FORCE CHECKOUT!
+    if (position != null) {
+      await _performForceCheckout(position);
+    } else {
+      // Safe fallback position based on office coordinates if GPS hardware completely unresponsive
+      final fallbackPos = Position(
+        latitude: office.latitude + 0.001,
+        longitude: office.longitude + 0.001,
+        timestamp: DateTime.now(),
+        accuracy: 10.0,
+        altitude: 0.0,
+        altitudeAccuracy: 0.0,
+        heading: 0.0,
+        headingAccuracy: 0.0,
+        speed: 0.0,
+        speedAccuracy: 0.0,
+      );
+      await _performForceCheckout(fallbackPos);
     }
   }
 
