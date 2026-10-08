@@ -155,7 +155,7 @@ class LocationMonitorService extends ChangeNotifier {
       if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
         locationSettings = AndroidSettings(
           accuracy: LocationAccuracy.high,
-          timeLimit: const Duration(seconds: 6),
+          timeLimit: const Duration(seconds: 15),
           foregroundNotificationConfig: const ForegroundNotificationConfig(
             notificationTitle: 'BrandHRMS Attendance',
             notificationText: 'Active attendance location monitoring',
@@ -165,13 +165,27 @@ class LocationMonitorService extends ChangeNotifier {
       } else {
         locationSettings = const LocationSettings(
           accuracy: LocationAccuracy.high,
-          timeLimit: Duration(seconds: 6),
+          timeLimit: Duration(seconds: 15),
         );
       }
 
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings: locationSettings,
-      );
+      Position? position;
+      try {
+        position = await Geolocator.getCurrentPosition(
+          locationSettings: locationSettings,
+        );
+      } catch (_) {
+        try {
+          position = await Geolocator.getLastKnownPosition();
+        } catch (_) {}
+      }
+
+      if (position == null) {
+        _state = BreachState.gpsDisabled;
+        _lastError = 'Unable to acquire GPS signal. Please ensure Location is enabled.';
+        notifyListeners();
+        return;
+      }
 
       final distance = Geolocator.distanceBetween(
         position.latitude,
@@ -202,7 +216,7 @@ class LocationMonitorService extends ChangeNotifier {
     } catch (e) {
       // Hardware / timeout error - treat as GPS lost (Outcome C), not out-of-radius
       _state = BreachState.gpsDisabled;
-      _lastError = e.toString();
+      _lastError = 'Unable to acquire GPS signal. Please ensure Location is enabled.';
       notifyListeners();
     }
   }
