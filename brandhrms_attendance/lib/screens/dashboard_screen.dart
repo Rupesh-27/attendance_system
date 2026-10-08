@@ -15,6 +15,22 @@ class TechQuote {
   const TechQuote({required this.text, required this.author});
 }
 
+class InAppNotificationItem {
+  final String title;
+  final String message;
+  final DateTime timestamp;
+  final IconData icon;
+  final Color color;
+
+  InAppNotificationItem({
+    required this.title,
+    required this.message,
+    required this.timestamp,
+    this.icon = Icons.notifications,
+    this.color = const Color(0xFFDC2626),
+  });
+}
+
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
@@ -99,6 +115,9 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   static const Color primaryColor = Color(0xFF0F9D8A);
 
+  final List<InAppNotificationItem> _notifications = [];
+  int _unreadNotifications = 0;
+
   bool _isLoading = true;
   bool _isCheckedIn = false;
   bool _isSubmittingAttendance = false;
@@ -153,8 +172,176 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _syncLocationStatusWithSession();
   }
 
+  void _showNotificationsTray() {
+    setState(() {
+      _unreadNotifications = 0;
+    });
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: primaryColor.withValues(alpha: 0.12),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.notifications_active, color: primaryColor, size: 22),
+                            ),
+                            const SizedBox(width: 10),
+                            const Text(
+                              'Notifications',
+                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                        if (_notifications.isNotEmpty)
+                          TextButton(
+                            onPressed: () {
+                              setState(() {
+                                _notifications.clear();
+                              });
+                              setSheetState(() {});
+                              Navigator.pop(ctx);
+                            },
+                            child: const Text('Clear All', style: TextStyle(color: Colors.red)),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    if (_notifications.isEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 36),
+                        alignment: Alignment.center,
+                        child: Column(
+                          children: [
+                            Icon(Icons.notifications_none, size: 48, color: Colors.grey.shade400),
+                            const SizedBox(height: 8),
+                            Text(
+                              'No new notifications',
+                              style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      Flexible(
+                        child: ListView.separated(
+                          shrinkWrap: true,
+                          itemCount: _notifications.length,
+                          separatorBuilder: (context, index) => const Divider(height: 1),
+                          itemBuilder: (context, index) {
+                            final item = _notifications[index];
+                            final timeStr = _formatTime(item.timestamp);
+                            return ListTile(
+                              contentPadding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+                              leading: CircleAvatar(
+                                backgroundColor: item.color.withValues(alpha: 0.12),
+                                child: Icon(item.icon, color: item.color, size: 20),
+                              ),
+                              title: Text(
+                                item.title,
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                              ),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const SizedBox(height: 3),
+                                  Text(item.message, style: const TextStyle(fontSize: 12.5)),
+                                  const SizedBox(height: 4),
+                                  Text(timeStr, style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   void _showForceCheckoutDialog() {
     if (!mounted) return;
+
+    final notice = InAppNotificationItem(
+      title: 'Automatic Check-Out',
+      message: 'You were automatically checked out because your GPS remained outside the office boundary for over 2 minutes.',
+      timestamp: DateTime.now(),
+      icon: Icons.exit_to_app_rounded,
+      color: const Color(0xFFDC2626),
+    );
+
+    setState(() {
+      _notifications.insert(0, notice);
+      _unreadNotifications++;
+      _isCheckedIn = false;
+      _currentSessionCheckIn = null;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: const Color(0xFF1E293B),
+        margin: const EdgeInsets.only(top: 10, left: 16, right: 16, bottom: 20),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 6),
+        content: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.red.shade900.withValues(alpha: 0.6),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.notifications_active, color: Colors.amberAccent, size: 20),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Automatic Check-Out Notice',
+                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13.5),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    'Outside office radius > 2 mins. Tap bell icon for details.',
+                    style: TextStyle(color: Colors.white70, fontSize: 11.5),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -367,6 +554,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
             LocationMonitorService.instance.startMonitoring(
               onForceCheckoutCallback: _showForceCheckoutDialog,
+              initialBreachTime: activeSession.initialOutOfRadiusAt,
             );
           } else {
             _isCheckedIn = false;
@@ -724,9 +912,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 : const Icon(Icons.refresh),
             tooltip: 'Refresh',
           ),
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.notifications_none),
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              IconButton(
+                onPressed: _showNotificationsTray,
+                icon: Icon(
+                  _unreadNotifications > 0 ? Icons.notifications_active : Icons.notifications_none,
+                  color: _unreadNotifications > 0 ? Colors.amberAccent : Colors.white,
+                ),
+                tooltip: 'Notifications',
+              ),
+              if (_unreadNotifications > 0)
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFEF4444),
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                    child: Text(
+                      '$_unreadNotifications',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
           ),
         ],
       ),

@@ -20,6 +20,7 @@ class LocationMonitorService extends ChangeNotifier {
 
   bool _isMonitoring = false;
   BreachState _state = BreachState.normal;
+  int _totalGraceSeconds = 120;
   int _countdownSeconds = 120;
   DateTime? _breachStartTime;
   double? _lastDistanceMeters;
@@ -42,13 +43,15 @@ class LocationMonitorService extends ChangeNotifier {
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
-  Future<void> startMonitoring({VoidCallback? onForceCheckoutCallback}) async {
+  Future<void> startMonitoring({
+    VoidCallback? onForceCheckoutCallback,
+    DateTime? initialBreachTime,
+  }) async {
     if (_isMonitoring) return;
 
     onForceCheckout = onForceCheckoutCallback;
     _isMonitoring = true;
-    _state = BreachState.normal;
-    _breachStartTime = null;
+    _totalGraceSeconds = 120;
     _countdownSeconds = 120;
     _lastError = null;
 
@@ -56,9 +59,38 @@ class LocationMonitorService extends ChangeNotifier {
     try {
       final settings = await ApiService.getSettings();
       if (settings != null && settings.retryIntervalMinutes > 0) {
-        _countdownSeconds = settings.retryIntervalMinutes * 60;
+        _totalGraceSeconds = settings.retryIntervalMinutes * 60;
+        _countdownSeconds = _totalGraceSeconds;
       }
     } catch (_) {}
+
+    // Check if an existing breach timestamp is active from the session
+    if (initialBreachTime != null) {
+      final elapsed = DateTime.now().toUtc().difference(initialBreachTime.toUtc()).inSeconds;
+      if (elapsed >= _totalGraceSeconds) {
+        // Full grace period already elapsed while phone screen was off or app was closed!
+        _state = BreachState.warning;
+        _breachStartTime = initialBreachTime;
+        _countdownSeconds = 0;
+        notifyListeners();
+        _executeRetryCheck();
+        return;
+      } else if (elapsed > 0) {
+        // Resume remaining countdown based on real wall-clock elapsed time
+        _state = BreachState.warning;
+        _breachStartTime = initialBreachTime;
+        _countdownSeconds = _totalGraceSeconds - elapsed;
+        _startTimerTicker();
+      } else {
+        _state = BreachState.normal;
+        _breachStartTime = null;
+        _countdownSeconds = _totalGraceSeconds;
+      }
+    } else {
+      _state = BreachState.normal;
+      _breachStartTime = null;
+      _countdownSeconds = _totalGraceSeconds;
+    }
 
     notifyListeners();
 
@@ -119,11 +151,26 @@ class LocationMonitorService extends ChangeNotifier {
         return;
       }
 
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
+      LocationSettings locationSettings;
+      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+        locationSettings = AndroidSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: const Duration(seconds: 6),
+          foregroundNotificationConfig: const ForegroundNotificationConfig(
+            notificationTitle: 'BrandHRMS Attendance',
+            notificationText: 'Active attendance location monitoring',
+            enableWakeLock: true,
+          ),
+        );
+      } else {
+        locationSettings = const LocationSettings(
           accuracy: LocationAccuracy.high,
           timeLimit: Duration(seconds: 6),
-        ),
+        );
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: locationSettings,
       );
 
       final distance = Geolocator.distanceBetween(
@@ -163,17 +210,16 @@ class LocationMonitorService extends ChangeNotifier {
   void _startWarningCountdown(Position pos) {
     _state = BreachState.warning;
     _breachStartTime = DateTime.now();
-
-    // Default 120s if not set
-    if (_countdownSeconds <= 0) {
-      _countdownSeconds = 120;
-    }
+    _countdownSeconds = _totalGraceSeconds;
 
     // Inform backend of breach start timestamp
     ApiService.recordBreachWarning(breachedAt: _breachStartTime);
 
     notifyListeners();
+    _startTimerTicker();
+  }
 
+  void _startTimerTicker() {
     _countdownTimer?.cancel();
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!_isMonitoring) {
@@ -181,13 +227,27 @@ class LocationMonitorService extends ChangeNotifier {
         return;
       }
 
-      if (_countdownSeconds > 0) {
-        _countdownSeconds--;
-        notifyListeners();
+      if (_breachStartTime != null) {
+        final elapsed = DateTime.now().difference(_breachStartTime!).inSeconds;
+        final remaining = _totalGraceSeconds - elapsed;
+
+        if (remaining > 0) {
+          _countdownSeconds = remaining;
+          notifyListeners();
+        } else {
+          _countdownSeconds = 0;
+          timer.cancel();
+          notifyListeners();
+          _executeRetryCheck();
+        }
       } else {
-        // Countdown reached 0: execute retry check
-        timer.cancel();
-        _executeRetryCheck();
+        if (_countdownSeconds > 0) {
+          _countdownSeconds--;
+          notifyListeners();
+        } else {
+          timer.cancel();
+          _executeRetryCheck();
+        }
       }
     });
   }
@@ -197,7 +257,7 @@ class LocationMonitorService extends ChangeNotifier {
     _countdownTimer = null;
     _state = BreachState.normal;
     _breachStartTime = null;
-    _countdownSeconds = 120;
+    _countdownSeconds = _totalGraceSeconds;
     notifyListeners();
   }
 
@@ -207,11 +267,26 @@ class LocationMonitorService extends ChangeNotifier {
 
     Position? position;
     try {
-      position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
+      LocationSettings retrySettings;
+      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+        retrySettings = AndroidSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: const Duration(seconds: 3),
+          foregroundNotificationConfig: const ForegroundNotificationConfig(
+            notificationTitle: 'BrandHRMS Attendance',
+            notificationText: 'Verifying final geofence location',
+            enableWakeLock: true,
+          ),
+        );
+      } else {
+        retrySettings = const LocationSettings(
           accuracy: LocationAccuracy.high,
           timeLimit: Duration(seconds: 3),
-        ),
+        );
+      }
+
+      position = await Geolocator.getCurrentPosition(
+        locationSettings: retrySettings,
       );
     } catch (_) {
       // If fresh position timed out or failed, instantly grab last known position
