@@ -199,6 +199,70 @@ func (r *attendanceRepo) UpdateInitialOutOfRadiusAt(ctx context.Context, session
 	return nil
 }
 
+func (r *attendanceRepo) GetExpiredBreachSessions(ctx context.Context, cutoff time.Time) ([]*domain.AttendanceSession, error) {
+	query := `
+		SELECT
+			id, employee_id, office_id,
+			office_snapshot_name, office_snapshot_lat, office_snapshot_lon, office_snapshot_radius,
+			check_in_time, check_in_latitude, check_in_longitude, check_in_accuracy_meters, check_in_captured_at, check_in_distance_meters,
+			check_out_time, check_out_latitude, check_out_longitude, check_out_accuracy_meters, check_out_captured_at, check_out_distance_meters,
+			duration_seconds, checkout_reason, initial_out_of_radius_at, status, attendance_day, created_at, updated_at
+		FROM attendance_sessions
+		WHERE status IN ('CHECKED_IN', 'CARRIED_OVER')
+		  AND initial_out_of_radius_at IS NOT NULL
+		  AND initial_out_of_radius_at <= $1
+		ORDER BY initial_out_of_radius_at ASC
+	`
+	rows, err := r.db.Pool.Query(ctx, query, cutoff)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var sessions []*domain.AttendanceSession
+	for rows.Next() {
+		var s domain.AttendanceSession
+		var attDay time.Time
+		err := rows.Scan(
+			&s.ID,
+			&s.EmployeeID,
+			&s.OfficeID,
+			&s.OfficeSnapshotName,
+			&s.OfficeSnapshotLat,
+			&s.OfficeSnapshotLon,
+			&s.OfficeSnapshotRadius,
+			&s.CheckInTime,
+			&s.CheckInLatitude,
+			&s.CheckInLongitude,
+			&s.CheckInAccuracyMeters,
+			&s.CheckInCapturedAt,
+			&s.CheckInDistanceMeters,
+			&s.CheckOutTime,
+			&s.CheckOutLatitude,
+			&s.CheckOutLongitude,
+			&s.CheckOutAccuracyMeters,
+			&s.CheckOutCapturedAt,
+			&s.CheckOutDistanceMeters,
+			&s.DurationSeconds,
+			&s.CheckoutReason,
+			&s.InitialOutOfRadiusAt,
+			&s.Status,
+			&attDay,
+			&s.CreatedAt,
+			&s.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		s.AttendanceDay = attDay.Format("2006-01-02")
+		sessions = append(sessions, &s)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return sessions, nil
+}
+
 func (r *attendanceRepo) GetSessionsByAttendanceDay(ctx context.Context, employeeID uuid.UUID, attendanceDay string) ([]*domain.AttendanceSession, error) {
 	query := `
 		SELECT

@@ -178,6 +178,22 @@ func (m *MockAttendanceRepo) UpdateInitialOutOfRadiusAt(ctx context.Context, ses
 	return nil
 }
 
+func (m *MockAttendanceRepo) GetExpiredBreachSessions(ctx context.Context, cutoff time.Time) ([]*domain.AttendanceSession, error) {
+	m.RLock()
+	defer m.RUnlock()
+
+	var sessions []*domain.AttendanceSession
+	for _, s := range m.sessions {
+		if (s.Status == domain.StatusCheckedIn || s.Status == domain.StatusCarriedOver) &&
+			s.InitialOutOfRadiusAt != nil &&
+			!s.InitialOutOfRadiusAt.After(cutoff) {
+			cp := *s
+			sessions = append(sessions, &cp)
+		}
+	}
+	return sessions, nil
+}
+
 func (m *MockAttendanceRepo) GetSessionsByAttendanceDay(ctx context.Context, employeeID uuid.UUID, attendanceDay string) ([]*domain.AttendanceSession, error) {
 	m.RLock()
 	defer m.RUnlock()

@@ -261,6 +261,82 @@ func (s *attendanceService) RecordOutOfRadiusBreach(
 	return s.attendanceRepo.UpdateInitialOutOfRadiusAt(ctx, session.ID, breachTime)
 }
 
+func (s *attendanceService) ClearOutOfRadiusBreach(
+	ctx context.Context,
+	employeeID uuid.UUID,
+) error {
+	session, err := s.attendanceRepo.GetActiveSession(ctx, employeeID)
+	if err != nil {
+		if errors.Is(err, domain.ErrNoActiveSession) {
+			return nil
+		}
+		return err
+	}
+	return s.attendanceRepo.UpdateInitialOutOfRadiusAt(ctx, session.ID, nil)
+}
+
+func (s *attendanceService) ProcessAutoForceCheckouts(ctx context.Context) (int, error) {
+	serverTime := s.clock()
+
+	retryMinutes := 2
+	if s.settingsRepo != nil {
+		settings, err := s.settingsRepo.GetSettings(ctx)
+		if err == nil && settings != nil {
+			if !settings.ForceCheckoutEnabled {
+				return 0, nil
+			}
+			if settings.RetryIntervalMinutes > 0 {
+				retryMinutes = settings.RetryIntervalMinutes
+			}
+		}
+	}
+
+	cutoff := serverTime.Add(-time.Duration(retryMinutes) * time.Minute)
+	sessions, err := s.attendanceRepo.GetExpiredBreachSessions(ctx, cutoff)
+	if err != nil {
+		return 0, err
+	}
+
+	processedCount := 0
+	for _, session := range sessions {
+		duration := int64(serverTime.Sub(session.CheckInTime).Seconds())
+		if duration < 0 {
+			duration = 0
+		}
+
+		session.CheckOutTime = &serverTime
+		session.DurationSeconds = &duration
+		session.CheckoutReason = domain.CheckoutReasonForceOutOfRadius
+		session.Status = domain.StatusCompleted
+		session.UpdatedAt = serverTime
+
+		if err := s.attendanceRepo.UpdateSession(ctx, session); err != nil {
+			log.Printf("[AutoForceCheckout] Failed to update session %s: %v", session.ID, err)
+			continue
+		}
+		processedCount++
+
+		emp, _ := s.employeeRepo.GetByID(ctx, session.EmployeeID)
+		office, _ := s.officeRepo.GetByID(ctx, session.OfficeID)
+
+		if s.telegramService != nil {
+			go func(e *domain.Employee, off *domain.Office, sess *domain.AttendanceSession) {
+				bgCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+				defer cancel()
+				dist := 0.0
+				if sess.CheckOutDistanceMeters != nil {
+					dist = *sess.CheckOutDistanceMeters
+				}
+				if err := s.telegramService.SendForceCheckoutAlert(bgCtx, e, off, sess, dist); err != nil {
+					log.Printf("[Telegram] Auto force checkout alert failed: %v", err)
+				}
+			}(emp, office, session)
+		}
+	}
+
+	return processedCount, nil
+}
+
 
 func (s *attendanceService) GetTodayStatus(
 	ctx context.Context,

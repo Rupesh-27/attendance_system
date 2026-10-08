@@ -184,6 +184,22 @@ func (h *AttendanceHandler) RecordBreach(c *gin.Context) {
 	SendSuccess(c, http.StatusOK, gin.H{"recorded": true, "breachedAt": breachTime})
 }
 
+func (h *AttendanceHandler) ClearBreach(c *gin.Context) {
+	empIDVal, exists := c.Get(middleware.ContextKeyEmployeeID)
+	if !exists {
+		SendError(c, http.StatusUnauthorized, "AUTH_INVALID", "User not authenticated", nil)
+		return
+	}
+	empID := empIDVal.(uuid.UUID)
+
+	if err := h.attendanceService.ClearOutOfRadiusBreach(c.Request.Context(), empID); err != nil {
+		MapDomainError(c, err)
+		return
+	}
+
+	SendSuccess(c, http.StatusOK, gin.H{"cleared": true})
+}
+
 func (h *AttendanceHandler) GetMyAttendance(c *gin.Context) {
 	empIDVal, exists := c.Get(middleware.ContextKeyEmployeeID)
 	if !exists {

@@ -50,6 +50,8 @@ func SetupRouter(cfg RouterConfig) *gin.Engine {
 				attGroup.POST("/check-out", cfg.AttendanceHandler.CheckOut)
 				attGroup.POST("/force-checkout", cfg.AttendanceHandler.ForceCheckOut)
 				attGroup.POST("/breach-warning", cfg.AttendanceHandler.RecordBreach)
+				attGroup.DELETE("/breach-warning", cfg.AttendanceHandler.ClearBreach)
+				attGroup.POST("/clear-breach", cfg.AttendanceHandler.ClearBreach)
 				attGroup.GET("/me", cfg.AttendanceHandler.GetMyAttendance)
 				attGroup.GET("/today-status", cfg.AttendanceHandler.GetTodayStatus)
 			}

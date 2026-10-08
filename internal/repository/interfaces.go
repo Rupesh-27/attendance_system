@@ -32,6 +32,8 @@ type AttendanceRepository interface {
 	UpdateSessionStatus(ctx context.Context, sessionID uuid.UUID, status domain.AttendanceStatus) error
 	// UpdateInitialOutOfRadiusAt updates the initial breach timestamp for an active session
 	UpdateInitialOutOfRadiusAt(ctx context.Context, sessionID uuid.UUID, breachTime *time.Time) error
+	// GetExpiredBreachSessions returns all active sessions with an out-of-radius breach timestamp older than or equal to the cutoff
+	GetExpiredBreachSessions(ctx context.Context, cutoff time.Time) ([]*domain.AttendanceSession, error)
 	// GetSessionsByAttendanceDay returns all sessions belonging to a specific attendance day (e.g. 2026-10-05)
 	GetSessionsByAttendanceDay(ctx context.Context, employeeID uuid.UUID, attendanceDay string) ([]*domain.AttendanceSession, error)
 	// GetHistoryByEmployeeID returns paginated attendance history belonging exclusively to the employee, optionally filtered by date range

@@ -120,6 +120,30 @@ func main() {
 		IdleTimeout:  60 * time.Second,
 	}
 
+	// Background Worker: Auto Force-Checkout for Expired Out-of-Radius Breaches
+	workerCtx, workerCancel := context.WithCancel(ctx)
+	defer workerCancel()
+
+	go func() {
+		ticker := time.NewTicker(10 * time.Second)
+		defer ticker.Stop()
+		log.Println("⏱️  Auto Force-Checkout background worker active (interval: 10s)")
+
+		for {
+			select {
+			case <-workerCtx.Done():
+				return
+			case <-ticker.C:
+				count, err := attSvc.ProcessAutoForceCheckouts(workerCtx)
+				if err != nil && !errors.Is(err, context.Canceled) {
+					log.Printf("[Worker Error] Auto force-checkout processing failed: %v", err)
+				} else if count > 0 {
+					log.Printf("🚨 [Worker] Automatically force-checked out %d employee(s) out-of-radius", count)
+				}
+			}
+		}
+	}()
+
 	go func() {
 		log.Printf("HTTP server listening on :%s", cfg.Port)
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {

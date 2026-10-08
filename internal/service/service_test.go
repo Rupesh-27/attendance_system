@@ -512,3 +512,57 @@ func TestAttendance_ForceCheckOut_Success(t *testing.T) {
 	assert.Equal(t, int64(240), *forceOutSession.DurationSeconds)
 }
 
+func TestAttendance_ProcessAutoForceCheckouts(t *testing.T) {
+	empRepo, officeRepo, attRepo, emp, _ := setupTestEnvironment()
+	mockSettings := mock.NewMockSettingsRepo()
+
+	now := time.Now().UTC()
+	clock := func() time.Time { return now }
+	attSvc := service.NewAttendanceService(empRepo, officeRepo, attRepo, clock, mockSettings)
+
+	inGps := domain.GPSLocation{
+		Latitude:       13.000000,
+		Longitude:      80.000000,
+		AccuracyMeters: 5.0,
+		CapturedAt:     now,
+	}
+
+	session, err := attSvc.CheckIn(context.Background(), emp.ID, inGps)
+	require.NoError(t, err)
+	assert.Equal(t, domain.StatusCheckedIn, session.Status)
+
+	// Case 1: Breach recorded 1 minute ago (within 2-minute threshold) -> Should NOT checkout
+	breachTime := now.Add(-1 * time.Minute)
+	err = attSvc.RecordOutOfRadiusBreach(context.Background(), emp.ID, &breachTime)
+	require.NoError(t, err)
+
+	count, err := attSvc.ProcessAutoForceCheckouts(context.Background())
+	require.NoError(t, err)
+	assert.Equal(t, 0, count)
+
+	active, err := attRepo.GetActiveSession(context.Background(), emp.ID)
+	require.NoError(t, err)
+	assert.Equal(t, domain.StatusCheckedIn, active.Status)
+
+	// Case 2: Employee walks back inside -> Clear breach -> Should NOT checkout
+	err = attSvc.ClearOutOfRadiusBreach(context.Background(), emp.ID)
+	require.NoError(t, err)
+
+	active, err = attRepo.GetActiveSession(context.Background(), emp.ID)
+	require.NoError(t, err)
+	assert.Nil(t, active.InitialOutOfRadiusAt)
+
+	// Case 3: New breach recorded 2m 10s ago (exceeded threshold) -> Should AUTO FORCE CHECKOUT!
+	oldBreach := now.Add(-130 * time.Second)
+	err = attSvc.RecordOutOfRadiusBreach(context.Background(), emp.ID, &oldBreach)
+	require.NoError(t, err)
+
+	count, err = attSvc.ProcessAutoForceCheckouts(context.Background())
+	require.NoError(t, err)
+	assert.Equal(t, 1, count)
+
+	// Verify session is now COMPLETED with FORCE_CHECKOUT_OUT_OF_RADIUS
+	_, err = attRepo.GetActiveSession(context.Background(), emp.ID)
+	assert.ErrorIs(t, err, domain.ErrNoActiveSession)
+}
+

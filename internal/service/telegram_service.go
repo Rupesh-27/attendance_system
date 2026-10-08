@@ -130,19 +130,24 @@ func (s *telegramService) SendForceCheckoutAlert(
 		radius = office.RadiusMeters
 	}
 
+	distText := fmt.Sprintf("%.1fm", distanceMeters)
+	if distanceMeters <= 0 {
+		distText = fmt.Sprintf("&gt; %.0fm (Out of radius)", radius)
+	}
+
 	msg := fmt.Sprintf(
 		"<b>HR Attendance Alert: Out-of-Radius Force Checkout</b>\n\n"+
 			"<b>Employee:</b> %s (%s)\n"+
 			"<b>Assigned Office:</b> %s\n"+
 			"<b>Allowed Radius:</b> %.0fm\n"+
-			"<b>Current Distance:</b> %.1fm\n"+
+			"<b>Current Distance:</b> %s\n"+
 			"<b>Checkout Time:</b> %s\n"+
 			"<b>Reason:</b> Employee remained outside the designated office boundary for more than 2 minutes.",
 		empName,
 		empCode,
 		officeName,
 		radius,
-		distanceMeters,
+		distText,
 		checkoutTimeStr,
 	)
 

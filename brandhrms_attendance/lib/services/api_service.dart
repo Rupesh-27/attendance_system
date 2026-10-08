@@ -374,6 +374,13 @@ class ApiService {
           'durationSeconds': data['durationSeconds'] ?? 0,
           'serverTime': data['serverTime'],
         };
+      } else if (data['code'] == 'NO_ACTIVE_SESSION') {
+        // Session already auto-checked out by backend background worker
+        return {
+          'success': true,
+          'alreadyCheckedOut': true,
+          'checkoutReason': 'FORCE_CHECKOUT_OUT_OF_RADIUS',
+        };
       } else {
         return {
           'success': false,
@@ -398,6 +405,18 @@ class ApiService {
         body: jsonEncode({
           'breachedAt': (breachedAt ?? DateTime.now()).toUtc().toIso8601String(),
         }),
+      );
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static Future<bool> clearBreachWarning() async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/attendance/clear-breach'),
+        headers: _authHeaders,
       );
       return response.statusCode == 200;
     } catch (_) {

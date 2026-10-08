@@ -557,12 +557,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
               initialBreachTime: activeSession.initialOutOfRadiusAt,
             );
           } else {
+            final wasCheckedInLocally = _isCheckedIn;
             _isCheckedIn = false;
             _currentSessionCheckIn = null;
             _totalWorkSeconds = _accumulatedSeconds;
             _monthlyWorkSeconds = _monthlyAccumulatedSeconds;
 
             LocationMonitorService.instance.stopMonitoring();
+
+            if (wasCheckedInLocally &&
+                displayTodaySessions.isNotEmpty &&
+                displayTodaySessions.first.checkoutReason == 'FORCE_CHECKOUT_OUT_OF_RADIUS') {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _showForceCheckoutDialog();
+              });
+            }
           }
 
           _isLoading = false;

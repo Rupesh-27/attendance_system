@@ -258,6 +258,7 @@ class LocationMonitorService extends ChangeNotifier {
     _state = BreachState.normal;
     _breachStartTime = null;
     _countdownSeconds = _totalGraceSeconds;
+    ApiService.clearBreachWarning();
     notifyListeners();
   }
 
