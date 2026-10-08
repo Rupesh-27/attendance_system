@@ -131,13 +131,13 @@ func (s *telegramService) SendForceCheckoutAlert(
 	}
 
 	msg := fmt.Sprintf(
-		"🚨 <b>HR Attendance Alert: Out-of-Radius Force Checkout</b> 🚨\n\n"+
-			"👤 <b>Employee:</b> %s (%s)\n"+
-			"🏢 <b>Assigned Office:</b> %s\n"+
-			"📏 <b>Allowed Radius:</b> %.0fm\n"+
-			"📍 <b>Current Distance:</b> %.1fm\n"+
-			"🕒 <b>Checkout Time:</b> %s\n"+
-			"⚠️ <b>Reason:</b> Employee remained outside the designated office boundary for more than 2 minutes.",
+		"<b>HR Attendance Alert: Out-of-Radius Force Checkout</b>\n\n"+
+			"<b>Employee:</b> %s (%s)\n"+
+			"<b>Assigned Office:</b> %s\n"+
+			"<b>Allowed Radius:</b> %.0fm\n"+
+			"<b>Current Distance:</b> %.1fm\n"+
+			"<b>Checkout Time:</b> %s\n"+
+			"<b>Reason:</b> Employee remained outside the designated office boundary for more than 2 minutes.",
 		empName,
 		empCode,
 		officeName,
