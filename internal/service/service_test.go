@@ -44,8 +44,9 @@ func setupTestEnvironment() (
 		PasswordHash: string(hash),
 		FullName:     "John Doe",
 		Role:         domain.RoleEmployee,
-		OfficeID:     office.ID,
-		IsActive:     true,
+		OfficeID:                  office.ID,
+		LocationAttendanceEnabled: true,
+		IsActive:                  true,
 	}
 	empRepo.Seed(emp)
 
@@ -362,8 +363,9 @@ func TestAttendance_History_BelongsOnlyToAuthenticatedEmployee(t *testing.T) {
 		EmployeeCode: "EMP002",
 		FullName:     "Bob Smith",
 		Role:         domain.RoleEmployee,
-		OfficeID:     office.ID,
-		IsActive:     true,
+		OfficeID:                  office.ID,
+		LocationAttendanceEnabled: true,
+		IsActive:                  true,
 	}
 	empRepo.Seed(emp2)
 
@@ -565,4 +567,36 @@ func TestAttendance_ProcessAutoForceCheckouts(t *testing.T) {
 	_, err = attRepo.GetActiveSession(context.Background(), emp.ID)
 	assert.ErrorIs(t, err, domain.ErrNoActiveSession)
 }
+
+func TestAttendance_CheckIn_WhenLocationAttendanceDisabled_AllowedOutsideRadius(t *testing.T) {
+	empRepo, officeRepo, attRepo, emp, office := setupTestEnvironment()
+
+	// Disable location restriction for this employee (e.g. Remote / Field staff)
+	emp.LocationAttendanceEnabled = false
+	empRepo.Seed(emp)
+
+	currentTime := time.Date(2026, 9, 23, 9, 0, 0, 0, time.UTC)
+	clock := func() time.Time { return currentTime }
+	attSvc := service.NewAttendanceService(empRepo, officeRepo, attRepo, clock)
+
+	// GPS is 500 meters away from the office
+	gps := domain.GPSLocation{
+		Latitude:       office.Latitude + 0.005,
+		Longitude:      office.Longitude + 0.005,
+		AccuracyMeters: 10.0,
+		CapturedAt:     currentTime,
+	}
+
+	session, err := attSvc.CheckIn(context.Background(), emp.ID, gps)
+	require.NoError(t, err)
+	require.NotNil(t, session)
+
+	// Verify check-in succeeded and coordinates were accurately captured in session
+	assert.Equal(t, domain.StatusCheckedIn, session.Status)
+	assert.Equal(t, gps.Latitude, session.CheckInLatitude)
+	assert.Equal(t, gps.Longitude, session.CheckInLongitude)
+	assert.Equal(t, gps.AccuracyMeters, session.CheckInAccuracyMeters)
+	assert.True(t, session.CheckInDistanceMeters > 50.0)
+}
+
 

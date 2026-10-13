@@ -20,8 +20,9 @@ type Employee struct {
 	FullName     string    `json:"fullName"`
 	Email        string    `json:"email,omitempty"`
 	Role         Role      `json:"role"`
-	OfficeID     uuid.UUID `json:"officeId"`
-	IsActive     bool      `json:"isActive"`
+	OfficeID                  uuid.UUID `json:"officeId"`
+	LocationAttendanceEnabled bool      `json:"locationAttendanceEnabled"`
+	IsActive                  bool      `json:"isActive"`
 	CreatedAt    time.Time `json:"createdAt"`
 	UpdatedAt    time.Time `json:"updatedAt"`
 }

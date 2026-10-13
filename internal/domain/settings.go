@@ -7,8 +7,9 @@ type SystemSettings struct {
 	RetryIntervalMinutes  int       `json:"retryIntervalMinutes"`
 	MaxRetries            int       `json:"maxRetries"`
 	TelegramAlertsEnabled bool      `json:"telegramAlertsEnabled"`
-	ForceCheckoutEnabled  bool      `json:"forceCheckoutEnabled"`
-	TelegramBotToken      string    `json:"telegramBotToken,omitempty"`
+	ForceCheckoutEnabled      bool      `json:"forceCheckoutEnabled"`
+	LocationAttendanceEnabled bool      `json:"locationAttendanceEnabled"`
+	TelegramBotToken          string    `json:"telegramBotToken,omitempty"`
 	TelegramChatID        string    `json:"telegramChatId,omitempty"`
 	UpdatedAt             time.Time `json:"updatedAt"`
 }

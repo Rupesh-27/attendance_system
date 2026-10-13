@@ -68,8 +68,9 @@ func main() {
 			PasswordHash: string(hash),
 			FullName:     "John Doe",
 			Role:         domain.RoleEmployee,
-			OfficeID:     officeID,
-			IsActive:     true,
+			OfficeID:                  officeID,
+			LocationAttendanceEnabled: true,
+			IsActive:                  true,
 			CreatedAt:    time.Now().UTC(),
 			UpdatedAt:    time.Now().UTC(),
 		}

@@ -8,6 +8,7 @@ class EmployeeProfile {
   final String role;
   final String officeId;
   final String? email;
+  final bool locationAttendanceEnabled;
   final bool isActive;
 
   EmployeeProfile({
@@ -17,6 +18,7 @@ class EmployeeProfile {
     required this.role,
     required this.officeId,
     this.email,
+    this.locationAttendanceEnabled = true,
     required this.isActive,
   });
 
@@ -28,6 +30,7 @@ class EmployeeProfile {
       role: json['role'] ?? 'EMPLOYEE',
       officeId: json['officeId'] ?? '',
       email: json['email'],
+      locationAttendanceEnabled: json['locationAttendanceEnabled'] ?? true,
       isActive: json['isActive'] ?? true,
     );
   }
@@ -67,12 +70,14 @@ class SystemSettings {
   final int maxRetries;
   final bool telegramAlertsEnabled;
   final bool forceCheckoutEnabled;
+  final bool locationAttendanceEnabled;
 
   SystemSettings({
     required this.retryIntervalMinutes,
     required this.maxRetries,
     required this.telegramAlertsEnabled,
     required this.forceCheckoutEnabled,
+    this.locationAttendanceEnabled = true,
   });
 
   factory SystemSettings.fromJson(Map<String, dynamic> json) {
@@ -81,6 +86,7 @@ class SystemSettings {
       maxRetries: (json['maxRetries'] as num?)?.toInt() ?? 1,
       telegramAlertsEnabled: json['telegramAlertsEnabled'] ?? true,
       forceCheckoutEnabled: json['forceCheckoutEnabled'] ?? true,
+      locationAttendanceEnabled: json['locationAttendanceEnabled'] ?? true,
     );
   }
 }
@@ -91,8 +97,14 @@ class AttendanceRecord {
   final String officeId;
   final String officeSnapshotName;
   final DateTime checkInTime;
+  final double checkInLatitude;
+  final double checkInLongitude;
+  final double checkInAccuracyMeters;
   final double checkInDistanceMeters;
   final DateTime? checkOutTime;
+  final double? checkOutLatitude;
+  final double? checkOutLongitude;
+  final double? checkOutAccuracyMeters;
   final double? checkOutDistanceMeters;
   final int? durationSeconds;
   final String status;
@@ -106,8 +118,14 @@ class AttendanceRecord {
     required this.officeId,
     required this.officeSnapshotName,
     required this.checkInTime,
+    this.checkInLatitude = 0.0,
+    this.checkInLongitude = 0.0,
+    this.checkInAccuracyMeters = 0.0,
     required this.checkInDistanceMeters,
     this.checkOutTime,
+    this.checkOutLatitude,
+    this.checkOutLongitude,
+    this.checkOutAccuracyMeters,
     this.checkOutDistanceMeters,
     this.durationSeconds,
     required this.status,
@@ -123,8 +141,14 @@ class AttendanceRecord {
       officeId: json['officeId'] ?? '',
       officeSnapshotName: json['officeSnapshotName'] ?? '',
       checkInTime: DateTime.parse(json['checkInTime']),
+      checkInLatitude: (json['checkInLatitude'] as num?)?.toDouble() ?? 0.0,
+      checkInLongitude: (json['checkInLongitude'] as num?)?.toDouble() ?? 0.0,
+      checkInAccuracyMeters: (json['checkInAccuracyMeters'] as num?)?.toDouble() ?? 0.0,
       checkInDistanceMeters: (json['checkInDistanceMeters'] as num?)?.toDouble() ?? 0.0,
       checkOutTime: json['checkOutTime'] != null ? DateTime.parse(json['checkOutTime']) : null,
+      checkOutLatitude: (json['checkOutLatitude'] as num?)?.toDouble(),
+      checkOutLongitude: (json['checkOutLongitude'] as num?)?.toDouble(),
+      checkOutAccuracyMeters: (json['checkOutAccuracyMeters'] as num?)?.toDouble(),
       checkOutDistanceMeters: (json['checkOutDistanceMeters'] as num?)?.toDouble(),
       durationSeconds: json['durationSeconds'] as int?,
       status: json['status'] ?? 'CHECKED_IN',
@@ -174,6 +198,17 @@ class ApiService {
   static String? authToken;
   static EmployeeProfile? currentEmployee;
   static AssignedOffice? assignedOffice;
+  static SystemSettings? systemSettings;
+
+  static bool get isLocationAttendanceRequired {
+    if (currentEmployee != null && !currentEmployee!.locationAttendanceEnabled) {
+      return false;
+    }
+    if (systemSettings != null && !systemSettings!.locationAttendanceEnabled) {
+      return false;
+    }
+    return true;
+  }
 
   static Map<String, String> get _authHeaders => {
         'Content-Type': 'application/json',
@@ -433,7 +468,8 @@ class ApiService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true && data['data'] != null) {
-          return SystemSettings.fromJson(data['data']);
+          systemSettings = SystemSettings.fromJson(data['data']);
+          return systemSettings;
         }
       }
     } catch (_) {}

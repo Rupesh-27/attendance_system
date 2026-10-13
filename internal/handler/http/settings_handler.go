@@ -18,12 +18,13 @@ func NewSettingsHandler(settingsService service.SettingsService) *SettingsHandle
 }
 
 type UpdateSettingsRequest struct {
-	RetryIntervalMinutes  *int    `json:"retryIntervalMinutes"`
-	MaxRetries            *int    `json:"maxRetries"`
-	TelegramAlertsEnabled *bool   `json:"telegramAlertsEnabled"`
-	ForceCheckoutEnabled  *bool   `json:"forceCheckoutEnabled"`
-	TelegramBotToken      *string `json:"telegramBotToken"`
-	TelegramChatID        *string `json:"telegramChatId"`
+	RetryIntervalMinutes      *int    `json:"retryIntervalMinutes"`
+	MaxRetries                *int    `json:"maxRetries"`
+	TelegramAlertsEnabled     *bool   `json:"telegramAlertsEnabled"`
+	ForceCheckoutEnabled      *bool   `json:"forceCheckoutEnabled"`
+	LocationAttendanceEnabled *bool   `json:"locationAttendanceEnabled"`
+	TelegramBotToken          *string `json:"telegramBotToken"`
+	TelegramChatID            *string `json:"telegramChatId"`
 }
 
 func (h *SettingsHandler) GetSettings(c *gin.Context) {
@@ -45,11 +46,12 @@ func (h *SettingsHandler) UpdateSettings(c *gin.Context) {
 	current, err := h.settingsService.GetSettings(c.Request.Context())
 	if err != nil {
 		current = &domain.SystemSettings{
-			ID:                    1,
-			RetryIntervalMinutes:  2,
-			MaxRetries:            1,
-			TelegramAlertsEnabled: true,
-			ForceCheckoutEnabled:  true,
+			ID:                        1,
+			RetryIntervalMinutes:      2,
+			MaxRetries:                1,
+			TelegramAlertsEnabled:     true,
+			ForceCheckoutEnabled:      true,
+			LocationAttendanceEnabled: true,
 		}
 	}
 
@@ -64,6 +66,9 @@ func (h *SettingsHandler) UpdateSettings(c *gin.Context) {
 	}
 	if req.ForceCheckoutEnabled != nil {
 		current.ForceCheckoutEnabled = *req.ForceCheckoutEnabled
+	}
+	if req.LocationAttendanceEnabled != nil {
+		current.LocationAttendanceEnabled = *req.LocationAttendanceEnabled
 	}
 	if req.TelegramBotToken != nil {
 		current.TelegramBotToken = *req.TelegramBotToken

@@ -263,8 +263,9 @@ func NewMockSettingsRepo() *MockSettingsRepo {
 			RetryIntervalMinutes:  2,
 			MaxRetries:            1,
 			TelegramAlertsEnabled: true,
-			ForceCheckoutEnabled:  true,
-			UpdatedAt:             time.Now().UTC(),
+			ForceCheckoutEnabled:      true,
+			LocationAttendanceEnabled: true,
+			UpdatedAt:                 time.Now().UTC(),
 		},
 	}
 }

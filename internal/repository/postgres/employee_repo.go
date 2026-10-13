@@ -21,7 +21,7 @@ func NewEmployeeRepository(db *DB) repository.EmployeeRepository {
 
 func (r *employeeRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.Employee, error) {
 	query := `
-		SELECT id, employee_code, password_hash, full_name, role, office_id, is_active, created_at, updated_at, COALESCE(email, '')
+		SELECT id, employee_code, password_hash, full_name, role, office_id, is_active, created_at, updated_at, COALESCE(email, ''), COALESCE(location_attendance_enabled, TRUE)
 		FROM employees
 		WHERE id = $1
 	`
@@ -37,6 +37,7 @@ func (r *employeeRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.Emplo
 		&emp.CreatedAt,
 		&emp.UpdatedAt,
 		&emp.Email,
+		&emp.LocationAttendanceEnabled,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -50,7 +51,7 @@ func (r *employeeRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.Emplo
 
 func (r *employeeRepo) GetByCode(ctx context.Context, codeOrEmail string) (*domain.Employee, error) {
 	query := `
-		SELECT id, employee_code, password_hash, full_name, role, office_id, is_active, created_at, updated_at, COALESCE(email, '')
+		SELECT id, employee_code, password_hash, full_name, role, office_id, is_active, created_at, updated_at, COALESCE(email, ''), COALESCE(location_attendance_enabled, TRUE)
 		FROM employees
 		WHERE employee_code = $1 OR email = $1
 	`
@@ -66,6 +67,7 @@ func (r *employeeRepo) GetByCode(ctx context.Context, codeOrEmail string) (*doma
 		&emp.CreatedAt,
 		&emp.UpdatedAt,
 		&emp.Email,
+		&emp.LocationAttendanceEnabled,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

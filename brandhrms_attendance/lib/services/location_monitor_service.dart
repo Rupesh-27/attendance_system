@@ -15,7 +15,7 @@ class LocationMonitorService extends ChangeNotifier {
   static final LocationMonitorService instance = LocationMonitorService._();
   LocationMonitorService._();
 
-  Timer? _pollingTimer;
+  StreamSubscription<Position>? _positionStreamSubscription;
   Timer? _countdownTimer;
 
   bool _isMonitoring = false;
@@ -55,12 +55,34 @@ class LocationMonitorService extends ChangeNotifier {
     _countdownSeconds = 120;
     _lastError = null;
 
+    if (!ApiService.isLocationAttendanceRequired) {
+      _isMonitoring = false;
+      _state = BreachState.normal;
+      _breachStartTime = null;
+      notifyListeners();
+      return;
+    }
+
+    final office = ApiService.assignedOffice;
+    if (office != null) {
+      _allowedRadiusMeters = office.radiusMeters;
+    }
+
     // Fetch dynamic system settings if available
     try {
       final settings = await ApiService.getSettings();
-      if (settings != null && settings.retryIntervalMinutes > 0) {
-        _totalGraceSeconds = settings.retryIntervalMinutes * 60;
-        _countdownSeconds = _totalGraceSeconds;
+      if (settings != null) {
+        if (!ApiService.isLocationAttendanceRequired) {
+          _isMonitoring = false;
+          _state = BreachState.normal;
+          _breachStartTime = null;
+          notifyListeners();
+          return;
+        }
+        if (settings.retryIntervalMinutes > 0) {
+          _totalGraceSeconds = settings.retryIntervalMinutes * 60;
+          _countdownSeconds = _totalGraceSeconds;
+        }
       }
     } catch (_) {}
 
@@ -94,19 +116,72 @@ class LocationMonitorService extends ChangeNotifier {
 
     notifyListeners();
 
-    // Start 30-second continuous GPS polling
-    _pollingTimer?.cancel();
-    _pollingTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      _pollLocation();
-    });
+    // Verify location services and permissions before starting stream
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      _state = BreachState.gpsDisabled;
+      _lastError = 'Location service is disabled';
+      notifyListeners();
+      return;
+    }
 
-    // Run first check immediately
-    _pollLocation();
+    final permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
+      _state = BreachState.gpsDisabled;
+      _lastError = 'Location permission is not granted';
+      notifyListeners();
+      return;
+    }
+
+    _startPositionStream();
+  }
+
+  void _startPositionStream() {
+    _positionStreamSubscription?.cancel();
+
+    LocationSettings locationSettings;
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      locationSettings = AndroidSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 0,
+        intervalDuration: const Duration(seconds: 15),
+        foregroundNotificationConfig: const ForegroundNotificationConfig(
+          notificationTitle: 'BrandHRMS',
+          notificationText: 'Checked in • Shift in progress',
+          enableWakeLock: true,
+        ),
+      );
+    } else {
+      locationSettings = const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 0,
+      );
+    }
+
+    // Grab quick initial position for instantaneous UI display
+    Geolocator.getLastKnownPosition().then((pos) {
+      if (pos != null && _isMonitoring) {
+        _processPosition(pos);
+      }
+    }).catchError((_) {});
+
+    // Listen to continuous position stream with persistent foreground service
+    _positionStreamSubscription = Geolocator.getPositionStream(
+      locationSettings: locationSettings,
+    ).listen(
+      (Position position) {
+        _processPosition(position);
+      },
+      onError: (dynamic error) {
+        _handleLocationError(error);
+      },
+    );
   }
 
   void stopMonitoring() {
-    _pollingTimer?.cancel();
-    _pollingTimer = null;
+    _positionStreamSubscription?.cancel();
+    _positionStreamSubscription = null;
     _countdownTimer?.cancel();
     _countdownTimer = null;
     _isMonitoring = false;
@@ -123,102 +198,48 @@ class LocationMonitorService extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> _pollLocation() async {
+  void _processPosition(Position position) {
     if (!_isMonitoring) return;
+    if (!ApiService.isLocationAttendanceRequired) return;
 
     final office = ApiService.assignedOffice;
     if (office == null) return;
     _allowedRadiusMeters = office.radiusMeters;
 
-    try {
-      // Check location service
-      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        // Outcome C: GPS disabled - handle separately, DO NOT force checkout
-        _state = BreachState.gpsDisabled;
-        _lastError = 'Location service is disabled';
-        notifyListeners();
-        return;
-      }
+    final distance = Geolocator.distanceBetween(
+      position.latitude,
+      position.longitude,
+      office.latitude,
+      office.longitude,
+    );
 
-      final permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
-        // Outcome C: Permission lost
-        _state = BreachState.gpsDisabled;
-        _lastError = 'Location permission is not granted';
-        notifyListeners();
-        return;
-      }
+    _lastDistanceMeters = distance;
+    _lastError = null;
 
-      LocationSettings locationSettings;
-      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-        locationSettings = AndroidSettings(
-          accuracy: LocationAccuracy.high,
-          timeLimit: const Duration(seconds: 15),
-          foregroundNotificationConfig: const ForegroundNotificationConfig(
-            notificationTitle: 'BrandHRMS Attendance',
-            notificationText: 'Active attendance location monitoring',
-            enableWakeLock: true,
-          ),
-        );
+    if (distance <= office.radiusMeters) {
+      // Inside allowed radius
+      if (_state == BreachState.warning) {
+        _cancelWarning();
+      } else if (_state == BreachState.gpsDisabled) {
+        _state = BreachState.normal;
+        notifyListeners();
       } else {
-        locationSettings = const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          timeLimit: Duration(seconds: 15),
-        );
-      }
-
-      Position? position;
-      try {
-        position = await Geolocator.getCurrentPosition(
-          locationSettings: locationSettings,
-        );
-      } catch (_) {
-        try {
-          position = await Geolocator.getLastKnownPosition();
-        } catch (_) {}
-      }
-
-      if (position == null) {
-        _state = BreachState.gpsDisabled;
-        _lastError = 'Unable to acquire GPS signal. Please ensure Location is enabled.';
         notifyListeners();
-        return;
       }
-
-      final distance = Geolocator.distanceBetween(
-        position.latitude,
-        position.longitude,
-        office.latitude,
-        office.longitude,
-      );
-
-      _lastDistanceMeters = distance;
-      _lastError = null;
-
-      if (distance <= office.radiusMeters) {
-        // Outcome A: Inside allowed radius
-        if (_state == BreachState.warning) {
-          // Warning cancelled, back inside
-          _cancelWarning();
-        } else if (_state == BreachState.gpsDisabled) {
-          _state = BreachState.normal;
-          notifyListeners();
-        }
-      } else {
-        // Outside allowed radius (distance > office.radiusMeters)
-        if (_state == BreachState.normal || _state == BreachState.gpsDisabled) {
-          // First breach detected! Start 2-minute countdown state machine
-          _startWarningCountdown(position);
-        }
+    } else {
+      // Outside allowed radius (distance > office.radiusMeters)
+      if (_state == BreachState.normal || _state == BreachState.gpsDisabled) {
+        // First breach detected! Start 2-minute countdown state machine
+        _startWarningCountdown(position);
       }
-    } catch (e) {
-      // Hardware / timeout error - treat as GPS lost (Outcome C), not out-of-radius
-      _state = BreachState.gpsDisabled;
-      _lastError = 'Unable to acquire GPS signal. Please ensure Location is enabled.';
-      notifyListeners();
     }
+  }
+
+  void _handleLocationError(dynamic error) {
+    if (!_isMonitoring) return;
+    _state = BreachState.gpsDisabled;
+    _lastError = 'Unable to acquire GPS signal. Please ensure Location is enabled.';
+    notifyListeners();
   }
 
   void _startWarningCountdown(Position pos) {
@@ -288,7 +309,7 @@ class LocationMonitorService extends ChangeNotifier {
           accuracy: LocationAccuracy.high,
           timeLimit: const Duration(seconds: 3),
           foregroundNotificationConfig: const ForegroundNotificationConfig(
-            notificationTitle: 'BrandHRMS Attendance',
+            notificationTitle: 'BrandHRMS',
             notificationText: 'Verifying final geofence location',
             enableWakeLock: true,
           ),
@@ -304,7 +325,6 @@ class LocationMonitorService extends ChangeNotifier {
         locationSettings: retrySettings,
       );
     } catch (_) {
-      // If fresh position timed out or failed, instantly grab last known position
       try {
         position = await Geolocator.getLastKnownPosition();
       } catch (_) {}
@@ -321,17 +341,16 @@ class LocationMonitorService extends ChangeNotifier {
       _lastDistanceMeters = distance;
 
       if (distance <= office.radiusMeters) {
-        // Outcome A: Successfully moved back inside radius
+        // Successfully moved back inside radius
         _cancelWarning();
         return;
       }
     }
 
-    // Outcome B: Still outside after 2 minutes or GPS unavailable -> FORCE CHECKOUT!
+    // Still outside after 2 minutes or GPS unavailable -> FORCE CHECKOUT!
     if (position != null) {
       await _performForceCheckout(position);
     } else {
-      // Safe fallback position based on office coordinates if GPS hardware completely unresponsive
       final fallbackPos = Position(
         latitude: office.latitude + 0.001,
         longitude: office.longitude + 0.001,

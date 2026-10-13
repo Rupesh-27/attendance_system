@@ -430,6 +430,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       await Future.wait([
         ApiService.getProfile(),
         ApiService.getAssignedOffice(),
+        ApiService.getSettings(),
       ]);
 
       final results = await Future.wait([
@@ -552,10 +553,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
             _totalWorkSeconds = _accumulatedSeconds + activeSec;
             _monthlyWorkSeconds = _monthlyAccumulatedSeconds + activeSec;
 
-            LocationMonitorService.instance.startMonitoring(
-              onForceCheckoutCallback: _showForceCheckoutDialog,
-              initialBreachTime: activeSession.initialOutOfRadiusAt,
-            );
+            if (ApiService.isLocationAttendanceRequired) {
+              LocationMonitorService.instance.startMonitoring(
+                onForceCheckoutCallback: _showForceCheckoutDialog,
+                initialBreachTime: activeSession.initialOutOfRadiusAt,
+              );
+            } else {
+              LocationMonitorService.instance.stopMonitoring();
+            }
           } else {
             final wasCheckedInLocally = _isCheckedIn;
             _isCheckedIn = false;
@@ -593,6 +598,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final monitor = LocationMonitorService.instance;
 
     if (_isCheckedIn) {
+      if (!ApiService.isLocationAttendanceRequired) {
+        setState(() {
+          _locationStatus = 'Flexible Location';
+          _locationStatusBadge = 'Remote / Any';
+          _locationStatusSubtext = 'Check-in active • Location restrictions off';
+          _locationStatusColor = const Color(0xFF0284C7);
+          _locationStatusBg = const Color(0xFFE0F2FE);
+          _locationStatusBorder = const Color(0xFF7DD3FC);
+          _locationStatusIcon = Icons.share_location_rounded;
+        });
+        return;
+      }
+
       if (monitor.state == BreachState.warning) {
         final dist = monitor.lastDistanceMeters ?? 0.0;
         final rad = monitor.allowedRadiusMeters ?? 10.0;
@@ -642,6 +660,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _locationStatusIcon = Icons.logout;
       });
     } else {
+      if (!ApiService.isLocationAttendanceRequired) {
+        setState(() {
+          _locationStatus = 'Ready';
+          _locationStatusBadge = 'Any Location';
+          _locationStatusSubtext = 'Location restrictions inactive • Coordinates will be logged';
+          _locationStatusColor = const Color(0xFF0284C7);
+          _locationStatusBg = const Color(0xFFE0F2FE);
+          _locationStatusBorder = const Color(0xFF7DD3FC);
+          _locationStatusIcon = Icons.share_location_rounded;
+        });
+        return;
+      }
 
       setState(() {
         _locationStatus = 'Not Checked In';
@@ -769,18 +799,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (mounted) {
         if (result['success'] == true) {
           if (!_isCheckedIn) {
-            LocationMonitorService.instance.startMonitoring(
-              onForceCheckoutCallback: _showForceCheckoutDialog,
-            );
-            setState(() {
-              _locationStatus = 'Available';
-              _locationStatusBadge = 'In Office';
-              _locationStatusSubtext = 'Check-in verified by server';
-              _locationStatusColor = const Color(0xFF15803D);
-              _locationStatusBg = const Color(0xFFDCFCE7);
-              _locationStatusBorder = const Color(0xFF86EFAC);
-              _locationStatusIcon = Icons.location_on;
-            });
+            if (ApiService.isLocationAttendanceRequired) {
+              LocationMonitorService.instance.startMonitoring(
+                onForceCheckoutCallback: _showForceCheckoutDialog,
+              );
+              setState(() {
+                _locationStatus = 'Available';
+                _locationStatusBadge = 'In Office';
+                _locationStatusSubtext = 'Check-in verified by server';
+                _locationStatusColor = const Color(0xFF15803D);
+                _locationStatusBg = const Color(0xFFDCFCE7);
+                _locationStatusBorder = const Color(0xFF86EFAC);
+                _locationStatusIcon = Icons.location_on;
+              });
+            } else {
+              LocationMonitorService.instance.stopMonitoring();
+              setState(() {
+                _locationStatus = 'Flexible Location';
+                _locationStatusBadge = 'Remote / Any';
+                _locationStatusSubtext = 'Check-in recorded • Coordinates captured';
+                _locationStatusColor = const Color(0xFF0284C7);
+                _locationStatusBg = const Color(0xFFE0F2FE);
+                _locationStatusBorder = const Color(0xFF7DD3FC);
+                _locationStatusIcon = Icons.share_location_rounded;
+              });
+            }
           } else {
             LocationMonitorService.instance.stopMonitoring();
             setState(() {

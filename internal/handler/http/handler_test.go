@@ -50,8 +50,9 @@ func setupTestRouter() (
 		PasswordHash: string(hash),
 		FullName:     "Alice Wonderland",
 		Role:         domain.RoleEmployee,
-		OfficeID:     office.ID,
-		IsActive:     true,
+		OfficeID:                  office.ID,
+		LocationAttendanceEnabled: true,
+		IsActive:                  true,
 	}
 	empRepo.Seed(emp)
 

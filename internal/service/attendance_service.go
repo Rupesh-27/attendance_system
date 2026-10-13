@@ -94,7 +94,7 @@ func (s *attendanceService) CheckIn(
 		gps.Longitude,
 	)
 
-	if !office.IsWithinRadius(distance) {
+	if s.isLocationAttendanceRequired(ctx, emp) && !office.IsWithinRadius(distance) {
 		return nil, domain.ErrOutsideOfficeRadius
 	}
 
@@ -166,7 +166,8 @@ func (s *attendanceService) CheckOut(
 		gps.Longitude,
 	)
 
-	if !office.IsWithinRadius(distance) {
+	emp, _ := s.employeeRepo.GetByID(ctx, employeeID)
+	if s.isLocationAttendanceRequired(ctx, emp) && !office.IsWithinRadius(distance) {
 		return nil, domain.ErrOutsideOfficeRadius
 	}
 
@@ -254,6 +255,11 @@ func (s *attendanceService) RecordOutOfRadiusBreach(
 	employeeID uuid.UUID,
 	breachTime *time.Time,
 ) error {
+	emp, _ := s.employeeRepo.GetByID(ctx, employeeID)
+	if !s.isLocationAttendanceRequired(ctx, emp) {
+		return nil
+	}
+
 	session, err := s.attendanceRepo.GetActiveSession(ctx, employeeID)
 	if err != nil {
 		return err
@@ -282,7 +288,7 @@ func (s *attendanceService) ProcessAutoForceCheckouts(ctx context.Context) (int,
 	if s.settingsRepo != nil {
 		settings, err := s.settingsRepo.GetSettings(ctx)
 		if err == nil && settings != nil {
-			if !settings.ForceCheckoutEnabled {
+			if !settings.ForceCheckoutEnabled || !settings.LocationAttendanceEnabled {
 				return 0, nil
 			}
 			if settings.RetryIntervalMinutes > 0 {
@@ -317,6 +323,10 @@ func (s *attendanceService) ProcessAutoForceCheckouts(ctx context.Context) (int,
 		processedCount++
 
 		emp, _ := s.employeeRepo.GetByID(ctx, session.EmployeeID)
+		if !s.isLocationAttendanceRequired(ctx, emp) {
+			_ = s.attendanceRepo.UpdateInitialOutOfRadiusAt(ctx, session.ID, nil)
+			continue
+		}
 		office, _ := s.officeRepo.GetByID(ctx, session.OfficeID)
 
 		if s.telegramService != nil {
@@ -425,4 +435,18 @@ func (s *attendanceService) GetMyHistory(
 		PageSize: pageSize,
 		Sessions: sessions,
 	}, nil
+}
+
+func (s *attendanceService) isLocationAttendanceRequired(ctx context.Context, emp *domain.Employee) bool {
+	if emp != nil && !emp.LocationAttendanceEnabled {
+		return false
+	}
+	if s.settingsRepo != nil {
+		if settings, err := s.settingsRepo.GetSettings(ctx); err == nil && settings != nil {
+			if !settings.LocationAttendanceEnabled {
+				return false
+			}
+		}
+	}
+	return true
 }

@@ -987,6 +987,63 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                   ],
                                 ),
                               ],
+                              if (session.checkInLatitude != 0.0 || session.checkInLongitude != 0.0) ...[
+                                const SizedBox(height: 6),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.pin_drop_outlined,
+                                        size: 16, color: primaryColor),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      'Check-in Loc: ${session.checkInLatitude.toStringAsFixed(6)}, ${session.checkInLongitude.toStringAsFixed(6)}',
+                                      style: TextStyle(
+                                        fontSize: 11.5,
+                                        color: Colors.grey.shade700,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    if (session.checkInAccuracyMeters > 0) ...[
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '(±${session.checkInAccuracyMeters.toStringAsFixed(0)}m)',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: Colors.grey.shade500,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ],
+                              if (session.checkOutLatitude != null &&
+                                  (session.checkOutLatitude != 0.0 || (session.checkOutLongitude ?? 0.0) != 0.0)) ...[
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Icon(Icons.pin_drop_outlined,
+                                        size: 16, color: Colors.orange.shade700),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      'Check-out Loc: ${session.checkOutLatitude!.toStringAsFixed(6)}, ${session.checkOutLongitude!.toStringAsFixed(6)}',
+                                      style: TextStyle(
+                                        fontSize: 11.5,
+                                        color: Colors.grey.shade700,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    if (session.checkOutAccuracyMeters != null && session.checkOutAccuracyMeters! > 0) ...[
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '(±${session.checkOutAccuracyMeters!.toStringAsFixed(0)}m)',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: Colors.grey.shade500,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ],
                             ],
                           ),
                         );

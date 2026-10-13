@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'screens/dashboard_screen.dart';
 import 'services/api_service.dart';
@@ -29,11 +30,40 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  static const String _prefRememberMe = 'remember_me';
+  static const String _prefSavedIdentifier = 'saved_identifier';
+  static const String _prefSavedPassword = 'saved_password';
+
   final employeeIdController = TextEditingController();
   final passwordController = TextEditingController();
 
   bool obscurePassword = true;
   bool isLoading = false;
+  bool rememberMe = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedCredentials();
+  }
+
+  Future<void> _loadSavedCredentials() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final isRemembered = prefs.getBool(_prefRememberMe) ?? false;
+      if (isRemembered) {
+        final savedIdentifier = prefs.getString(_prefSavedIdentifier) ?? '';
+        final savedPassword = prefs.getString(_prefSavedPassword) ?? '';
+        if (mounted) {
+          setState(() {
+            rememberMe = true;
+            employeeIdController.text = savedIdentifier;
+            passwordController.text = savedPassword;
+          });
+        }
+      }
+    } catch (_) {}
+  }
 
   @override
   void dispose() {
@@ -61,6 +91,20 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => isLoading = false);
 
     if (result['success'] == true) {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        if (rememberMe) {
+          await prefs.setBool(_prefRememberMe, true);
+          await prefs.setString(_prefSavedIdentifier, identifier);
+          await prefs.setString(_prefSavedPassword, password);
+        } else {
+          await prefs.remove(_prefRememberMe);
+          await prefs.remove(_prefSavedIdentifier);
+          await prefs.remove(_prefSavedPassword);
+        }
+      } catch (_) {}
+
+      if (!mounted) return;
       DashboardScreen.pickNewQuote();
       Navigator.pushReplacement(
         context,
@@ -138,7 +182,46 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
 
-              const SizedBox(height: 30),
+              const SizedBox(height: 12),
+
+              Row(
+                children: [
+                  SizedBox(
+                    height: 24,
+                    width: 24,
+                    child: Checkbox(
+                      value: rememberMe,
+                      activeColor: Theme.of(context).colorScheme.primary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      onChanged: (val) {
+                        setState(() {
+                          rememberMe = val ?? false;
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        rememberMe = !rememberMe;
+                      });
+                    },
+                    child: const Text(
+                      'Remember me',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF374151),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 24),
 
               SizedBox(
                 height: 52,
