@@ -599,4 +599,72 @@ func TestAttendance_CheckIn_WhenLocationAttendanceDisabled_AllowedOutsideRadius(
 	assert.True(t, session.CheckInDistanceMeters > 50.0)
 }
 
+func TestAttendance_WhenLocationAttendanceDisabled_RelaxedAccuracyAccepted(t *testing.T) {
+	empRepo, officeRepo, attRepo, emp, office := setupTestEnvironment()
+
+	// Disable location restriction for this employee
+	emp.LocationAttendanceEnabled = false
+	empRepo.Seed(emp)
+
+	currentTime := time.Date(2026, 9, 23, 9, 0, 0, 0, time.UTC)
+	clock := func() time.Time { return currentTime }
+	attSvc := service.NewAttendanceService(empRepo, officeRepo, attRepo, clock)
+
+	// GPS is outside office AND has indoor accuracy of 50 meters (which would be rejected in strict mode)
+	inGps := domain.GPSLocation{
+		Latitude:       office.Latitude + 0.005,
+		Longitude:      office.Longitude + 0.005,
+		AccuracyMeters: 50.0,
+		CapturedAt:     currentTime,
+	}
+
+	session, err := attSvc.CheckIn(context.Background(), emp.ID, inGps)
+	require.NoError(t, err)
+	require.NotNil(t, session)
+	assert.Equal(t, domain.StatusCheckedIn, session.Status)
+	assert.Equal(t, 50.0, session.CheckInAccuracyMeters)
+
+	// Now check out with indoor accuracy of 65 meters
+	outTime := currentTime.Add(2 * time.Hour)
+	outClock := func() time.Time { return outTime }
+	attSvcOut := service.NewAttendanceService(empRepo, officeRepo, attRepo, outClock)
+
+	outGps := domain.GPSLocation{
+		Latitude:       office.Latitude + 0.005,
+		Longitude:      office.Longitude + 0.005,
+		AccuracyMeters: 65.0,
+		CapturedAt:     outTime,
+	}
+
+	completedSession, err := attSvcOut.CheckOut(context.Background(), emp.ID, outGps)
+	require.NoError(t, err)
+	require.NotNil(t, completedSession)
+	assert.Equal(t, domain.StatusCompleted, completedSession.Status)
+	assert.Equal(t, 65.0, *completedSession.CheckOutAccuracyMeters)
+}
+
+func TestAttendance_WhenLocationAttendanceEnabled_StrictAccuracyEnforced(t *testing.T) {
+	empRepo, officeRepo, attRepo, emp, office := setupTestEnvironment()
+
+	// Strict location restriction enabled
+	emp.LocationAttendanceEnabled = true
+	empRepo.Seed(emp)
+
+	currentTime := time.Date(2026, 9, 23, 9, 0, 0, 0, time.UTC)
+	clock := func() time.Time { return currentTime }
+	attSvc := service.NewAttendanceService(empRepo, officeRepo, attRepo, clock)
+
+	// GPS inside office but weak accuracy of 35 meters
+	gps := domain.GPSLocation{
+		Latitude:       office.Latitude,
+		Longitude:      office.Longitude,
+		AccuracyMeters: 35.0,
+		CapturedAt:     currentTime,
+	}
+
+	_, err := attSvc.CheckIn(context.Background(), emp.ID, gps)
+	assert.ErrorIs(t, err, domain.ErrAccuracyTooLow)
+}
+
+
 

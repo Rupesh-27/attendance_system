@@ -59,10 +59,6 @@ func (s *attendanceService) CheckIn(
 ) (*domain.AttendanceSession, error) {
 	serverTime := s.clock()
 
-	if err := gps.Validate(serverTime); err != nil {
-		return nil, err
-	}
-
 	existingSession, err := s.attendanceRepo.GetActiveSession(ctx, employeeID)
 	if err == nil && existingSession != nil {
 		return nil, domain.ErrActiveSessionExists
@@ -77,6 +73,16 @@ func (s *attendanceService) CheckIn(
 	}
 	if !emp.IsActive {
 		return nil, domain.ErrEmployeeInactive
+	}
+
+	if s.isLocationAttendanceRequired(ctx, emp) {
+		if err := gps.Validate(serverTime); err != nil {
+			return nil, err
+		}
+	} else {
+		if err := gps.ValidateFlexible(serverTime); err != nil {
+			return nil, err
+		}
 	}
 
 	office, err := s.officeRepo.GetByID(ctx, emp.OfficeID)
@@ -139,8 +145,15 @@ func (s *attendanceService) CheckOut(
 ) (*domain.AttendanceSession, error) {
 	serverTime := s.clock()
 
-	if err := gps.Validate(serverTime); err != nil {
-		return nil, err
+	emp, _ := s.employeeRepo.GetByID(ctx, employeeID)
+	if s.isLocationAttendanceRequired(ctx, emp) {
+		if err := gps.Validate(serverTime); err != nil {
+			return nil, err
+		}
+	} else {
+		if err := gps.ValidateFlexible(serverTime); err != nil {
+			return nil, err
+		}
 	}
 
 	session, err := s.attendanceRepo.GetActiveSession(ctx, employeeID)
@@ -166,7 +179,6 @@ func (s *attendanceService) CheckOut(
 		gps.Longitude,
 	)
 
-	emp, _ := s.employeeRepo.GetByID(ctx, employeeID)
 	if s.isLocationAttendanceRequired(ctx, emp) && !office.IsWithinRadius(distance) {
 		return nil, domain.ErrOutsideOfficeRadius
 	}

@@ -847,16 +847,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _loadDashboardData();
         } else {
           final actionAttempted = _isCheckedIn ? 'Check-out' : 'Check-in';
+          final rawMsg = result['message'] as String? ?? '';
+          final isAccuracyError = rawMsg.toLowerCase().contains('accuracy');
+          final isOutsideRadius = rawMsg.toLowerCase().contains('outside');
 
           setState(() {
             _locationStatus = 'Unavailable';
-            _locationStatusBadge = 'Outside Radius';
+            _locationStatusBadge = isAccuracyError
+                ? 'Weak GPS'
+                : (isOutsideRadius ? 'Outside Radius' : 'Failed');
             _locationStatusSubtext =
-                result['message'] ?? '$actionAttempted rejected: Outside office radius';
+                result['message'] ?? '$actionAttempted failed. Please verify location.';
             _locationStatusColor = const Color(0xFFDC2626);
             _locationStatusBg = const Color(0xFFFEE2E2);
             _locationStatusBorder = const Color(0xFFFCA5A5);
-            _locationStatusIcon = Icons.location_off;
+            _locationStatusIcon = isAccuracyError
+                ? Icons.gps_not_fixed_rounded
+                : Icons.location_off;
           });
 
           final errorMsg =
