@@ -30,4 +30,15 @@ var (
 	ErrActiveSessionExists = errors.New("an active attendance session is already open")
 	ErrNoActiveSession     = errors.New("no active attendance session found to check out")
 	ErrSessionAlreadyEnded = errors.New("attendance session has already been completed")
+
+	// Leave Management Errors
+	ErrLeaveTypeNotFound          = errors.New("leave type not found")
+	ErrInsufficientLeaveBalance   = errors.New("insufficient leave balance for the requested dates")
+	ErrLeaveDateOverlap           = errors.New("you already have a pending or approved leave request covering these dates")
+	ErrInvalidLeaveDates          = errors.New("leave start date cannot be after end date")
+	ErrLeaveApplicationNotFound   = errors.New("leave application not found")
+	ErrLeaveNotPending            = errors.New("only pending leave applications can be reviewed or cancelled")
+	ErrCasualLeaveExceedsOneDay   = errors.New("casual leave cannot exceed 1 day per application")
+	ErrCasualLeaveMonthlyLimit    = errors.New("casual leave can only be applied once per calendar month")
+	ErrSickLeaveAttachmentRequired = errors.New("medical certificate required for sick leave of 2 or more days")
 )

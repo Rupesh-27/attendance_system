@@ -46,3 +46,22 @@ type SettingsRepository interface {
 	UpdateSettings(ctx context.Context, settings *domain.SystemSettings) error
 }
 
+// LeaveRepository defines persistence operations for Leave Management
+type LeaveRepository interface {
+	GetLeaveTypes(ctx context.Context) ([]*domain.LeaveType, error)
+	GetLeaveTypeByID(ctx context.Context, id uuid.UUID) (*domain.LeaveType, error)
+	GetLeaveBalances(ctx context.Context, employeeID uuid.UUID, year int) ([]*domain.EmployeeLeaveBalance, error)
+	GetLeaveBalance(ctx context.Context, employeeID, leaveTypeID uuid.UUID, year int) (*domain.EmployeeLeaveBalance, error)
+	CreateApplication(ctx context.Context, app *domain.LeaveApplication) error
+	GetApplicationByID(ctx context.Context, id uuid.UUID) (*domain.LeaveApplication, error)
+	GetApplicationsByEmployee(ctx context.Context, employeeID uuid.UUID, status *domain.LeaveStatus) ([]*domain.LeaveApplication, error)
+	GetPendingApplications(ctx context.Context) ([]*domain.LeaveApplication, error)
+	UpdateApplicationStatus(ctx context.Context, id uuid.UUID, status domain.LeaveStatus, reviewedBy *uuid.UUID, reviewedAt *time.Time, remarks *string) error
+	DeductLeaveBalance(ctx context.Context, employeeID, leaveTypeID uuid.UUID, year int, days float64) error
+	RefundLeaveBalance(ctx context.Context, employeeID, leaveTypeID uuid.UUID, year int, days float64) error
+	HasOverlappingLeave(ctx context.Context, employeeID uuid.UUID, startDate, endDate time.Time) (bool, error)
+	HasCasualLeaveInMonth(ctx context.Context, employeeID uuid.UUID, year int, month time.Month) (bool, error)
+	GetApprovedLeaveForDate(ctx context.Context, employeeID uuid.UUID, date time.Time) (*domain.LeaveApplication, error)
+}
+
+

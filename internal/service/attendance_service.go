@@ -20,6 +20,7 @@ type attendanceService struct {
 	attendanceRepo  repository.AttendanceRepository
 	telegramService TelegramService
 	settingsRepo    repository.SettingsRepository
+	leaveRepo       repository.LeaveRepository
 	clock           Clock
 }
 
@@ -35,11 +36,14 @@ func NewAttendanceService(
 	}
 	var tg TelegramService
 	var settings repository.SettingsRepository
+	var leave repository.LeaveRepository
 	for _, e := range extra {
 		if t, ok := e.(TelegramService); ok {
 			tg = t
 		} else if s, ok := e.(repository.SettingsRepository); ok {
 			settings = s
+		} else if l, ok := e.(repository.LeaveRepository); ok {
+			leave = l
 		}
 	}
 	return &attendanceService{
@@ -48,6 +52,7 @@ func NewAttendanceService(
 		attendanceRepo:  attendanceRepo,
 		telegramService: tg,
 		settingsRepo:    settings,
+		leaveRepo:       leave,
 		clock:           clock,
 	}
 }
@@ -413,12 +418,24 @@ func (s *attendanceService) GetTodayStatus(
 		}
 	}
 
+	var isOnLeave bool
+	var approvedLeave *domain.LeaveApplication
+	if s.leaveRepo != nil {
+		app, _ := s.leaveRepo.GetApprovedLeaveForDate(ctx, employeeID, serverTime)
+		if app != nil {
+			isOnLeave = true
+			approvedLeave = app
+		}
+	}
+
 	return &TodayAttendanceStatus{
 		AttendanceDay:    targetAttendanceDay,
 		IsCarriedOver:    isCarriedOver,
 		ActiveSession:    activeSession,
 		TodaySessions:    sessions,
 		TotalWorkSeconds: totalWorkSeconds,
+		IsOnLeave:        isOnLeave,
+		ApprovedLeave:    approvedLeave,
 	}, nil
 }
 

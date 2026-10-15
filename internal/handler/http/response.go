@@ -110,8 +110,27 @@ func MapDomainError(c *gin.Context, err error) {
 		SendError(c, http.StatusBadRequest, "NOT_CHECKED_IN", err.Error(), nil)
 
 	case errors.Is(err, domain.ErrEmployeeNotFound),
-		errors.Is(err, domain.ErrOfficeNotFound):
+		errors.Is(err, domain.ErrOfficeNotFound),
+		errors.Is(err, domain.ErrLeaveTypeNotFound),
+		errors.Is(err, domain.ErrLeaveApplicationNotFound):
 		SendError(c, http.StatusNotFound, "NOT_FOUND", err.Error(), nil)
+
+	case errors.Is(err, domain.ErrInsufficientLeaveBalance):
+		SendError(c, http.StatusBadRequest, "INSUFFICIENT_BALANCE", err.Error(), nil)
+
+	case errors.Is(err, domain.ErrLeaveDateOverlap):
+		SendError(c, http.StatusConflict, "LEAVE_OVERLAP", err.Error(), nil)
+
+	case errors.Is(err, domain.ErrInvalidLeaveDates):
+		SendError(c, http.StatusBadRequest, "INVALID_DATES", err.Error(), nil)
+
+	case errors.Is(err, domain.ErrLeaveNotPending):
+		SendError(c, http.StatusBadRequest, "LEAVE_NOT_PENDING", err.Error(), nil)
+
+	case errors.Is(err, domain.ErrCasualLeaveExceedsOneDay),
+		errors.Is(err, domain.ErrCasualLeaveMonthlyLimit),
+		errors.Is(err, domain.ErrSickLeaveAttachmentRequired):
+		SendError(c, http.StatusBadRequest, "POLICY_VIOLATION", err.Error(), nil)
 
 	default:
 		SendError(c, http.StatusInternalServerError, "INTERNAL_SERVER_ERROR", "An unexpected error occurred", nil)

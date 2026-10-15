@@ -6,6 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import '../services/api_service.dart';
 import '../services/location_monitor_service.dart';
 import 'attendance_history_screen.dart';
+import 'leave_management_screen.dart';
 import 'profile_screen.dart';
 
 class TechQuote {
@@ -600,9 +601,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (_isCheckedIn) {
       if (!ApiService.isLocationAttendanceRequired) {
         setState(() {
-          _locationStatus = 'Flexible Location';
-          _locationStatusBadge = 'Remote / Any';
-          _locationStatusSubtext = 'Check-in active • Location restrictions off';
+          _locationStatus = 'Off-Site';
+          _locationStatusBadge = 'Remote';
+          _locationStatusSubtext = 'Check-in active • Off-site verified';
           _locationStatusColor = const Color(0xFF0284C7);
           _locationStatusBg = const Color(0xFFE0F2FE);
           _locationStatusBorder = const Color(0xFF7DD3FC);
@@ -663,8 +664,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (!ApiService.isLocationAttendanceRequired) {
         setState(() {
           _locationStatus = 'Ready';
-          _locationStatusBadge = 'Any Location';
-          _locationStatusSubtext = 'Location restrictions inactive • Coordinates will be logged';
+          _locationStatusBadge = 'Off-Site';
+          _locationStatusSubtext = 'Off-site check-in enabled • Coordinates will be logged';
           _locationStatusColor = const Color(0xFF0284C7);
           _locationStatusBg = const Color(0xFFE0F2FE);
           _locationStatusBorder = const Color(0xFF7DD3FC);
@@ -815,8 +816,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             } else {
               LocationMonitorService.instance.stopMonitoring();
               setState(() {
-                _locationStatus = 'Flexible Location';
-                _locationStatusBadge = 'Remote / Any';
+                _locationStatus = 'Off-Site';
+                _locationStatusBadge = 'Remote';
                 _locationStatusSubtext = 'Check-in recorded • Coordinates captured';
                 _locationStatusColor = const Color(0xFF0284C7);
                 _locationStatusBg = const Color(0xFFE0F2FE);
@@ -895,6 +896,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedTabIndex = 0;
   final GlobalKey<AttendanceHistoryScreenState> _historyKey =
       GlobalKey<AttendanceHistoryScreenState>();
+  final GlobalKey<LeaveManagementScreenState> _leaveKey =
+      GlobalKey<LeaveManagementScreenState>();
 
   @override
   Widget build(BuildContext context) {
@@ -905,6 +908,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         children: [
           _buildDashboardPage(context),
           AttendanceHistoryScreen(key: _historyKey),
+          LeaveManagementScreen(key: _leaveKey),
           const ProfileScreen(),
         ],
       ),
@@ -918,6 +922,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             _loadDashboardData();
           } else if (index == 1) {
             _historyKey.currentState?.fetchHistory();
+          } else if (index == 2) {
+            _leaveKey.currentState?.refreshData();
           }
         },
         destinations: const [
@@ -930,6 +936,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             icon: Icon(Icons.access_time_outlined),
             selectedIcon: Icon(Icons.access_time),
             label: 'Attendance',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.calendar_month_outlined),
+            selectedIcon: Icon(Icons.calendar_month),
+            label: 'Leaves',
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline),

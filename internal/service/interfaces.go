@@ -28,7 +28,10 @@ type TodayAttendanceStatus struct {
 	ActiveSession    *domain.AttendanceSession   `json:"activeSession,omitempty"`
 	TodaySessions    []*domain.AttendanceSession `json:"todaySessions"`
 	TotalWorkSeconds int64                       `json:"totalWorkSeconds"`
+	IsOnLeave        bool                        `json:"isOnLeave,omitempty"`
+	ApprovedLeave    *domain.LeaveApplication    `json:"approvedLeave,omitempty"`
 }
+
 
 type AuthService interface {
 	Login(ctx context.Context, employeeCode, password string) (*AuthResult, error)
@@ -49,4 +52,26 @@ type AttendanceService interface {
 	GetTodayStatus(ctx context.Context, employeeID uuid.UUID) (*TodayAttendanceStatus, error)
 	GetMyHistory(ctx context.Context, employeeID uuid.UUID, from, to *time.Time, page, pageSize int) (*AttendanceHistoryResult, error)
 }
+
+type ApplyLeaveRequest struct {
+	LeaveTypeID    uuid.UUID              `json:"leaveTypeId"`
+	StartDate      string                 `json:"startDate"`
+	EndDate        string                 `json:"endDate"`
+	IsHalfDay      bool                   `json:"isHalfDay"`
+	HalfDaySession *domain.HalfDaySession `json:"halfDaySession,omitempty"`
+	Reason         string                 `json:"reason"`
+	AttachmentURL  *string                `json:"attachmentUrl,omitempty"`
+}
+
+type LeaveService interface {
+	GetLeaveTypes(ctx context.Context) ([]*domain.LeaveType, error)
+	GetLeaveBalances(ctx context.Context, employeeID uuid.UUID, year int) ([]*domain.EmployeeLeaveBalance, error)
+	ApplyLeave(ctx context.Context, employeeID uuid.UUID, req ApplyLeaveRequest) (*domain.LeaveApplication, error)
+	GetMyApplications(ctx context.Context, employeeID uuid.UUID, status *domain.LeaveStatus) ([]*domain.LeaveApplication, error)
+	CancelApplication(ctx context.Context, employeeID, applicationID uuid.UUID) error
+	GetPendingApprovals(ctx context.Context) ([]*domain.LeaveApplication, error)
+	ApproveApplication(ctx context.Context, applicationID, reviewerID uuid.UUID, remarks *string) (*domain.LeaveApplication, error)
+	RejectApplication(ctx context.Context, applicationID, reviewerID uuid.UUID, remarks *string) (*domain.LeaveApplication, error)
+}
+
 

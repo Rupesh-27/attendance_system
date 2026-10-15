@@ -31,10 +31,11 @@ func main() {
 
 	// 1. Initialize Database Repositories (Auto fallback to in-memory mocks if DB is unavailable)
 	var (
-		empRepo repository.EmployeeRepository
+		empRepo      repository.EmployeeRepository
 		offRepo      repository.OfficeRepository
 		attRepo      repository.AttendanceRepository
 		settingsRepo repository.SettingsRepository
+		leaveRepo    repository.LeaveRepository
 	)
 
 	db, err := postgres.NewDB(ctx, cfg.DatabaseURL)
@@ -46,6 +47,7 @@ func main() {
 		mockOff := mock.NewMockOfficeRepo()
 		mockAtt := mock.NewMockAttendanceRepo()
 		mockSettings := mock.NewMockSettingsRepo()
+		mockLeave := mock.NewMockLeaveRepo()
 
 		officeID := uuid.MustParse("a0000000-0000-0000-0000-000000000001")
 		office := &domain.Office{
@@ -63,27 +65,61 @@ func main() {
 		hash, _ := bcrypt.GenerateFromPassword([]byte("Password123!"), bcrypt.DefaultCost)
 		empID := uuid.MustParse("b0000000-0000-0000-0000-000000000001")
 		emp := &domain.Employee{
-			ID:           empID,
-			EmployeeCode: "EMP1001",
-			PasswordHash: string(hash),
-			FullName:     "John Doe",
-			Role:         domain.RoleEmployee,
+			ID:                        empID,
+			EmployeeCode:              "EMP1001",
+			PasswordHash:              string(hash),
+			FullName:                  "John Doe",
+			Role:                      domain.RoleEmployee,
 			OfficeID:                  officeID,
 			LocationAttendanceEnabled: true,
 			IsActive:                  true,
-			CreatedAt:    time.Now().UTC(),
-			UpdatedAt:    time.Now().UTC(),
+			CreatedAt:                 time.Now().UTC(),
+			UpdatedAt:                 time.Now().UTC(),
 		}
 		mockEmp.Seed(emp)
+
+		// Seed initial 2026 leave balances for EMP1001
+		clID := uuid.MustParse("c0000000-0000-0000-0000-000000000001")
+		slID := uuid.MustParse("c0000000-0000-0000-0000-000000000002")
+		plID := uuid.MustParse("c0000000-0000-0000-0000-000000000003")
+		mockLeave.SeedBalance(&domain.EmployeeLeaveBalance{
+			ID:            uuid.New(),
+			EmployeeID:    empID,
+			LeaveTypeID:   clID,
+			Year:          2026,
+			AllocatedDays: 12,
+			UsedDays:      0,
+			RemainingDays: 12,
+		})
+		mockLeave.SeedBalance(&domain.EmployeeLeaveBalance{
+			ID:            uuid.New(),
+			EmployeeID:    empID,
+			LeaveTypeID:   slID,
+			Year:          2026,
+			AllocatedDays: 8,
+			UsedDays:      0,
+			RemainingDays: 8,
+		})
+		mockLeave.SeedBalance(&domain.EmployeeLeaveBalance{
+			ID:            uuid.New(),
+			EmployeeID:    empID,
+			LeaveTypeID:   plID,
+			Year:          2026,
+			AllocatedDays: 15,
+			UsedDays:      0,
+			RemainingDays: 15,
+		})
 
 		log.Println("✅ In-memory mock repositories initialized:")
 		log.Printf("   - Test Employee: Code 'EMP1001' | Password 'Password123!'")
 		log.Printf("   - Assigned Office: '%s' (Lat: %f, Lon: %f, Radius: %.1fm)", office.Name, office.Latitude, office.Longitude, office.RadiusMeters)
+		log.Println("   - Leave Balances: CL (12d), SL (8d), PL (15d)")
 
 		empRepo = mockEmp
 		offRepo = mockOff
 		attRepo = mockAtt
 		settingsRepo = mockSettings
+		leaveRepo = mockLeave
 	} else {
 		defer db.Close()
 		log.Println("Successfully connected to PostgreSQL database cluster")
@@ -91,6 +127,7 @@ func main() {
 		offRepo = postgres.NewOfficeRepository(db)
 		attRepo = postgres.NewAttendanceRepository(db)
 		settingsRepo = postgres.NewSettingsRepository(db)
+		leaveRepo = postgres.NewLeaveRepository(db)
 	}
 
 	telegramSvc := service.NewTelegramService(settingsRepo, cfg.TelegramBotToken, cfg.TelegramChatID)
@@ -98,18 +135,21 @@ func main() {
 
 	authSvc := service.NewAuthService(empRepo, cfg.JWTSecret, cfg.JWTExpiration)
 	empSvc := service.NewEmployeeService(empRepo, offRepo)
-	attSvc := service.NewAttendanceService(empRepo, offRepo, attRepo, nil, telegramSvc, settingsRepo)
+	attSvc := service.NewAttendanceService(empRepo, offRepo, attRepo, nil, telegramSvc, settingsRepo, leaveRepo)
+	leaveSvc := service.NewLeaveService(leaveRepo, empRepo, nil)
 
 	authHandler := handler.NewAuthHandler(authSvc)
 	empHandler := handler.NewEmployeeHandler(empSvc)
 	attHandler := handler.NewAttendanceHandler(attSvc)
 	settingsHandler := handler.NewSettingsHandler(settingsSvc)
+	leaveHandler := handler.NewLeaveHandler(leaveSvc)
 
 	router := handler.SetupRouter(handler.RouterConfig{
 		AuthHandler:       authHandler,
 		EmployeeHandler:   empHandler,
 		AttendanceHandler: attHandler,
 		SettingsHandler:   settingsHandler,
+		LeaveHandler:      leaveHandler,
 		JWTSecret:         cfg.JWTSecret,
 	})
 

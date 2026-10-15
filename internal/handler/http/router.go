@@ -12,6 +12,7 @@ type RouterConfig struct {
 	EmployeeHandler   *EmployeeHandler
 	AttendanceHandler *AttendanceHandler
 	SettingsHandler   *SettingsHandler
+	LeaveHandler      *LeaveHandler
 	JWTSecret         string
 }
 
@@ -61,6 +62,20 @@ func SetupRouter(cfg RouterConfig) *gin.Engine {
 				{
 					settingsGroup.GET("", cfg.SettingsHandler.GetSettings)
 					settingsGroup.PUT("", cfg.SettingsHandler.UpdateSettings)
+				}
+			}
+
+			if cfg.LeaveHandler != nil {
+				leaveGroup := protected.Group("/leave")
+				{
+					leaveGroup.GET("/types", cfg.LeaveHandler.GetLeaveTypes)
+					leaveGroup.GET("/balances", cfg.LeaveHandler.GetLeaveBalances)
+					leaveGroup.POST("/apply", cfg.LeaveHandler.ApplyLeave)
+					leaveGroup.GET("/my-applications", cfg.LeaveHandler.GetMyApplications)
+					leaveGroup.POST("/:id/cancel", cfg.LeaveHandler.CancelApplication)
+					leaveGroup.GET("/approvals", cfg.LeaveHandler.GetPendingApprovals)
+					leaveGroup.POST("/:id/approve", cfg.LeaveHandler.ApproveApplication)
+					leaveGroup.POST("/:id/reject", cfg.LeaveHandler.RejectApplication)
 				}
 			}
 		}

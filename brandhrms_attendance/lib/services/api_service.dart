@@ -168,12 +168,17 @@ class TodayStatusResult {
   final List<AttendanceRecord> todaySessions;
   final int totalWorkSeconds;
 
+  final bool isOnLeave;
+  final LeaveApplication? approvedLeave;
+
   TodayStatusResult({
     required this.attendanceDay,
     required this.isCarriedOver,
     this.activeSession,
     required this.todaySessions,
     required this.totalWorkSeconds,
+    this.isOnLeave = false,
+    this.approvedLeave,
   });
 
   factory TodayStatusResult.fromJson(Map<String, dynamic> json) {
@@ -187,6 +192,148 @@ class TodayStatusResult {
           .map((s) => AttendanceRecord.fromJson(s))
           .toList(),
       totalWorkSeconds: (json['totalWorkSeconds'] as num?)?.toInt() ?? 0,
+      isOnLeave: json['isOnLeave'] ?? false,
+      approvedLeave: json['approvedLeave'] != null
+          ? LeaveApplication.fromJson(json['approvedLeave'])
+          : null,
+    );
+  }
+}
+
+class LeaveType {
+  final String id;
+  final String name;
+  final String code;
+  final String? description;
+  final int annualAllowance;
+  final bool isPaid;
+  final bool isActive;
+
+  LeaveType({
+    required this.id,
+    required this.name,
+    required this.code,
+    this.description,
+    required this.annualAllowance,
+    required this.isPaid,
+    required this.isActive,
+  });
+
+  factory LeaveType.fromJson(Map<String, dynamic> json) {
+    return LeaveType(
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
+      code: json['code'] ?? '',
+      description: json['description'],
+      annualAllowance: (json['annualAllowance'] as num?)?.toInt() ?? 0,
+      isPaid: json['isPaid'] ?? true,
+      isActive: json['isActive'] ?? true,
+    );
+  }
+}
+
+class EmployeeLeaveBalance {
+  final String id;
+  final String employeeId;
+  final String leaveTypeId;
+  final String leaveTypeName;
+  final String leaveTypeCode;
+  final int year;
+  final double allocatedDays;
+  final double usedDays;
+  final double remainingDays;
+
+  EmployeeLeaveBalance({
+    required this.id,
+    required this.employeeId,
+    required this.leaveTypeId,
+    required this.leaveTypeName,
+    required this.leaveTypeCode,
+    required this.year,
+    required this.allocatedDays,
+    required this.usedDays,
+    required this.remainingDays,
+  });
+
+  factory EmployeeLeaveBalance.fromJson(Map<String, dynamic> json) {
+    return EmployeeLeaveBalance(
+      id: json['id'] ?? '',
+      employeeId: json['employeeId'] ?? '',
+      leaveTypeId: json['leaveTypeId'] ?? '',
+      leaveTypeName: json['leaveTypeName'] ?? '',
+      leaveTypeCode: json['leaveTypeCode'] ?? '',
+      year: (json['year'] as num?)?.toInt() ?? DateTime.now().year,
+      allocatedDays: (json['allocatedDays'] as num?)?.toDouble() ?? 0.0,
+      usedDays: (json['usedDays'] as num?)?.toDouble() ?? 0.0,
+      remainingDays: (json['remainingDays'] as num?)?.toDouble() ?? 0.0,
+    );
+  }
+}
+
+class LeaveApplication {
+  final String id;
+  final String employeeId;
+  final String? employeeName;
+  final String? employeeCode;
+  final String leaveTypeId;
+  final String leaveTypeName;
+  final String leaveTypeCode;
+  final DateTime startDate;
+  final DateTime endDate;
+  final double totalDays;
+  final bool isHalfDay;
+  final String? halfDaySession;
+  final String reason;
+  final String status;
+  final String? reviewedBy;
+  final String? reviewedByName;
+  final DateTime? reviewedAt;
+  final String? managerRemarks;
+  final DateTime createdAt;
+
+  LeaveApplication({
+    required this.id,
+    required this.employeeId,
+    this.employeeName,
+    this.employeeCode,
+    required this.leaveTypeId,
+    required this.leaveTypeName,
+    required this.leaveTypeCode,
+    required this.startDate,
+    required this.endDate,
+    required this.totalDays,
+    required this.isHalfDay,
+    this.halfDaySession,
+    required this.reason,
+    required this.status,
+    this.reviewedBy,
+    this.reviewedByName,
+    this.reviewedAt,
+    this.managerRemarks,
+    required this.createdAt,
+  });
+
+  factory LeaveApplication.fromJson(Map<String, dynamic> json) {
+    return LeaveApplication(
+      id: json['id'] ?? '',
+      employeeId: json['employeeId'] ?? '',
+      employeeName: json['employeeName'],
+      employeeCode: json['employeeCode'],
+      leaveTypeId: json['leaveTypeId'] ?? '',
+      leaveTypeName: json['leaveTypeName'] ?? '',
+      leaveTypeCode: json['leaveTypeCode'] ?? '',
+      startDate: DateTime.tryParse(json['startDate'] ?? '') ?? DateTime.now(),
+      endDate: DateTime.tryParse(json['endDate'] ?? '') ?? DateTime.now(),
+      totalDays: (json['totalDays'] as num?)?.toDouble() ?? 1.0,
+      isHalfDay: json['isHalfDay'] ?? false,
+      halfDaySession: json['halfDaySession'],
+      reason: json['reason'] ?? '',
+      status: json['status'] ?? 'PENDING',
+      reviewedBy: json['reviewedBy'],
+      reviewedByName: json['reviewedByName'],
+      reviewedAt: json['reviewedAt'] != null ? DateTime.tryParse(json['reviewedAt']) : null,
+      managerRemarks: json['managerRemarks'],
+      createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt']) ?? DateTime.now() : DateTime.now(),
     );
   }
 }
@@ -517,6 +664,168 @@ class ApiService {
       }
     } catch (_) {}
     return null;
+  }
+
+  // Leave Management APIs
+  static Future<List<LeaveType>> getLeaveTypes() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/leave/types'),
+        headers: _authHeaders,
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['data'] != null) {
+          final List list = data['data'];
+          return list.map((item) => LeaveType.fromJson(item)).toList();
+        }
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  static Future<List<EmployeeLeaveBalance>> getLeaveBalances({int? year}) async {
+    try {
+      String endpoint = '$baseUrl/leave/balances';
+      if (year != null) {
+        endpoint += '?year=$year';
+      }
+      final response = await http.get(
+        Uri.parse(endpoint),
+        headers: _authHeaders,
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['data'] != null) {
+          final List list = data['data'];
+          return list.map((item) => EmployeeLeaveBalance.fromJson(item)).toList();
+        }
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  static Future<Map<String, dynamic>> applyLeave({
+    required String leaveTypeId,
+    required String startDate,
+    required String endDate,
+    required bool isHalfDay,
+    String? halfDaySession,
+    required String reason,
+  }) async {
+    try {
+      final payload = <String, dynamic>{
+        'leaveTypeId': leaveTypeId,
+        'startDate': startDate,
+        'endDate': endDate,
+        'isHalfDay': isHalfDay,
+        'reason': reason,
+      };
+      if (halfDaySession != null) {
+        payload['halfDaySession'] = halfDaySession;
+      }
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/leave/apply'),
+        headers: _authHeaders,
+        body: jsonEncode(payload),
+      );
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 201 || (response.statusCode == 200 && data['success'] == true)) {
+        return {'success': true, 'data': LeaveApplication.fromJson(data['data'])};
+      } else {
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Failed to apply leave',
+          'code': data['code'],
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: $e'};
+    }
+  }
+
+  static Future<List<LeaveApplication>> getMyLeaveApplications({String? status}) async {
+    try {
+      String endpoint = '$baseUrl/leave/my-applications';
+      if (status != null && status.isNotEmpty) {
+        endpoint += '?status=$status';
+      }
+      final response = await http.get(
+        Uri.parse(endpoint),
+        headers: _authHeaders,
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['data'] != null) {
+          final List list = data['data'];
+          return list.map((item) => LeaveApplication.fromJson(item)).toList();
+        }
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  static Future<bool> cancelLeaveApplication(String id) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/leave/$id/cancel'),
+        headers: _authHeaders,
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['success'] == true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
+  static Future<List<LeaveApplication>> getPendingLeaveApprovals() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/leave/approvals'),
+        headers: _authHeaders,
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['data'] != null) {
+          final List list = data['data'];
+          return list.map((item) => LeaveApplication.fromJson(item)).toList();
+        }
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  static Future<bool> approveLeaveApplication(String id, {String? remarks}) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/leave/$id/approve'),
+        headers: _authHeaders,
+        body: jsonEncode({'remarks': remarks}),
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['success'] == true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
+  static Future<bool> rejectLeaveApplication(String id, {String? remarks}) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/leave/$id/reject'),
+        headers: _authHeaders,
+        body: jsonEncode({'remarks': remarks}),
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['success'] == true;
+      }
+    } catch (_) {}
+    return false;
   }
 
   static void logout() {
