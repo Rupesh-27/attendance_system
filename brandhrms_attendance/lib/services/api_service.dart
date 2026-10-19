@@ -285,6 +285,8 @@ class LeaveApplication {
   final String? halfDaySession;
   final String reason;
   final String status;
+  final String? applyingTo;
+  final String? cc;
   final String? reviewedBy;
   final String? reviewedByName;
   final DateTime? reviewedAt;
@@ -306,6 +308,8 @@ class LeaveApplication {
     this.halfDaySession,
     required this.reason,
     required this.status,
+    this.applyingTo,
+    this.cc,
     this.reviewedBy,
     this.reviewedByName,
     this.reviewedAt,
@@ -329,6 +333,8 @@ class LeaveApplication {
       halfDaySession: json['halfDaySession'],
       reason: json['reason'] ?? '',
       status: json['status'] ?? 'PENDING',
+      applyingTo: json['applyingTo'],
+      cc: json['cc'],
       reviewedBy: json['reviewedBy'],
       reviewedByName: json['reviewedByName'],
       reviewedAt: json['reviewedAt'] != null ? DateTime.tryParse(json['reviewedAt']) : null,
@@ -712,6 +718,8 @@ class ApiService {
     required bool isHalfDay,
     String? halfDaySession,
     required String reason,
+    String? applyingTo,
+    String? cc,
   }) async {
     try {
       final payload = <String, dynamic>{
@@ -723,6 +731,12 @@ class ApiService {
       };
       if (halfDaySession != null) {
         payload['halfDaySession'] = halfDaySession;
+      }
+      if (applyingTo != null && applyingTo.isNotEmpty) {
+        payload['applyingTo'] = applyingTo;
+      }
+      if (cc != null && cc.isNotEmpty) {
+        payload['cc'] = cc;
       }
 
       final response = await http.post(

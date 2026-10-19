@@ -50,6 +50,8 @@ CREATE TABLE IF NOT EXISTS leave_applications (
     is_half_day BOOLEAN NOT NULL DEFAULT FALSE,
     half_day_session VARCHAR(20) NULL,
     reason TEXT NOT NULL,
+    applying_to VARCHAR(150) DEFAULT 'Mathumitha',
+    cc TEXT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
     reviewed_by UUID NULL REFERENCES employees(id) ON DELETE SET NULL,
     reviewed_at TIMESTAMPTZ NULL,
@@ -57,7 +59,7 @@ CREATE TABLE IF NOT EXISTS leave_applications (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT chk_leave_dates CHECK (start_date <= end_date),
-    CONSTRAINT chk_leave_status CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED', 'CANCELLED')),
+    CONSTRAINT chk_leave_status CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED', 'CANCELLED', 'WITHDRAWN', 'CANCELLATION_PENDING')),
     CONSTRAINT chk_half_day_session CHECK (half_day_session IS NULL OR half_day_session IN ('FIRST_HALF', 'SECOND_HALF'))
 );
 

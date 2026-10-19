@@ -70,6 +70,8 @@ type LeaveApplication struct {
 	HalfDaySession *HalfDaySession `json:"halfDaySession,omitempty"`
 	Reason         string          `json:"reason"`
 	AttachmentURL  *string         `json:"attachmentUrl,omitempty"`
+	ApplyingTo     *string         `json:"applyingTo,omitempty"`
+	CC             *string         `json:"cc,omitempty"`
 	Status         LeaveStatus     `json:"status"`
 	ReviewedBy     *uuid.UUID      `json:"reviewedBy,omitempty"`
 	ReviewedByName string          `json:"reviewedByName,omitempty"`

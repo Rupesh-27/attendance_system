@@ -127,6 +127,11 @@ func (s *leaveService) ApplyLeave(ctx context.Context, employeeID uuid.UUID, req
 
 	// 4. Create application in PENDING status
 	now := s.clock()
+	applyingTo := "Mathumitha"
+	if req.ApplyingTo != nil && *req.ApplyingTo != "" {
+		applyingTo = *req.ApplyingTo
+	}
+
 	app := &domain.LeaveApplication{
 		ID:             uuid.New(),
 		EmployeeID:     employeeID,
@@ -138,6 +143,8 @@ func (s *leaveService) ApplyLeave(ctx context.Context, employeeID uuid.UUID, req
 		HalfDaySession: req.HalfDaySession,
 		Reason:         req.Reason,
 		AttachmentURL:  req.AttachmentURL,
+		ApplyingTo:     &applyingTo,
+		CC:             req.CC,
 		Status:         domain.LeaveStatusPending,
 		CreatedAt:      now,
 		UpdatedAt:      now,

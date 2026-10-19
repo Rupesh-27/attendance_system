@@ -61,6 +61,8 @@ type ApplyLeaveRequest struct {
 	HalfDaySession *domain.HalfDaySession `json:"halfDaySession,omitempty"`
 	Reason         string                 `json:"reason"`
 	AttachmentURL  *string                `json:"attachmentUrl,omitempty"`
+	ApplyingTo     *string                `json:"applyingTo,omitempty"`
+	CC             *string                `json:"cc,omitempty"`
 }
 
 type LeaveService interface {

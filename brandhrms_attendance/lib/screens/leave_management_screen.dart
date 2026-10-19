@@ -148,7 +148,7 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
               ),
             ),
             Text(
-              '${_balances.length} Categories',
+              '${_balances.length} Types',
               style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
             ),
           ],
@@ -519,6 +519,29 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
               ),
             ],
           ),
+          if (app.applyingTo != null && app.applyingTo!.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                const Icon(Icons.person_outline, size: 13, color: Color(0xFF64748B)),
+                const SizedBox(width: 4),
+                Text(
+                  'Applying to: ${app.applyingTo}',
+                  style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
+                ),
+                if (app.cc != null && app.cc!.isNotEmpty) ...[
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      '• CC: ${app.cc}',
+                      style: const TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
           if (app.reason.isNotEmpty) ...[
             const SizedBox(height: 8),
             Text(
@@ -702,9 +725,66 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
   bool _isHalfDay = false;
   String _halfDaySession = 'FIRST_HALF';
   final TextEditingController _reasonController = TextEditingController();
+  final String _applyingTo = 'Mathumitha';
+  final List<String> _ccList = [];
 
   bool _isSubmitting = false;
   String? _errorMessage;
+
+  void _showAddCcDialog() {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Add CC', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Enter colleague name or email to keep them notified:',
+              style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: 'e.g. Alice Smith, HR',
+                filled: true,
+                fillColor: const Color(0xFFF8FAFC),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final text = controller.text.trim();
+              if (text.isNotEmpty && !_ccList.contains(text)) {
+                setState(() => _ccList.add(text));
+              }
+              Navigator.pop(ctx);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primaryColor,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('Add', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -756,7 +836,7 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
 
   Future<void> _submit() async {
     if (_selectedTypeId == null) {
-      setState(() => _errorMessage = 'Please select a leave category');
+      setState(() => _errorMessage = 'Please select a leave type');
       return;
     }
     if (_reasonController.text.trim().isEmpty) {
@@ -788,6 +868,8 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
       isHalfDay: _isHalfDay,
       halfDaySession: _isHalfDay ? _halfDaySession : null,
       reason: _reasonController.text.trim(),
+      applyingTo: _applyingTo,
+      cc: _ccList.isNotEmpty ? _ccList.join(', ') : null,
     );
 
     if (mounted) {
@@ -840,9 +922,145 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
             const Divider(color: Color(0xFFE2E8F0)),
             const SizedBox(height: 12),
 
-            // Leave Category Dropdown
+            // Applying to and CC to
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      RichText(
+                        text: const TextSpan(
+                          text: 'Applying to ',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF334155),
+                          ),
+                          children: [
+                            TextSpan(
+                              text: '*',
+                              style: TextStyle(color: Color(0xFFEF4444)),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFCBD5E1)),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 28,
+                              height: 28,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFE0F2FE),
+                                shape: BoxShape.circle,
+                              ),
+                              alignment: Alignment.center,
+                              child: const Text(
+                                'M',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF0284C7),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            const Expanded(
+                              child: Text(
+                                'Mathumitha',
+                                style: TextStyle(
+                                  fontSize: 13.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF1E293B),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'CC to',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    InkWell(
+                      onTap: _showAddCcDialog,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFCBD5E1)),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.add_circle_outline, size: 16, color: primaryColor),
+                            SizedBox(width: 6),
+                            Text(
+                              'Add',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: primaryColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            if (_ccList.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 6,
+                runSpacing: 4,
+                children: _ccList.map((cc) {
+                  return Chip(
+                    backgroundColor: const Color(0xFFF1F5F9),
+                    side: const BorderSide(color: Color(0xFFE2E8F0)),
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    label: Text(cc, style: const TextStyle(fontSize: 11, color: Color(0xFF334155))),
+                    deleteIcon: const Icon(Icons.close, size: 14, color: Color(0xFF64748B)),
+                    onDeleted: () {
+                      setState(() {
+                        _ccList.remove(cc);
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
+            ],
+            const SizedBox(height: 16),
+
+            // Leave Type Dropdown
             const Text(
-              'Leave Category',
+              'Leave Type',
               style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
             ),
             const SizedBox(height: 6),
@@ -1060,7 +1278,7 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Start Date',
+                        'From Date',
                         style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
                       ),
                       const SizedBox(height: 6),
@@ -1112,7 +1330,7 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          'End Date',
+                          'To Date',
                           style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
                         ),
                         const SizedBox(height: 6),
