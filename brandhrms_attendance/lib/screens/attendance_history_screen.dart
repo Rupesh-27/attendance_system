@@ -987,8 +987,29 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                   ],
                                 ),
                               ],
-                              if (session.checkInLatitude != 0.0 || session.checkInLongitude != 0.0) ...[
+                              if (session.checkInAddress != null && session.checkInAddress!.isNotEmpty) ...[
                                 const SizedBox(height: 6),
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Icon(Icons.location_on_outlined,
+                                        size: 16, color: primaryColor),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        session.checkInAddress!,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey.shade800,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                              if (session.checkInLatitude != 0.0 || session.checkInLongitude != 0.0) ...[
+                                const SizedBox(height: 4),
                                 Row(
                                   children: [
                                     const Icon(Icons.pin_drop_outlined,
@@ -1012,6 +1033,27 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                         ),
                                       ),
                                     ],
+                                  ],
+                                ),
+                              ],
+                              if (session.checkOutAddress != null && session.checkOutAddress!.isNotEmpty) ...[
+                                const SizedBox(height: 6),
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Icon(Icons.location_on_outlined,
+                                        size: 16, color: Colors.orange.shade700),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        session.checkOutAddress!,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey.shade800,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ],

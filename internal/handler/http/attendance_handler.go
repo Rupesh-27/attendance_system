@@ -41,6 +41,7 @@ func (h *AttendanceHandler) CheckIn(c *gin.Context) {
 		Longitude:      req.Longitude,
 		AccuracyMeters: req.AccuracyMeters,
 		CapturedAt:     req.CapturedAt,
+		Address:        req.Address,
 	}
 
 	session, err := h.attendanceService.CheckIn(c.Request.Context(), empID, gps)
@@ -78,6 +79,7 @@ func (h *AttendanceHandler) CheckOut(c *gin.Context) {
 		Longitude:      req.Longitude,
 		AccuracyMeters: req.AccuracyMeters,
 		CapturedAt:     req.CapturedAt,
+		Address:        req.Address,
 	}
 
 	session, err := h.attendanceService.CheckOut(c.Request.Context(), empID, gps)
@@ -125,6 +127,7 @@ func (h *AttendanceHandler) ForceCheckOut(c *gin.Context) {
 		Longitude:      req.Longitude,
 		AccuracyMeters: req.AccuracyMeters,
 		CapturedAt:     req.CapturedAt,
+		Address:        req.Address,
 	}
 
 	reason := domain.CheckoutReasonForceOutOfRadius

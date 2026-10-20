@@ -50,6 +50,7 @@ type AttendanceSession struct {
 	CheckInAccuracyMeters float64   `json:"checkInAccuracyMeters"`
 	CheckInCapturedAt     time.Time `json:"checkInCapturedAt"`
 	CheckInDistanceMeters float64   `json:"checkInDistanceMeters"`
+	CheckInAddress        *string   `json:"checkInAddress,omitempty"`
 
 	// Check-Out Telemetry & Decision (populated upon completion)
 	CheckOutTime           *time.Time `json:"checkOutTime,omitempty"` // Server authoritative
@@ -58,6 +59,7 @@ type AttendanceSession struct {
 	CheckOutAccuracyMeters *float64   `json:"checkOutAccuracyMeters,omitempty"`
 	CheckOutCapturedAt     *time.Time `json:"checkOutCapturedAt,omitempty"`
 	CheckOutDistanceMeters *float64   `json:"checkOutDistanceMeters,omitempty"`
+	CheckOutAddress        *string    `json:"checkOutAddress,omitempty"`
 
 	// Calculated Duration in seconds
 	DurationSeconds      *int64           `json:"durationSeconds,omitempty"`
@@ -105,6 +107,7 @@ func (s *AttendanceSession) CompleteCheckoutWithReason(
 	s.CheckOutAccuracyMeters = &gps.AccuracyMeters
 	s.CheckOutCapturedAt = &gps.CapturedAt
 	s.CheckOutDistanceMeters = &distanceMeters
+	s.CheckOutAddress = gps.Address
 	s.DurationSeconds = &duration
 	if reason == "" {
 		s.CheckoutReason = CheckoutReasonManual

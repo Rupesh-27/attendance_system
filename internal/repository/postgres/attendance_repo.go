@@ -26,8 +26,8 @@ func (r *attendanceRepo) GetActiveSession(ctx context.Context, employeeID uuid.U
 		SELECT
 			id, employee_id, office_id,
 			office_snapshot_name, office_snapshot_lat, office_snapshot_lon, office_snapshot_radius,
-			check_in_time, check_in_latitude, check_in_longitude, check_in_accuracy_meters, check_in_captured_at, check_in_distance_meters,
-			check_out_time, check_out_latitude, check_out_longitude, check_out_accuracy_meters, check_out_captured_at, check_out_distance_meters,
+			check_in_time, check_in_latitude, check_in_longitude, check_in_accuracy_meters, check_in_captured_at, check_in_distance_meters, check_in_address,
+			check_out_time, check_out_latitude, check_out_longitude, check_out_accuracy_meters, check_out_captured_at, check_out_distance_meters, check_out_address,
 			duration_seconds, checkout_reason, initial_out_of_radius_at, status, attendance_day, created_at, updated_at
 		FROM attendance_sessions
 		WHERE employee_id = $1 AND status IN ('CHECKED_IN', 'CARRIED_OVER')
@@ -49,12 +49,14 @@ func (r *attendanceRepo) GetActiveSession(ctx context.Context, employeeID uuid.U
 		&s.CheckInAccuracyMeters,
 		&s.CheckInCapturedAt,
 		&s.CheckInDistanceMeters,
+		&s.CheckInAddress,
 		&s.CheckOutTime,
 		&s.CheckOutLatitude,
 		&s.CheckOutLongitude,
 		&s.CheckOutAccuracyMeters,
 		&s.CheckOutCapturedAt,
 		&s.CheckOutDistanceMeters,
+		&s.CheckOutAddress,
 		&s.DurationSeconds,
 		&s.CheckoutReason,
 		&s.InitialOutOfRadiusAt,
@@ -84,13 +86,13 @@ func (r *attendanceRepo) CreateSession(ctx context.Context, s *domain.Attendance
 		INSERT INTO attendance_sessions (
 			id, employee_id, office_id,
 			office_snapshot_name, office_snapshot_lat, office_snapshot_lon, office_snapshot_radius,
-			check_in_time, check_in_latitude, check_in_longitude, check_in_accuracy_meters, check_in_captured_at, check_in_distance_meters,
+			check_in_time, check_in_latitude, check_in_longitude, check_in_accuracy_meters, check_in_captured_at, check_in_distance_meters, check_in_address,
 			checkout_reason, initial_out_of_radius_at, status, attendance_day, created_at, updated_at
 		) VALUES (
 			$1, $2, $3,
 			$4, $5, $6, $7,
-			$8, $9, $10, $11, $12, $13,
-			$14, $15, $16, $17, $18, $19
+			$8, $9, $10, $11, $12, $13, $14,
+			$15, $16, $17, $18, $19, $20
 		)
 	`
 	var attDay time.Time
@@ -107,7 +109,7 @@ func (r *attendanceRepo) CreateSession(ctx context.Context, s *domain.Attendance
 	_, err := r.db.Pool.Exec(ctx, query,
 		s.ID, s.EmployeeID, s.OfficeID,
 		s.OfficeSnapshotName, s.OfficeSnapshotLat, s.OfficeSnapshotLon, s.OfficeSnapshotRadius,
-		s.CheckInTime, s.CheckInLatitude, s.CheckInLongitude, s.CheckInAccuracyMeters, s.CheckInCapturedAt, s.CheckInDistanceMeters,
+		s.CheckInTime, s.CheckInLatitude, s.CheckInLongitude, s.CheckInAccuracyMeters, s.CheckInCapturedAt, s.CheckInDistanceMeters, s.CheckInAddress,
 		reason, s.InitialOutOfRadiusAt, s.Status, attDay, s.CreatedAt, s.UpdatedAt,
 	)
 	if err != nil {
@@ -136,12 +138,13 @@ func (r *attendanceRepo) UpdateSession(ctx context.Context, s *domain.Attendance
 			check_out_accuracy_meters = $4,
 			check_out_captured_at = $5,
 			check_out_distance_meters = $6,
-			duration_seconds = $7,
-			checkout_reason = $8,
-			initial_out_of_radius_at = $9,
-			status = $10,
-			updated_at = $11
-		WHERE id = $12
+			check_out_address = $7,
+			duration_seconds = $8,
+			checkout_reason = $9,
+			initial_out_of_radius_at = $10,
+			status = $11,
+			updated_at = $12
+		WHERE id = $13
 	`
 	cmdTag, err := r.db.Pool.Exec(ctx, query,
 		s.CheckOutTime,
@@ -150,6 +153,7 @@ func (r *attendanceRepo) UpdateSession(ctx context.Context, s *domain.Attendance
 		s.CheckOutAccuracyMeters,
 		s.CheckOutCapturedAt,
 		s.CheckOutDistanceMeters,
+		s.CheckOutAddress,
 		s.DurationSeconds,
 		reason,
 		s.InitialOutOfRadiusAt,
@@ -204,8 +208,8 @@ func (r *attendanceRepo) GetExpiredBreachSessions(ctx context.Context, cutoff ti
 		SELECT
 			id, employee_id, office_id,
 			office_snapshot_name, office_snapshot_lat, office_snapshot_lon, office_snapshot_radius,
-			check_in_time, check_in_latitude, check_in_longitude, check_in_accuracy_meters, check_in_captured_at, check_in_distance_meters,
-			check_out_time, check_out_latitude, check_out_longitude, check_out_accuracy_meters, check_out_captured_at, check_out_distance_meters,
+			check_in_time, check_in_latitude, check_in_longitude, check_in_accuracy_meters, check_in_captured_at, check_in_distance_meters, check_in_address,
+			check_out_time, check_out_latitude, check_out_longitude, check_out_accuracy_meters, check_out_captured_at, check_out_distance_meters, check_out_address,
 			duration_seconds, checkout_reason, initial_out_of_radius_at, status, attendance_day, created_at, updated_at
 		FROM attendance_sessions
 		WHERE status IN ('CHECKED_IN', 'CARRIED_OVER')
@@ -237,12 +241,14 @@ func (r *attendanceRepo) GetExpiredBreachSessions(ctx context.Context, cutoff ti
 			&s.CheckInAccuracyMeters,
 			&s.CheckInCapturedAt,
 			&s.CheckInDistanceMeters,
+			&s.CheckInAddress,
 			&s.CheckOutTime,
 			&s.CheckOutLatitude,
 			&s.CheckOutLongitude,
 			&s.CheckOutAccuracyMeters,
 			&s.CheckOutCapturedAt,
 			&s.CheckOutDistanceMeters,
+			&s.CheckOutAddress,
 			&s.DurationSeconds,
 			&s.CheckoutReason,
 			&s.InitialOutOfRadiusAt,
@@ -268,8 +274,8 @@ func (r *attendanceRepo) GetSessionsByAttendanceDay(ctx context.Context, employe
 		SELECT
 			id, employee_id, office_id,
 			office_snapshot_name, office_snapshot_lat, office_snapshot_lon, office_snapshot_radius,
-			check_in_time, check_in_latitude, check_in_longitude, check_in_accuracy_meters, check_in_captured_at, check_in_distance_meters,
-			check_out_time, check_out_latitude, check_out_longitude, check_out_accuracy_meters, check_out_captured_at, check_out_distance_meters,
+			check_in_time, check_in_latitude, check_in_longitude, check_in_accuracy_meters, check_in_captured_at, check_in_distance_meters, check_in_address,
+			check_out_time, check_out_latitude, check_out_longitude, check_out_accuracy_meters, check_out_captured_at, check_out_distance_meters, check_out_address,
 			duration_seconds, checkout_reason, initial_out_of_radius_at, status, attendance_day, created_at, updated_at
 		FROM attendance_sessions
 		WHERE employee_id = $1 AND attendance_day = $2
@@ -299,12 +305,14 @@ func (r *attendanceRepo) GetSessionsByAttendanceDay(ctx context.Context, employe
 			&s.CheckInAccuracyMeters,
 			&s.CheckInCapturedAt,
 			&s.CheckInDistanceMeters,
+			&s.CheckInAddress,
 			&s.CheckOutTime,
 			&s.CheckOutLatitude,
 			&s.CheckOutLongitude,
 			&s.CheckOutAccuracyMeters,
 			&s.CheckOutCapturedAt,
 			&s.CheckOutDistanceMeters,
+			&s.CheckOutAddress,
 			&s.DurationSeconds,
 			&s.CheckoutReason,
 			&s.InitialOutOfRadiusAt,
@@ -345,8 +353,8 @@ func (r *attendanceRepo) GetHistoryByEmployeeID(
 		SELECT
 			id, employee_id, office_id,
 			office_snapshot_name, office_snapshot_lat, office_snapshot_lon, office_snapshot_radius,
-			check_in_time, check_in_latitude, check_in_longitude, check_in_accuracy_meters, check_in_captured_at, check_in_distance_meters,
-			check_out_time, check_out_latitude, check_out_longitude, check_out_accuracy_meters, check_out_captured_at, check_out_distance_meters,
+			check_in_time, check_in_latitude, check_in_longitude, check_in_accuracy_meters, check_in_captured_at, check_in_distance_meters, check_in_address,
+			check_out_time, check_out_latitude, check_out_longitude, check_out_accuracy_meters, check_out_captured_at, check_out_distance_meters, check_out_address,
 			duration_seconds, checkout_reason, initial_out_of_radius_at, status, attendance_day, created_at, updated_at
 		FROM attendance_sessions
 		WHERE employee_id = $1
@@ -379,12 +387,14 @@ func (r *attendanceRepo) GetHistoryByEmployeeID(
 			&s.CheckInAccuracyMeters,
 			&s.CheckInCapturedAt,
 			&s.CheckInDistanceMeters,
+			&s.CheckInAddress,
 			&s.CheckOutTime,
 			&s.CheckOutLatitude,
 			&s.CheckOutLongitude,
 			&s.CheckOutAccuracyMeters,
 			&s.CheckOutCapturedAt,
 			&s.CheckOutDistanceMeters,
+			&s.CheckOutAddress,
 			&s.DurationSeconds,
 			&s.CheckoutReason,
 			&s.InitialOutOfRadiusAt,

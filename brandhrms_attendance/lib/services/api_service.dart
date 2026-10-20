@@ -101,11 +101,13 @@ class AttendanceRecord {
   final double checkInLongitude;
   final double checkInAccuracyMeters;
   final double checkInDistanceMeters;
+  final String? checkInAddress;
   final DateTime? checkOutTime;
   final double? checkOutLatitude;
   final double? checkOutLongitude;
   final double? checkOutAccuracyMeters;
   final double? checkOutDistanceMeters;
+  final String? checkOutAddress;
   final int? durationSeconds;
   final String status;
   final String? checkoutReason;
@@ -122,11 +124,13 @@ class AttendanceRecord {
     this.checkInLongitude = 0.0,
     this.checkInAccuracyMeters = 0.0,
     required this.checkInDistanceMeters,
+    this.checkInAddress,
     this.checkOutTime,
     this.checkOutLatitude,
     this.checkOutLongitude,
     this.checkOutAccuracyMeters,
     this.checkOutDistanceMeters,
+    this.checkOutAddress,
     this.durationSeconds,
     required this.status,
     this.checkoutReason,
@@ -145,11 +149,13 @@ class AttendanceRecord {
       checkInLongitude: (json['checkInLongitude'] as num?)?.toDouble() ?? 0.0,
       checkInAccuracyMeters: (json['checkInAccuracyMeters'] as num?)?.toDouble() ?? 0.0,
       checkInDistanceMeters: (json['checkInDistanceMeters'] as num?)?.toDouble() ?? 0.0,
+      checkInAddress: json['checkInAddress'],
       checkOutTime: json['checkOutTime'] != null ? DateTime.parse(json['checkOutTime']) : null,
       checkOutLatitude: (json['checkOutLatitude'] as num?)?.toDouble(),
       checkOutLongitude: (json['checkOutLongitude'] as num?)?.toDouble(),
       checkOutAccuracyMeters: (json['checkOutAccuracyMeters'] as num?)?.toDouble(),
       checkOutDistanceMeters: (json['checkOutDistanceMeters'] as num?)?.toDouble(),
+      checkOutAddress: json['checkOutAddress'],
       durationSeconds: json['durationSeconds'] as int?,
       status: json['status'] ?? 'CHECKED_IN',
       checkoutReason: json['checkoutReason'],
@@ -443,6 +449,7 @@ class ApiService {
     required double latitude,
     required double longitude,
     required double accuracyMeters,
+    String? address,
   }) async {
     try {
       final response = await http.post(
@@ -453,6 +460,7 @@ class ApiService {
           'longitude': longitude,
           'accuracyMeters': accuracyMeters,
           'capturedAt': DateTime.now().toUtc().toIso8601String(),
+          if (address != null && address.trim().isNotEmpty) 'address': address.trim(),
         }),
       );
 
@@ -487,6 +495,7 @@ class ApiService {
     required double latitude,
     required double longitude,
     required double accuracyMeters,
+    String? address,
   }) async {
     try {
       final response = await http.post(
@@ -497,6 +506,7 @@ class ApiService {
           'longitude': longitude,
           'accuracyMeters': accuracyMeters,
           'capturedAt': DateTime.now().toUtc().toIso8601String(),
+          if (address != null && address.trim().isNotEmpty) 'address': address.trim(),
         }),
       );
 
@@ -534,6 +544,7 @@ class ApiService {
     required double accuracyMeters,
     DateTime? breachedAt,
     String? reason,
+    String? address,
   }) async {
     try {
       final response = await http.post(
@@ -546,6 +557,7 @@ class ApiService {
           'capturedAt': DateTime.now().toUtc().toIso8601String(),
           if (breachedAt != null) 'breachedAt': breachedAt.toUtc().toIso8601String(),
           if (reason != null && reason.isNotEmpty) 'reason': reason,
+          if (address != null && address.trim().isNotEmpty) 'address': address.trim(),
         }),
       );
 

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../services/api_service.dart';
+import '../services/geocoding_service.dart';
 import '../services/location_monitor_service.dart';
 import 'attendance_history_screen.dart';
 import 'leave_management_screen.dart';
@@ -785,16 +786,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       );
 
+      final address = await GeocodingService.getAddressFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+
       final result = _isCheckedIn
           ? await ApiService.checkOut(
               latitude: position.latitude,
               longitude: position.longitude,
               accuracyMeters: position.accuracy,
+              address: address,
             )
           : await ApiService.checkIn(
               latitude: position.latitude,
               longitude: position.longitude,
               accuracyMeters: position.accuracy,
+              address: address,
             );
 
       if (mounted) {
@@ -1781,6 +1789,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                         ],
                       ),
+                      if (session.checkInAddress != null && session.checkInAddress!.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Row(
+                          children: [
+                            const SizedBox(width: 22),
+                            Icon(Icons.location_on_outlined, size: 12, color: Colors.grey.shade500),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                session.checkInAddress!,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey.shade600,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                       if (session.checkOutTime != null) ...[
                         const SizedBox(height: 4),
                         Row(
@@ -1799,6 +1828,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ),
                           ],
                         ),
+                        if (session.checkOutAddress != null && session.checkOutAddress!.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Row(
+                            children: [
+                              const SizedBox(width: 22),
+                              Icon(Icons.location_on_outlined, size: 12, color: Colors.grey.shade500),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  session.checkOutAddress!,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
                     ],
                   );

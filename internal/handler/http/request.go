@@ -12,6 +12,7 @@ type GPSRequest struct {
 	Longitude      float64   `json:"longitude" binding:"required"`
 	AccuracyMeters float64   `json:"accuracyMeters" binding:"required"`
 	CapturedAt     time.Time `json:"capturedAt" binding:"required"`
+	Address        *string   `json:"address,omitempty"`
 }
 
 type ForceCheckoutRequest struct {
@@ -19,6 +20,7 @@ type ForceCheckoutRequest struct {
 	Longitude      float64    `json:"longitude" binding:"required"`
 	AccuracyMeters float64    `json:"accuracyMeters" binding:"required"`
 	CapturedAt     time.Time  `json:"capturedAt" binding:"required"`
+	Address        *string    `json:"address,omitempty"`
 	BreachedAt     *time.Time `json:"breachedAt,omitempty"`
 	Reason         string     `json:"reason,omitempty"`
 }

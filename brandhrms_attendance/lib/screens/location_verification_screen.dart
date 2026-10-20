@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../services/api_service.dart';
+import '../services/geocoding_service.dart';
 
 class LocationVerificationScreen extends StatefulWidget {
   final bool isCheckOut;
@@ -87,16 +88,23 @@ class _LocationVerificationScreenState
             'Validating with backend server...';
       });
 
+      final address = await GeocodingService.getAddressFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+
       final result = widget.isCheckOut
           ? await ApiService.checkOut(
               latitude: position.latitude,
               longitude: position.longitude,
               accuracyMeters: position.accuracy,
+              address: address,
             )
           : await ApiService.checkIn(
               latitude: position.latitude,
               longitude: position.longitude,
               accuracyMeters: position.accuracy,
+              address: address,
             );
 
       if (!mounted) return;

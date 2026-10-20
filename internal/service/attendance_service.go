@@ -129,6 +129,7 @@ func (s *attendanceService) CheckIn(
 		CheckInAccuracyMeters: gps.AccuracyMeters,
 		CheckInCapturedAt:     gps.CapturedAt,
 		CheckInDistanceMeters: distance,
+		CheckInAddress:        gps.Address,
 		AttendanceDay:         attendanceDay,
 		Source:                domain.SourceGPSMobile,
 		Status:                domain.StatusCheckedIn,

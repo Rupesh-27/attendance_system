@@ -17,6 +17,7 @@ type GPSLocation struct {
 	Longitude      float64   `json:"longitude"`
 	AccuracyMeters float64   `json:"accuracyMeters"`
 	CapturedAt     time.Time `json:"capturedAt"`
+	Address        *string   `json:"address,omitempty"`
 }
 
 // Validate checks the GPS coordinates, accuracy threshold, and freshness against server authoritative time.
