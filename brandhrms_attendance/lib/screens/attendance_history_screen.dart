@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
+import '../services/language_service.dart';
 
 class AttendanceHistoryScreen extends StatefulWidget {
   const AttendanceHistoryScreen({super.key});
@@ -261,9 +262,9 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
         automaticallyImplyLeading: false,
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
-        title: const Text(
-          'Attendance',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          tr('attendance'),
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(
@@ -649,45 +650,71 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                   ],
                 ),
               ),
-              if (daySessions.isNotEmpty)
-                InkWell(
-                  onTap: () => _showSwipesBreakdownModal(
-                    date: _selectedDay,
-                    officeName: officeName,
-                    sessions: daySessions,
-                    totalWorkFormatted: totalDurationSec > 0
-                        ? '${hours}hr ${mins}mins'
-                        : '0hr 0mins',
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE0F2FE),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (daySessions.isNotEmpty)
+                    InkWell(
+                      onTap: () => _showSwipesBreakdownModal(
+                        date: _selectedDay,
+                        officeName: officeName,
+                        sessions: daySessions,
+                        totalWorkFormatted: totalDurationSec > 0
+                            ? '${hours}hr ${mins}mins'
+                            : '0hr 0mins',
+                      ),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0xFF7DD3FC)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: const [
-                        Icon(Icons.visibility_outlined,
-                            size: 16, color: Color(0xFF0284C7)),
-                        SizedBox(width: 4),
-                        Text(
-                          'View',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF0284C7),
-                          ),
+                      child: Container(
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE0F2FE),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: const Color(0xFF7DD3FC)),
                         ),
-                      ],
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(Icons.visibility_outlined,
+                                size: 16, color: Color(0xFF0284C7)),
+                            SizedBox(width: 4),
+                            Text(
+                              'View',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF0284C7),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  else
+                    _buildBadge(status),
+                  const SizedBox(width: 8),
+                  InkWell(
+                    onTap: _showMonthFilterPicker,
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFFCBD5E1)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Icon(Icons.filter_list_rounded, size: 16, color: Color(0xFF334155)),
+                          SizedBox(width: 4),
+                          Icon(Icons.arrow_drop_down, size: 16, color: Color(0xFF64748B)),
+                        ],
+                      ),
                     ),
                   ),
-                )
-              else
-                _buildBadge(status),
+                ],
+              ),
             ],
           ),
 
@@ -875,6 +902,12 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                         final session = sessions[index];
                         final isCurrent = session.status == 'CHECKED_IN' &&
                             session.checkOutTime == null;
+                        final inLoc = (session.checkInAddress != null && session.checkInAddress!.isNotEmpty)
+                            ? session.checkInAddress!
+                            : session.officeSnapshotName;
+                        final outLoc = (session.checkOutAddress != null && session.checkOutAddress!.isNotEmpty)
+                            ? session.checkOutAddress!
+                            : session.officeSnapshotName;
 
                         return Padding(
                           padding: const EdgeInsets.symmetric(vertical: 4),
@@ -987,17 +1020,25 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                   ],
                                 ),
                               ],
-                              if (session.checkInAddress != null && session.checkInAddress!.isNotEmpty) ...[
-                                const SizedBox(height: 6),
+                              if (inLoc.isNotEmpty) ...[
+                                const SizedBox(height: 5),
                                 Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     const Icon(Icons.location_on_outlined,
                                         size: 16, color: primaryColor),
                                     const SizedBox(width: 6),
+                                    const Text(
+                                      'Check-in Location: ',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF334155),
+                                      ),
+                                    ),
                                     Expanded(
                                       child: Text(
-                                        session.checkInAddress!,
+                                        inLoc,
                                         style: TextStyle(
                                           fontSize: 12,
                                           color: Colors.grey.shade800,
@@ -1008,45 +1049,25 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                   ],
                                 ),
                               ],
-                              if (session.checkInLatitude != 0.0 || session.checkInLongitude != 0.0) ...[
-                                const SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    const Icon(Icons.pin_drop_outlined,
-                                        size: 16, color: primaryColor),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      'Check-in Loc: ${session.checkInLatitude.toStringAsFixed(6)}, ${session.checkInLongitude.toStringAsFixed(6)}',
-                                      style: TextStyle(
-                                        fontSize: 11.5,
-                                        color: Colors.grey.shade700,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    if (session.checkInAccuracyMeters > 0) ...[
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        '(±${session.checkInAccuracyMeters.toStringAsFixed(0)}m)',
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          color: Colors.grey.shade500,
-                                        ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ],
-                              if (session.checkOutAddress != null && session.checkOutAddress!.isNotEmpty) ...[
-                                const SizedBox(height: 6),
+                              if (session.checkOutTime != null && outLoc.isNotEmpty) ...[
+                                const SizedBox(height: 5),
                                 Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Icon(Icons.location_on_outlined,
                                         size: 16, color: Colors.orange.shade700),
                                     const SizedBox(width: 6),
+                                    const Text(
+                                      'Check-out Location: ',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF334155),
+                                      ),
+                                    ),
                                     Expanded(
                                       child: Text(
-                                        session.checkOutAddress!,
+                                        outLoc,
                                         style: TextStyle(
                                           fontSize: 12,
                                           color: Colors.grey.shade800,
@@ -1054,35 +1075,6 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                         ),
                                       ),
                                     ),
-                                  ],
-                                ),
-                              ],
-                              if (session.checkOutLatitude != null &&
-                                  (session.checkOutLatitude != 0.0 || (session.checkOutLongitude ?? 0.0) != 0.0)) ...[
-                                const SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    Icon(Icons.pin_drop_outlined,
-                                        size: 16, color: Colors.orange.shade700),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      'Check-out Loc: ${session.checkOutLatitude!.toStringAsFixed(6)}, ${session.checkOutLongitude!.toStringAsFixed(6)}',
-                                      style: TextStyle(
-                                        fontSize: 11.5,
-                                        color: Colors.grey.shade700,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    if (session.checkOutAccuracyMeters != null && session.checkOutAccuracyMeters! > 0) ...[
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        '(±${session.checkOutAccuracyMeters!.toStringAsFixed(0)}m)',
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          color: Colors.grey.shade500,
-                                        ),
-                                      ),
-                                    ],
                                   ],
                                 ),
                               ],
@@ -1091,6 +1083,654 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                         );
                       },
                     ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showMonthFilterPicker() {
+    int selectedYear = _currentMonth.year;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final now = DateTime.now();
+            final months = [
+              'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+              'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+            ];
+
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Select Month',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'View full check-in/out records for that month',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 20),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.chevron_left, size: 22),
+                          onPressed: () {
+                            setModalState(() => selectedYear--);
+                          },
+                        ),
+                        Text(
+                          '$selectedYear',
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1E293B),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.chevron_right, size: 22),
+                          onPressed: () {
+                            setModalState(() => selectedYear++);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 4,
+                      crossAxisSpacing: 8,
+                      mainAxisSpacing: 8,
+                      childAspectRatio: 1.6,
+                    ),
+                    itemCount: 12,
+                    itemBuilder: (context, index) {
+                      final monthNum = index + 1;
+                      final isSelected = selectedYear == _currentMonth.year &&
+                          monthNum == _currentMonth.month;
+                      final isCurrentActualMonth = selectedYear == now.year &&
+                          monthNum == now.month;
+
+                      return InkWell(
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          _loadAndShowMonthlyDetails(DateTime(selectedYear, monthNum, 1));
+                        },
+                        borderRadius: BorderRadius.circular(10),
+                        child: Container(
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? primaryColor
+                                : (isCurrentActualMonth
+                                    ? const Color(0xFFE0F2FE)
+                                    : const Color(0xFFF1F5F9)),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: isSelected
+                                  ? primaryColor
+                                  : (isCurrentActualMonth
+                                      ? const Color(0xFF7DD3FC)
+                                      : const Color(0xFFCBD5E1)),
+                            ),
+                          ),
+                          child: Text(
+                            months[index],
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: isSelected
+                                  ? Colors.white
+                                  : (isCurrentActualMonth
+                                      ? const Color(0xFF0284C7)
+                                      : const Color(0xFF334155)),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 14),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _loadAndShowMonthlyDetails(DateTime targetMonth) async {
+    if (_currentMonth.year == targetMonth.year &&
+        _currentMonth.month == targetMonth.month &&
+        _records.isNotEmpty) {
+      _showMonthlyAttendanceModal(targetMonth, _records);
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const Center(
+        child: CircularProgressIndicator(color: primaryColor),
+      ),
+    );
+
+    try {
+      final startOfMonth = DateTime(targetMonth.year, targetMonth.month, 1);
+      final daysInMonth = DateTime(targetMonth.year, targetMonth.month + 1, 0).day;
+      final endOfMonth = DateTime(targetMonth.year, targetMonth.month, daysInMonth);
+
+      final from = '${startOfMonth.year}-${startOfMonth.month.toString().padLeft(2, '0')}-01';
+      final to = '${endOfMonth.year}-${endOfMonth.month.toString().padLeft(2, '0')}-${endOfMonth.day.toString().padLeft(2, '0')}';
+
+      final records = await ApiService.getHistory(from: from, to: to);
+
+      if (mounted) {
+        Navigator.pop(context);
+        setState(() {
+          _currentMonth = targetMonth;
+          _records = records;
+          final targetDay = _selectedDay.day.clamp(1, daysInMonth);
+          _selectedDay = DateTime(targetMonth.year, targetMonth.month, targetDay);
+        });
+        _showMonthlyAttendanceModal(targetMonth, records);
+      }
+    } catch (_) {
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to load attendance records for selected month')),
+        );
+      }
+    }
+  }
+
+  void _showMonthlyAttendanceModal(DateTime month, List<AttendanceRecord> records) {
+    final Map<String, List<AttendanceRecord>> groupedByDay = {};
+    int totalWorkSec = 0;
+
+    for (final r in records) {
+      final dateKey = (r.attendanceDay != null && r.attendanceDay!.isNotEmpty)
+          ? r.attendanceDay!
+          : '${r.checkInTime.toLocal().year}-${r.checkInTime.toLocal().month.toString().padLeft(2, '0')}-${r.checkInTime.toLocal().day.toString().padLeft(2, '0')}';
+      groupedByDay.putIfAbsent(dateKey, () => []).add(r);
+
+      if (r.durationSeconds != null && r.durationSeconds! > 0) {
+        totalWorkSec += r.durationSeconds!;
+      } else if (r.checkOutTime != null) {
+        totalWorkSec += r.checkOutTime!.difference(r.checkInTime).inSeconds;
+      }
+    }
+
+    final sortedDays = groupedByDay.keys.toList()..sort((a, b) => b.compareTo(a));
+    final totalHours = totalWorkSec ~/ 3600;
+    final totalMins = (totalWorkSec % 3600) ~/ 60;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.85,
+          minChildSize: 0.45,
+          maxChildSize: 0.95,
+          builder: (context, scrollController) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Monthly Attendance Log',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            _formatMonthYear(month),
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: primaryColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 20),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+
+                  // Summary metrics card
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        Column(
+                          children: [
+                            const Text(
+                              'Present Days',
+                              style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '${groupedByDay.keys.length}',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF0F9D8A),
+                              ),
+                            ),
+                          ],
+                        ),
+                        Container(height: 24, width: 1, color: const Color(0xFFCBD5E1)),
+                        Column(
+                          children: [
+                            const Text(
+                              'Total Sessions',
+                              style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '${records.length}',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF0284C7),
+                              ),
+                            ),
+                          ],
+                        ),
+                        Container(height: 24, width: 1, color: const Color(0xFFCBD5E1)),
+                        Column(
+                          children: [
+                            const Text(
+                              'Total Work',
+                              style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              totalHours > 0 ? '${totalHours}h ${totalMins}m' : '0h 0m',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF1E293B),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  const Divider(height: 1),
+                  const SizedBox(height: 8),
+
+                  Expanded(
+                    child: records.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.event_busy_outlined, size: 48, color: Colors.grey.shade400),
+                                const SizedBox(height: 12),
+                                Text(
+                                  'No attendance records found for ${_formatMonthYear(month)}',
+                                  style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                                ),
+                              ],
+                            ),
+                          )
+                        : ListView.separated(
+                            controller: scrollController,
+                            itemCount: sortedDays.length,
+                            separatorBuilder: (context, index) => const SizedBox(height: 12),
+                            itemBuilder: (context, dayIdx) {
+                              final dayKey = sortedDays[dayIdx];
+                              final daySessions = groupedByDay[dayKey] ?? [];
+
+                              int dayWorkSec = 0;
+                              for (final s in daySessions) {
+                                if (s.durationSeconds != null && s.durationSeconds! > 0) {
+                                  dayWorkSec += s.durationSeconds!;
+                                } else if (s.checkOutTime != null) {
+                                  dayWorkSec += s.checkOutTime!.difference(s.checkInTime).inSeconds;
+                                }
+                              }
+                              final dayH = dayWorkSec ~/ 3600;
+                              final dayM = (dayWorkSec % 3600) ~/ 60;
+                              final parsedDate = DateTime.tryParse(dayKey) ?? daySessions.first.checkInTime.toLocal();
+
+                              return Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withValues(alpha: 0.02),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Day header
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(6),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFE0F2FE),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: const Icon(Icons.calendar_today, size: 14, color: Color(0xFF0284C7)),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            _formatDateFull(parsedDate),
+                                            style: const TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF1E293B),
+                                            ),
+                                          ),
+                                        ),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFF1F5F9),
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                          child: Text(
+                                            '${daySessions.length} session${daySessions.length > 1 ? 's' : ''}${dayWorkSec > 0 ? ' • ${dayH}h ${dayM}m' : ''}',
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w600,
+                                              color: Color(0xFF475569),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 10),
+                                    const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                                    const SizedBox(height: 8),
+
+                                    // Sessions list for this day
+                                    ...daySessions.asMap().entries.map((entry) {
+                                      final sIndex = entry.key;
+                                      final session = entry.value;
+                                      final isCurrent = session.status == 'CHECKED_IN' && session.checkOutTime == null;
+                                      final inLoc = (session.checkInAddress != null && session.checkInAddress!.isNotEmpty)
+                                          ? session.checkInAddress!
+                                          : session.officeSnapshotName;
+                                      final outLoc = (session.checkOutAddress != null && session.checkOutAddress!.isNotEmpty)
+                                          ? session.checkOutAddress!
+                                          : session.officeSnapshotName;
+
+                                      return Container(
+                                        margin: EdgeInsets.only(top: sIndex > 0 ? 10 : 0),
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFF8FAFC),
+                                          borderRadius: BorderRadius.circular(10),
+                                          border: Border.all(color: const Color(0xFFECEFF1)),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  'Session #${daySessions.length - sIndex}',
+                                                  style: const TextStyle(
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Color(0xFF1E293B),
+                                                  ),
+                                                ),
+                                                const Spacer(),
+                                                if (isCurrent)
+                                                  Container(
+                                                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.green.shade50,
+                                                      borderRadius: BorderRadius.circular(10),
+                                                      border: Border.all(color: Colors.green.shade300),
+                                                    ),
+                                                    child: const Text(
+                                                      'Active Now',
+                                                      style: TextStyle(
+                                                        fontSize: 10,
+                                                        fontWeight: FontWeight.bold,
+                                                        color: Colors.green,
+                                                      ),
+                                                    ),
+                                                  )
+                                                else if (session.checkoutReason == 'FORCE_CHECKOUT_OUT_OF_RADIUS')
+                                                  Container(
+                                                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.red.shade50,
+                                                      borderRadius: BorderRadius.circular(10),
+                                                      border: Border.all(color: Colors.red.shade200),
+                                                    ),
+                                                    child: const Text(
+                                                      'Out of Radius',
+                                                      style: TextStyle(
+                                                        fontSize: 10,
+                                                        fontWeight: FontWeight.bold,
+                                                        color: Colors.red,
+                                                      ),
+                                                    ),
+                                                  )
+                                                else if (session.durationSeconds != null)
+                                                  Text(
+                                                    '${session.durationSeconds! ~/ 60}m ${session.durationSeconds! % 60}s',
+                                                    style: TextStyle(
+                                                      fontSize: 11,
+                                                      color: Colors.grey.shade600,
+                                                      fontWeight: FontWeight.w500,
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
+                                            const SizedBox(height: 6),
+                                            // Check-in time & address
+                                            Row(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                const Icon(Icons.login, size: 15, color: Colors.green),
+                                                const SizedBox(width: 6),
+                                                const Text(
+                                                  'Check-in: ',
+                                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                                ),
+                                                Text(
+                                                  _formatTime(session.checkInTime),
+                                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                                ),
+                                              ],
+                                            ),
+                                            if (inLoc.isNotEmpty) ...[
+                                              const SizedBox(height: 3),
+                                              Padding(
+                                                padding: const EdgeInsets.only(left: 21),
+                                                child: Row(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    const Icon(Icons.location_on_outlined, size: 14, color: primaryColor),
+                                                    const SizedBox(width: 4),
+                                                    Expanded(
+                                                      child: Text(
+                                                        inLoc,
+                                                        style: TextStyle(
+                                                          fontSize: 11.5,
+                                                          color: Colors.grey.shade800,
+                                                          fontWeight: FontWeight.w500,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                            const SizedBox(height: 6),
+                                            // Check-out time & address
+                                            Row(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                const Icon(Icons.logout, size: 15, color: Colors.orange),
+                                                const SizedBox(width: 6),
+                                                const Text(
+                                                  'Check-out: ',
+                                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                                ),
+                                                Text(
+                                                  session.checkOutTime != null
+                                                      ? _formatTime(session.checkOutTime!)
+                                                      : 'Active (Not yet checked out)',
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: session.checkOutTime != null ? Colors.black87 : Colors.green,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            if (session.checkOutTime != null && outLoc.isNotEmpty) ...[
+                                              const SizedBox(height: 3),
+                                              Padding(
+                                                padding: const EdgeInsets.only(left: 21),
+                                                child: Row(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Icon(Icons.location_on_outlined, size: 14, color: Colors.orange.shade700),
+                                                    const SizedBox(width: 4),
+                                                    Expanded(
+                                                      child: Text(
+                                                        outLoc,
+                                                        style: TextStyle(
+                                                          fontSize: 11.5,
+                                                          color: Colors.grey.shade800,
+                                                          fontWeight: FontWeight.w500,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                      );
+                                    }),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
                   ),
                 ],
               ),

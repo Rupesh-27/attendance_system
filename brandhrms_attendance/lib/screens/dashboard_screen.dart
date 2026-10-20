@@ -9,6 +9,7 @@ import '../services/location_monitor_service.dart';
 import 'attendance_history_screen.dart';
 import 'leave_management_screen.dart';
 import 'profile_screen.dart';
+import '../services/language_service.dart';
 
 class TechQuote {
   final String text;
@@ -934,26 +935,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
             _leaveKey.currentState?.refreshData();
           }
         },
-        destinations: const [
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard),
-            label: 'Dashboard',
+            icon: const Icon(Icons.dashboard_outlined),
+            selectedIcon: const Icon(Icons.dashboard),
+            label: tr('dashboard'),
           ),
           NavigationDestination(
-            icon: Icon(Icons.access_time_outlined),
-            selectedIcon: Icon(Icons.access_time),
-            label: 'Attendance',
+            icon: const Icon(Icons.access_time_outlined),
+            selectedIcon: const Icon(Icons.access_time),
+            label: tr('attendance'),
           ),
           NavigationDestination(
-            icon: Icon(Icons.calendar_month_outlined),
-            selectedIcon: Icon(Icons.calendar_month),
-            label: 'Leaves',
+            icon: const Icon(Icons.calendar_month_outlined),
+            selectedIcon: const Icon(Icons.calendar_month),
+            label: tr('leaves'),
           ),
           NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: 'Profile',
+            icon: const Icon(Icons.person_outline),
+            selectedIcon: const Icon(Icons.person),
+            label: tr('profile'),
           ),
         ],
       ),
@@ -1340,7 +1341,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          _isCheckedIn ? 'Checked In' : 'Not Checked In',
+                          _isCheckedIn ? tr('checked_in') : tr('not_checked_in'),
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
@@ -1378,8 +1379,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
               label: Text(
                 _isSubmittingAttendance
-                    ? 'Verifying Location...'
-                    : (_isCheckedIn ? 'Check-out' : 'Check-in'),
+                    ? tr('verifying_location')
+                    : (_isCheckedIn ? tr('check_out') : tr('check_in')),
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
@@ -1409,7 +1410,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             icon: Icons.access_time_outlined,
             iconColor: const Color(0xFF00BFA5),
             iconBg: const Color(0xFFE0F7F4),
-            title: 'Daily Effort',
+            title: tr('daily_effort'),
             value: _formatEffortHM(_totalWorkSeconds),
           ),
         ),
@@ -1419,7 +1420,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             icon: Icons.calendar_month_outlined,
             iconColor: const Color(0xFF1E88E5),
             iconBg: const Color(0xFFE3F2FD),
-            title: 'Monthly Effort',
+            title: tr('monthly_effort'),
             value: _formatEffortHM(_monthlyWorkSeconds),
           ),
         ),
@@ -1429,7 +1430,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             icon: Icons.local_cafe_outlined,
             iconColor: const Color(0xFFFF5252),
             iconBg: const Color(0xFFFFEBEE),
-            title: 'Total Break Hours',
+            title: tr('total_break_hours'),
             value: _formatEffortHM(_totalBreakSeconds),
           ),
         ),
@@ -1514,7 +1515,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Assigned Office', style: TextStyle(color: Colors.grey)),
+                Text(tr('assigned_office'), style: const TextStyle(color: Colors.grey)),
                 const SizedBox(height: 4),
                 Text(
                   officeName,
@@ -1549,9 +1550,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Location Status',
-                  style: TextStyle(color: Colors.grey, fontSize: 13),
+                Text(
+                  tr('geofence_status'),
+                  style: const TextStyle(color: Colors.grey, fontSize: 13),
                 ),
                 const SizedBox(height: 3),
                 Row(

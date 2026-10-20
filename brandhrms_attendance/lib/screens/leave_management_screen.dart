@@ -1,6 +1,8 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
+import '../services/language_service.dart';
 
 String _formatDate(DateTime dt) {
   const months = [
@@ -29,6 +31,8 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
   List<EmployeeLeaveBalance> _balances = [];
   List<LeaveApplication> _myApplications = [];
   String _selectedStatusFilter = 'ALL';
+  int _activeTabIndex = 0; // 0: Leave Balance, 1: Application History
+  String? _selectedLeaveTypeFilter; // null for all, or specific leaveTypeId
 
   @override
   void initState() {
@@ -69,9 +73,9 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text(
-          'My Leaves',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        title: Text(
+          tr('my_leaves'),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
         ),
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
@@ -89,94 +93,219 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
-        label: const Text('Apply Leave', style: TextStyle(fontWeight: FontWeight.bold)),
+        label: Text(tr('apply_leave'), style: const TextStyle(fontWeight: FontWeight.bold)),
       ),
       body: _isLoading
           ? const Center(
               child: CircularProgressIndicator(color: primaryColor),
             )
-          : RefreshIndicator(
-              onRefresh: refreshData,
-              color: primaryColor,
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
-                children: [
-                  _buildBalancesCarousel(),
-                  const SizedBox(height: 20),
-                  _buildSectionHeader('Application History'),
-                  const SizedBox(height: 10),
-                  _buildStatusFilterChips(),
-                  const SizedBox(height: 14),
-                  _buildApplicationsList(),
-                ],
-              ),
+          : Column(
+              children: [
+                _buildSegmentedSwitcher(),
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: refreshData,
+                    color: primaryColor,
+                    child: _activeTabIndex == 0
+                        ? _buildLeaveBalanceView()
+                        : _buildApplicationHistoryView(),
+                  ),
+                ),
+              ],
             ),
     );
   }
 
-  // ==================== BALANCES CAROUSEL ====================
-  Widget _buildBalancesCarousel() {
-    if (_balances.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
-        ),
-        child: const Center(
-          child: Text(
-            'No leave balances found for current year',
-            style: TextStyle(color: Color(0xFF64748B)),
+  // ==================== SEGMENTED SWITCHER ====================
+  Widget _buildSegmentedSwitcher() {
+    final pendingCount =
+        _myApplications.where((a) => a.status == 'PENDING').length;
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF1F5F9),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: InkWell(
+              onTap: () {
+                setState(() => _activeTabIndex = 0);
+              },
+              borderRadius: BorderRadius.circular(10),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: _activeTabIndex == 0 ? primaryColor : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: _activeTabIndex == 0
+                      ? [
+                          BoxShadow(
+                            color: primaryColor.withValues(alpha: 0.25),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : null,
+                ),
+                alignment: Alignment.center,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.pie_chart_outline_rounded,
+                      size: 16,
+                      color: _activeTabIndex == 0
+                          ? Colors.white
+                          : const Color(0xFF475569),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      tr('leave_balance'),
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: _activeTabIndex == 0
+                            ? Colors.white
+                            : const Color(0xFF475569),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
+          Expanded(
+            child: InkWell(
+              onTap: () {
+                setState(() {
+                  _activeTabIndex = 1;
+                  _selectedStatusFilter = 'ALL';
+                  _selectedLeaveTypeFilter = null;
+                });
+              },
+              borderRadius: BorderRadius.circular(10),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: _activeTabIndex == 1 ? primaryColor : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: _activeTabIndex == 1
+                      ? [
+                          BoxShadow(
+                            color: primaryColor.withValues(alpha: 0.25),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : null,
+                ),
+                alignment: Alignment.center,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.history_rounded,
+                      size: 16,
+                      color: _activeTabIndex == 1
+                          ? Colors.white
+                          : const Color(0xFF475569),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      tr('application_history'),
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: _activeTabIndex == 1
+                            ? Colors.white
+                            : const Color(0xFF475569),
+                      ),
+                    ),
+                    if (pendingCount > 0) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: _activeTabIndex == 1
+                              ? Colors.white
+                              : const Color(0xFFF59E0B),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          '$pendingCount',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: _activeTabIndex == 1
+                                ? primaryColor
+                                : Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ==================== LEAVE BALANCE VIEW ====================
+  Widget _buildLeaveBalanceView() {
+    if (_balances.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.event_note_outlined, size: 48, color: Colors.grey.shade400),
+            const SizedBox(height: 12),
+            const Text(
+              'No leave balances found for current year',
+              style: TextStyle(color: Color(0xFF64748B), fontSize: 14),
+            ),
+          ],
         ),
       );
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 88),
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              'Leave Balances (2026)',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1E293B),
-              ),
-            ),
-            Text(
-              '${_balances.length} Types',
-              style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 145,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: _balances.length,
-            separatorBuilder: (context, index) => const SizedBox(width: 12),
-            itemBuilder: (context, index) {
-              final bal = _balances[index];
-              return _buildBalanceCard(bal, index);
-            },
+        Text(
+          tr('leave_balances'),
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1E293B),
           ),
         ),
+        const SizedBox(height: 12),
+
+        ..._balances.asMap().entries.map((entry) {
+          final index = entry.key;
+          final bal = entry.value;
+          return _buildDetailedBalanceCard(bal, index);
+        }),
       ],
     );
   }
 
-  Widget _buildBalanceCard(EmployeeLeaveBalance bal, int index) {
+  Widget _buildDetailedBalanceCard(EmployeeLeaveBalance bal, int index) {
     final colors = [
-      {'gradStart': const Color(0xFF0F9D8A), 'bg': const Color(0xFFECFDF5)},
-      {'gradStart': const Color(0xFF3B82F6), 'bg': const Color(0xFFEFF6FF)},
-      {'gradStart': const Color(0xFFF59E0B), 'bg': const Color(0xFFFFFBEB)},
+      {'color': const Color(0xFF0F9D8A), 'bg': const Color(0xFFECFDF5)},
+      {'color': const Color(0xFF3B82F6), 'bg': const Color(0xFFEFF6FF)},
+      {'color': const Color(0xFFF59E0B), 'bg': const Color(0xFFFFFBEB)},
     ];
-    final colorScheme = colors[index % colors.length];
+    final scheme = colors[index % colors.length];
 
     final double progress = bal.allocatedDays > 0
         ? (bal.remainingDays / bal.allocatedDays).clamp(0.0, 1.0)
@@ -186,161 +315,331 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
         ? bal.remainingDays.toInt().toString()
         : bal.remainingDays.toStringAsFixed(1);
 
+    final usedText = bal.usedDays.truncateToDouble() == bal.usedDays
+        ? bal.usedDays.toInt().toString()
+        : bal.usedDays.toStringAsFixed(1);
+
+    String ruleText = 'Annual allowance for standard employee entitlement';
+    if (bal.leaveTypeCode == 'CL' || bal.leaveTypeName.toLowerCase().contains('casual')) {
+      ruleText = 'Max 1 day per application • Urgent personal work';
+    } else if (bal.leaveTypeCode == 'SL' || bal.leaveTypeName.toLowerCase().contains('sick')) {
+      ruleText = 'Medical certificate required for 2+ consecutive days';
+    } else if (bal.leaveTypeCode == 'PL' || bal.leaveTypeName.toLowerCase().contains('paid')) {
+      ruleText = 'Privilege leave for planned holidays and family events';
+    }
+
     return Container(
-      width: 190,
-      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x0A000000),
-            blurRadius: 10,
-            offset: Offset(0, 4),
+            color: Color(0x06000000),
+            blurRadius: 8,
+            offset: Offset(0, 2),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: colorScheme['bg'],
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  bal.leaveTypeCode.isNotEmpty ? bal.leaveTypeCode : 'LEAVE',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme['gradStart'],
-                  ),
-                ),
-              ),
-              Icon(Icons.event_available, size: 18, color: colorScheme['gradStart']),
-            ],
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                bal.leaveTypeName,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF334155),
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 4),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Text(
-                    remainingText,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF0F172A),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            setState(() {
+              _selectedLeaveTypeFilter = bal.leaveTypeId;
+              _selectedStatusFilter = 'ALL';
+              _activeTabIndex = 1;
+            });
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: scheme['bg'] as Color,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            bal.leaveTypeCode.isNotEmpty ? bal.leaveTypeCode : 'LEAVE',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: scheme['color'] as Color,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          bal.leaveTypeName,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1E293B),
+                          ),
+                        ),
+                      ],
                     ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'History',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: scheme['color'] as Color,
+                          ),
+                        ),
+                        const SizedBox(width: 2),
+                        Icon(Icons.chevron_right, size: 16, color: scheme['color'] as Color),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+
+                // Metrics Row
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFF1F5F9)),
                   ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '/ ${bal.allocatedDays.toInt()} Days',
-                    style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Allocated',
+                            style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${bal.allocatedDays.toInt()} Days',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF334155),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Used',
+                            style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '$usedText Days',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFFEF4444),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          const Text(
+                            'Available',
+                            style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '$remainingText Days',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: scheme['color'] as Color,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ],
-          ),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: progress,
-              backgroundColor: const Color(0xFFE2E8F0),
-              valueColor: AlwaysStoppedAnimation<Color>(colorScheme['gradStart']!),
-              minHeight: 5,
+                ),
+                const SizedBox(height: 12),
+
+                // Progress Bar
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    backgroundColor: const Color(0xFFE2E8F0),
+                    valueColor: AlwaysStoppedAnimation<Color>(scheme['color'] as Color),
+                    minHeight: 6,
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                // Policy / Rule Tag
+                Row(
+                  children: [
+                    const Icon(Icons.info_outline, size: 12, color: Color(0xFF94A3B8)),
+                    const SizedBox(width: 5),
+                    Expanded(
+                      child: Text(
+                        ruleText,
+                        style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildSectionHeader(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.bold,
-        color: Color(0xFF1E293B),
-      ),
+  // ==================== APPLICATION HISTORY VIEW ====================
+  Widget _buildApplicationHistoryView() {
+    final leaveTypeName = _selectedLeaveTypeFilter != null
+        ? _balances.firstWhere(
+            (b) => b.leaveTypeId == _selectedLeaveTypeFilter,
+            orElse: () => EmployeeLeaveBalance(
+              id: '',
+              employeeId: '',
+              leaveTypeId: '',
+              leaveTypeName: 'Selected',
+              leaveTypeCode: '',
+              year: 2026,
+              allocatedDays: 0,
+              usedDays: 0,
+              remainingDays: 0,
+            ),
+          ).leaveTypeName
+        : null;
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
+      children: [
+        if (_selectedLeaveTypeFilter != null) ...[
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE0F2FE),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFFBAE6FD)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.filter_alt, size: 16, color: Color(0xFF0284C7)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Filtered by: $leaveTypeName',
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0369A1),
+                    ),
+                  ),
+                ),
+                InkWell(
+                  onTap: () {
+                    setState(() => _selectedLeaveTypeFilter = null);
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.close, size: 14, color: Color(0xFF0369A1)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
+        _buildStatusFilterChips(),
+        const SizedBox(height: 14),
+        _buildApplicationsList(),
+      ],
     );
   }
 
   Widget _buildStatusFilterChips() {
     final filters = [
-      {'key': 'ALL', 'label': 'All Requests'},
-      {'key': 'PENDING', 'label': 'Pending'},
-      {'key': 'APPROVED', 'label': 'Approved'},
-      {'key': 'REJECTED', 'label': 'Rejected'},
-      {'key': 'WITHDRAWN', 'label': 'Withdrawn'},
-      {'key': 'CANCELLATION_PENDING', 'label': 'Cancel Requested'},
-      {'key': 'CANCELLED', 'label': 'Cancelled'},
+      {'key': 'ALL', 'label': tr('all_requests')},
+      {'key': 'PENDING', 'label': tr('pending')},
+      {'key': 'APPROVED', 'label': tr('approved')},
+      {'key': 'REJECTED', 'label': tr('rejected')},
+      {'key': 'WITHDRAWN', 'label': tr('withdrawn')},
+      {'key': 'CANCELLATION_PENDING', 'label': tr('cancel_requested')},
+      {'key': 'CANCELLED', 'label': tr('cancelled')},
     ];
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: filters.map((f) {
-          final isSelected = _selectedStatusFilter == f['key'];
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: ChoiceChip(
-              label: Text(
-                f['label']!,
-                style: TextStyle(
-                  color: isSelected ? Colors.white : const Color(0xFF475569),
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  fontSize: 12,
-                ),
-              ),
-              selected: isSelected,
-              selectedColor: primaryColor,
-              backgroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-                side: BorderSide(
-                  color: isSelected ? primaryColor : const Color(0xFFCBD5E1),
-                ),
-              ),
-              onSelected: (val) {
-                if (val) {
-                  setState(() => _selectedStatusFilter = f['key']!);
-                }
-              },
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: filters.map((f) {
+        final isSelected = _selectedStatusFilter == f['key'];
+        return ChoiceChip(
+          label: Text(
+            f['label']!,
+            style: TextStyle(
+              color: isSelected ? Colors.white : const Color(0xFF475569),
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+              fontSize: 12,
             ),
-          );
-        }).toList(),
-      ),
+          ),
+          selected: isSelected,
+          selectedColor: primaryColor,
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(
+              color: isSelected ? primaryColor : const Color(0xFFCBD5E1),
+            ),
+          ),
+          onSelected: (val) {
+            setState(() {
+              _selectedStatusFilter = val ? f['key']! : 'ALL';
+            });
+          },
+        );
+      }).toList(),
     );
   }
 
   Widget _buildApplicationsList() {
     final filtered = _myApplications.where((a) {
-      if (_selectedStatusFilter == 'ALL') return true;
-      return a.status == _selectedStatusFilter;
+      if (_selectedStatusFilter != 'ALL' && a.status != _selectedStatusFilter) {
+        return false;
+      }
+      if (_selectedLeaveTypeFilter != null &&
+          a.leaveTypeId != _selectedLeaveTypeFilter) {
+        return false;
+      }
+      return true;
     }).toList();
 
     if (filtered.isEmpty) {
+      final isFiltered =
+          _selectedStatusFilter != 'ALL' || _selectedLeaveTypeFilter != null;
       return Container(
         padding: const EdgeInsets.all(32),
         alignment: Alignment.center,
@@ -353,9 +652,9 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
           children: [
             Icon(Icons.inbox_outlined, size: 48, color: Colors.grey.shade400),
             const SizedBox(height: 12),
-            const Text(
-              'No Leave Requests Found',
-              style: TextStyle(
+            Text(
+              tr('no_leave_requests'),
+              style: const TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 15,
                 color: Color(0xFF475569),
@@ -363,12 +662,30 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
             ),
             const SizedBox(height: 4),
             Text(
-              _selectedStatusFilter == 'ALL'
-                  ? 'Tap "Apply Leave" below to submit your first request'
-                  : 'No requests match the selected filter',
+              isFiltered
+                  ? tr('no_requests_filter')
+                  : tr('tap_apply_leave'),
               style: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
               textAlign: TextAlign.center,
             ),
+            if (isFiltered) ...[
+              const SizedBox(height: 14),
+              ElevatedButton.icon(
+                onPressed: () => setState(() {
+                  _selectedStatusFilter = 'ALL';
+                  _selectedLeaveTypeFilter = null;
+                }),
+                icon: const Icon(Icons.refresh, size: 16),
+                label: const Text('Show All Requests'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryColor,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       );
@@ -379,12 +696,57 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
     );
   }
 
+  Widget _buildDetailColumn({
+    required String label,
+    required String value,
+    IconData? icon,
+    Color? valueColor,
+    FontWeight? valueFontWeight,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 12, color: const Color(0xFF94A3B8)),
+              const SizedBox(width: 4),
+            ],
+            Flexible(
+              child: Text(
+                label.toUpperCase(),
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF64748B),
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 3),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 12.5,
+            fontWeight: valueFontWeight ?? FontWeight.w600,
+            color: valueColor ?? const Color(0xFF1E293B),
+            height: 1.25,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildApplicationCard(LeaveApplication app) {
     final startStr = _formatDate(app.startDate);
     final endStr = _formatDate(app.endDate);
-    final dateDisplay = app.startDate.isAtSameMomentAs(app.endDate)
-        ? startStr
-        : '$startStr - $endStr';
+    final durationDisplay = app.isHalfDay
+        ? '0.5 Day (${app.halfDaySession == "SECOND_HALF" || app.halfDaySession == "Session 2" ? "Session 2 (PM)" : "Session 1 (AM)"})'
+        : '${app.totalDays.toInt()} ${app.totalDays > 1 ? "Days" : "Day"}';
+    final appliedOnStr = _formatDate(app.createdAt);
 
     Color statusColor;
     Color statusBg;
@@ -441,34 +803,40 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0F9D8A).withAlpha(25),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      app.leaveTypeCode.isNotEmpty ? app.leaveTypeCode : 'LEAVE',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: primaryColor,
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0F9D8A).withAlpha(25),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        app.leaveTypeCode.isNotEmpty ? app.leaveTypeCode : 'LEAVE',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: primaryColor,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    app.leaveTypeName,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1E293B),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        app.leaveTypeName,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1E293B),
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
@@ -487,66 +855,123 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              const Icon(Icons.calendar_today_outlined, size: 15, color: Color(0xFF64748B)),
-              const SizedBox(width: 6),
-              Text(
-                dateDisplay,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF334155),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  app.isHalfDay
-                      ? '0.5 Day (${app.halfDaySession == "SECOND_HALF" || app.halfDaySession == "Session 2" ? "Session 2 (PM)" : "Session 1 (AM)"})'
-                      : '${app.totalDays.toInt()} ${app.totalDays > 1 ? "Days" : "Day"}',
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: Color(0xFF475569),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          if (app.applyingTo != null && app.applyingTo!.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Row(
+          // Structured 2-column details grid
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Column(
               children: [
-                const Icon(Icons.person_outline, size: 13, color: Color(0xFF64748B)),
-                const SizedBox(width: 4),
-                Text(
-                  'Applying to: ${app.applyingTo}',
-                  style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B), fontWeight: FontWeight.w500),
-                ),
-                if (app.cc != null && app.cc!.isNotEmpty) ...[
-                  const SizedBox(width: 8),
-                  Flexible(
-                    child: Text(
-                      '• CC: ${app.cc}',
-                      style: const TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
-                      overflow: TextOverflow.ellipsis,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: _buildDetailColumn(
+                        label: tr('from_date'),
+                        value: startStr,
+                        icon: Icons.calendar_today_outlined,
+                      ),
                     ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildDetailColumn(
+                        label: tr('to_date'),
+                        value: endStr,
+                        icon: Icons.event_outlined,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: _buildDetailColumn(
+                        label: tr('duration'),
+                        value: durationDisplay,
+                        icon: Icons.timelapse_rounded,
+                        valueColor: primaryColor,
+                        valueFontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildDetailColumn(
+                        label: tr('applied_on'),
+                        value: appliedOnStr,
+                        icon: Icons.schedule_rounded,
+                      ),
+                    ),
+                  ],
+                ),
+                if ((app.applyingTo != null && app.applyingTo!.isNotEmpty) ||
+                    (app.cc != null && app.cc!.isNotEmpty)) ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: _buildDetailColumn(
+                          label: tr('applying_to'),
+                          value: (app.applyingTo != null && app.applyingTo!.isNotEmpty)
+                              ? app.applyingTo!
+                              : '-',
+                          icon: Icons.person_outline,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildDetailColumn(
+                          label: tr('cc_to'),
+                          value: (app.cc != null && app.cc!.isNotEmpty)
+                              ? app.cc!
+                              : '-',
+                          icon: Icons.people_outline,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ],
             ),
-          ],
+          ),
           if (app.reason.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(
-              app.reason,
-              style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    tr('reason').toUpperCase(),
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF64748B),
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    app.reason,
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      color: Color(0xFF334155),
+                      height: 1.3,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
           if (app.managerRemarks != null && app.managerRemarks!.isNotEmpty) ...[
@@ -727,9 +1152,51 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
   final TextEditingController _reasonController = TextEditingController();
   final String _applyingTo = 'Mathumitha';
   final List<String> _ccList = [];
+  PlatformFile? _attachedFile;
+  int _attachedFileSize = 0;
 
   bool _isSubmitting = false;
   String? _errorMessage;
+
+  Future<void> _pickFile() async {
+    try {
+      final file = await FilePicker.pickFile(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'png', 'jpg', 'jpeg'],
+      );
+      if (file != null) {
+        final size = file.lengthSync() ?? (await file.length()) ?? 0;
+        if (size > 10 * 1024 * 1024) {
+          setState(() {
+            _errorMessage = 'Selected file exceeds the 10 MB limit.';
+          });
+          return;
+        }
+        setState(() {
+          _attachedFile = file;
+          _attachedFileSize = size;
+          _errorMessage = null;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Unable to pick file. Please try again.';
+      });
+    }
+  }
+
+  void _removeFile() {
+    setState(() {
+      _attachedFile = null;
+      _attachedFileSize = 0;
+    });
+  }
+
+  String _formatFileSize(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+  }
 
   void _showAddCcDialog() {
     final controller = TextEditingController();
@@ -931,15 +1398,15 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      RichText(
-                        text: const TextSpan(
-                          text: 'Applying to ',
-                          style: TextStyle(
+                      Text.rich(
+                        TextSpan(
+                          text: 'Applying To ',
+                          style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
                             color: Color(0xFF334155),
                           ),
-                          children: [
+                          children: const [
                             TextSpan(
                               text: '*',
                               style: TextStyle(color: Color(0xFFEF4444)),
@@ -949,7 +1416,8 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
                       ),
                       const SizedBox(height: 6),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        height: 48,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
                         decoration: BoxDecoration(
                           color: const Color(0xFFF8FAFC),
                           borderRadius: BorderRadius.circular(12),
@@ -958,8 +1426,8 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
                         child: Row(
                           children: [
                             Container(
-                              width: 28,
-                              height: 28,
+                              width: 26,
+                              height: 26,
                               decoration: const BoxDecoration(
                                 color: Color(0xFFE0F2FE),
                                 shape: BoxShape.circle,
@@ -968,7 +1436,7 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
                               child: const Text(
                                 'M',
                                 style: TextStyle(
-                                  fontSize: 13,
+                                  fontSize: 12,
                                   fontWeight: FontWeight.bold,
                                   color: Color(0xFF0284C7),
                                 ),
@@ -979,7 +1447,7 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
                               child: Text(
                                 'Mathumitha',
                                 style: TextStyle(
-                                  fontSize: 13.5,
+                                  fontSize: 13,
                                   fontWeight: FontWeight.w600,
                                   color: Color(0xFF1E293B),
                                 ),
@@ -996,11 +1464,11 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'CC to',
+                      'CC To',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF64748B),
+                        color: Color(0xFF334155),
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -1008,7 +1476,8 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
                       onTap: _showAddCcDialog,
                       borderRadius: BorderRadius.circular(12),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        height: 48,
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(12),
@@ -1419,6 +1888,175 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
                 ),
               ),
             ),
+            const SizedBox(height: 16),
+
+            // Attach File
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Attach File',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF334155),
+                  ),
+                ),
+                Text(
+                  _attachedFile != null ? '1 file selected' : 'Optional (PDF, JPG, PNG)',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            if (_attachedFile == null)
+              InkWell(
+                onTap: _pickFile,
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFCBD5E1)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: primaryColor.withAlpha(25),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.attach_file_rounded,
+                          size: 20,
+                          color: primaryColor,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Upload Supporting Document',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF1E293B),
+                              ),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              'PDF or Images up to 10 MB',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF64748B),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: primaryColor,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Text(
+                          'Browse',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFCBD5E1)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: (_attachedFile!.extension?.toLowerCase() == 'pdf')
+                            ? const Color(0xFFFEE2E2)
+                            : const Color(0xFFE0F2FE),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        (_attachedFile!.extension?.toLowerCase() == 'pdf')
+                            ? Icons.picture_as_pdf_rounded
+                            : Icons.image_rounded,
+                        size: 20,
+                        color: (_attachedFile!.extension?.toLowerCase() == 'pdf')
+                            ? const Color(0xFFDC2626)
+                            : const Color(0xFF0284C7),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _attachedFile!.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${_attachedFile!.extension?.toUpperCase() ?? 'FILE'} • ${_formatFileSize(_attachedFileSize)}',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    InkWell(
+                      onTap: _removeFile,
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFF1F5F9),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.close,
+                          size: 16,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
 
             if (_errorMessage != null) ...[
               const SizedBox(height: 12),

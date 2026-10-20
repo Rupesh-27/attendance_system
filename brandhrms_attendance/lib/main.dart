@@ -3,8 +3,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'screens/dashboard_screen.dart';
 import 'services/api_service.dart';
+import 'services/language_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await LanguageService.instance.init();
   runApp(const BrandHrmsApp());
 }
 
@@ -13,11 +16,16 @@ class BrandHrmsApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'BrandHRMS',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(useMaterial3: true),
-      home: const LoginScreen(),
+    return AnimatedBuilder(
+      animation: LanguageService.instance,
+      builder: (context, _) {
+        return MaterialApp(
+          title: 'BrandHRMS',
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(useMaterial3: true),
+          home: const LoginScreen(),
+        );
+      },
     );
   }
 }
@@ -135,28 +143,28 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 40),
 
-              const Text(
-                'Welcome to BrandHRMS',
+              Text(
+                tr('welcome_to_brandhrms'),
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
               ),
 
               const SizedBox(height: 10),
 
-              const Text(
-                'Employee Login',
+              Text(
+                tr('employee_login'),
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, color: Colors.grey),
+                style: const TextStyle(fontSize: 16, color: Colors.grey),
               ),
 
               const SizedBox(height: 40),
 
               TextField(
                 controller: employeeIdController,
-                decoration: const InputDecoration(
-                  labelText: 'Employee ID or Email',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.person_outline),
+                decoration: InputDecoration(
+                  labelText: tr('employee_id_or_email'),
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.person_outline),
                 ),
               ),
 
@@ -166,7 +174,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 controller: passwordController,
                 obscureText: obscurePassword,
                 decoration: InputDecoration(
-                  labelText: 'Password',
+                  labelText: tr('password'),
                   border: const OutlineInputBorder(),
                   prefixIcon: const Icon(Icons.lock_outline),
                   suffixIcon: IconButton(
@@ -209,9 +217,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         rememberMe = !rememberMe;
                       });
                     },
-                    child: const Text(
-                      'Remember me',
-                      style: TextStyle(
+                    child: Text(
+                      tr('remember_me'),
+                      style: const TextStyle(
                         fontSize: 14,
                         color: Color(0xFF374151),
                         fontWeight: FontWeight.w500,
@@ -236,7 +244,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             strokeWidth: 2.5,
                           ),
                         )
-                      : const Text('Login', style: TextStyle(fontSize: 17)),
+                      : Text(tr('login'), style: const TextStyle(fontSize: 17)),
                 ),
               ),
             ],
