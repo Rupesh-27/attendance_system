@@ -22,7 +22,34 @@ class BrandHrmsApp extends StatelessWidget {
         return MaterialApp(
           title: 'BrandHRMS',
           debugShowCheckedModeBanner: false,
-          theme: ThemeData(useMaterial3: true),
+          theme: ThemeData(
+            useMaterial3: true,
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color(0xFF0F9D8A),
+              primary: const Color(0xFF0F9D8A),
+              brightness: Brightness.light,
+            ),
+            scaffoldBackgroundColor: const Color(0xFFF8FAFC),
+            materialTapTargetSize: MaterialTapTargetSize.padded,
+            visualDensity: VisualDensity.adaptivePlatformDensity,
+            appBarTheme: const AppBarTheme(
+              centerTitle: false,
+              elevation: 0,
+              scrolledUnderElevation: 0,
+            ),
+          ),
+          builder: (context, child) {
+            final mediaQuery = MediaQuery.of(context);
+            // Safe sp clamping for Android accessibility text scaling
+            final clampedScaler = mediaQuery.textScaler.clamp(
+              minScaleFactor: 0.85,
+              maxScaleFactor: 1.25,
+            );
+            return MediaQuery(
+              data: mediaQuery.copyWith(textScaler: clampedScaler),
+              child: child!,
+            );
+          },
           home: const LoginScreen(),
         );
       },

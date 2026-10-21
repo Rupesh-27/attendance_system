@@ -375,8 +375,8 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.chevron_left, size: 20),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 26, minHeight: 26),
+                    padding: const EdgeInsets.all(6),
+                    constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
                     onPressed: _previousMonth,
                     tooltip: tr('previous_month'),
                   ),
@@ -392,8 +392,8 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                   const SizedBox(width: 2),
                   IconButton(
                     icon: const Icon(Icons.chevron_right, size: 20),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 26, minHeight: 26),
+                    padding: const EdgeInsets.all(6),
+                    constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
                     onPressed: _nextMonth,
                     tooltip: tr('next_month'),
                   ),
@@ -625,10 +625,10 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
@@ -701,8 +701,8 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                       ),
                       borderRadius: BorderRadius.circular(10),
                       child: Container(
-                        width: 34,
-                        height: 34,
+                        width: 36,
+                        height: 36,
                         decoration: BoxDecoration(
                           color: const Color(0xFFE0F2FE),
                           borderRadius: BorderRadius.circular(10),
@@ -710,7 +710,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                         ),
                         child: const Icon(
                           Icons.visibility_outlined,
-                          size: 18,
+                          size: 19,
                           color: Color(0xFF0284C7),
                         ),
                       ),
@@ -722,8 +722,8 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                     onTap: _showMonthFilterPicker,
                     borderRadius: BorderRadius.circular(10),
                     child: Container(
-                      width: 34,
-                      height: 34,
+                      width: 36,
+                      height: 36,
                       decoration: BoxDecoration(
                         color: const Color(0xFFF1F5F9),
                         borderRadius: BorderRadius.circular(10),
@@ -731,7 +731,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                       ),
                       child: const Icon(
                         Icons.filter_alt_outlined,
-                        size: 18,
+                        size: 19,
                         color: Color(0xFF334155),
                       ),
                     ),

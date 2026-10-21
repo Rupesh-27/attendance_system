@@ -1538,7 +1538,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
-            height: 44,
+            height: 48,
             child: FilledButton.icon(
               onPressed:
                   _isSubmittingAttendance ? null : _handleAttendanceAction,
@@ -2087,10 +2087,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _card({required Widget child, EdgeInsetsGeometry? padding}) {
     return Container(
       width: double.infinity,
-      padding: padding ?? const EdgeInsets.all(18),
+      padding: padding ?? const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: child,
     );
