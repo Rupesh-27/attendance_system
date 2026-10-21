@@ -135,6 +135,9 @@ class LanguageService extends ChangeNotifier {
 
       // Dashboard
       'welcome_back': 'Welcome back',
+      'good_morning': 'Good Morning',
+      'good_afternoon': 'Good Afternoon',
+      'good_evening': 'Good Evening',
       'check_in': 'Check-in',
       'check_out': 'Check-out',
       'Check-in': 'Check-in',
@@ -386,6 +389,9 @@ class LanguageService extends ChangeNotifier {
 
       // Dashboard
       'welcome_back': 'Willkommen zurück',
+      'good_morning': 'Guten Morgen',
+      'good_afternoon': 'Guten Tag',
+      'good_evening': 'Guten Abend',
       'check_in': 'Kommen',
       'check_out': 'Gehen',
       'Check-in': 'Kommen',
@@ -637,6 +643,9 @@ class LanguageService extends ChangeNotifier {
 
       // Dashboard
       'welcome_back': 'З вяртаннем',
+      'good_morning': 'Добрай раніцы',
+      'good_afternoon': 'Добры дзень',
+      'good_evening': 'Добры вечар',
       'check_in': 'Прыход',
       'check_out': 'Сыход',
       'Check-in': 'Прыход',

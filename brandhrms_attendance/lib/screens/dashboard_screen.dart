@@ -37,78 +37,192 @@ class InAppNotificationItem {
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
-  static const List<TechQuote> techQuotes = [
-    TechQuote(
-      text: 'Any sufficiently advanced technology is indistinguishable from magic.',
-      author: 'Arthur C. Clarke',
-    ),
-    TechQuote(
-      text: 'Part of the inhumanity of the computer is that, once it is competently programmed, it is completely honest.',
-      author: 'Isaac Asimov',
-    ),
-    TechQuote(
-      text: 'The sky above the port was the color of television, tuned to a dead channel.',
-      author: 'William Gibson',
-    ),
-    TechQuote(
-      text: 'Once men turned their thinking over to machines in the hope that this would set them free.',
-      author: 'Frank Herbert',
-    ),
-    TechQuote(
-      text: 'We are stuck with technology when what we really want is just stuff that works.',
-      author: 'Douglas Adams',
-    ),
-    TechQuote(
-      text: 'The computer communicates with him into a computer-generated universe.',
-      author: 'Neal Stephenson',
-    ),
-    TechQuote(
-      text: 'Never let your sense of morals prevent you from doing what is right.',
-      author: 'Isaac Asimov',
-    ),
-    TechQuote(
-      text: 'A common mistake people make designing something foolproof is underestimating the ingenuity of fools.',
-      author: 'Douglas Adams',
-    ),
-    TechQuote(
-      text: 'The real problem is not whether machines think, but whether men do.',
-      author: 'B. F. Skinner',
-    ),
-    TechQuote(
-      text: 'The future is already here — it\'s just not evenly distributed.',
-      author: 'William Gibson',
-    ),
-    TechQuote(
-      text: 'Technology is a useful servant but a dangerous master.',
-      author: 'Christian Lous Lange',
-    ),
-    TechQuote(
-      text: 'How dangerous is the acquirement of knowledge, and how much happier is he who aspires within bounds.',
-      author: 'Mary Shelley',
-    ),
-    TechQuote(
-      text: 'Technological power is always the result of hardware, someone else\'s work, easily bought.',
-      author: 'Michael Crichton',
-    ),
-    TechQuote(
-      text: 'Machines who think? They\'re almost as terrifying as men who don\'t.',
-      author: 'Isaac Asimov',
-    ),
-    TechQuote(
-      text: 'We need not to be let alone. We need to be really bothered once in a while about something real.',
-      author: 'Ray Bradbury',
-    ),
-  ];
+  static const Map<AppLanguage, List<TechQuote>> quotesByLanguage = {
+    AppLanguage.english: [
+      TechQuote(
+        text: 'Any sufficiently advanced technology is indistinguishable from magic.',
+        author: 'Arthur C. Clarke',
+      ),
+      TechQuote(
+        text: 'Part of the inhumanity of the computer is that, once it is competently programmed, it is completely honest.',
+        author: 'Isaac Asimov',
+      ),
+      TechQuote(
+        text: 'The sky above the port was the color of television, tuned to a dead channel.',
+        author: 'William Gibson',
+      ),
+      TechQuote(
+        text: 'Once men turned their thinking over to machines in the hope that this would set them free.',
+        author: 'Frank Herbert',
+      ),
+      TechQuote(
+        text: 'We are stuck with technology when what we really want is just stuff that works.',
+        author: 'Douglas Adams',
+      ),
+      TechQuote(
+        text: 'The computer communicates with him into a computer-generated universe.',
+        author: 'Neal Stephenson',
+      ),
+      TechQuote(
+        text: 'Never let your sense of morals prevent you from doing what is right.',
+        author: 'Isaac Asimov',
+      ),
+      TechQuote(
+        text: 'A common mistake people make designing something foolproof is underestimating the ingenuity of fools.',
+        author: 'Douglas Adams',
+      ),
+      TechQuote(
+        text: 'The real problem is not whether machines think, but whether men do.',
+        author: 'B. F. Skinner',
+      ),
+      TechQuote(
+        text: 'The future is already here — it\'s just not evenly distributed.',
+        author: 'William Gibson',
+      ),
+      TechQuote(
+        text: 'Technology is a useful servant but a dangerous master.',
+        author: 'Christian Lous Lange',
+      ),
+      TechQuote(
+        text: 'How dangerous is the acquirement of knowledge, and how much happier is he who aspires within bounds.',
+        author: 'Mary Shelley',
+      ),
+      TechQuote(
+        text: 'Technological power is always the result of hardware, someone else\'s work, easily bought.',
+        author: 'Michael Crichton',
+      ),
+      TechQuote(
+        text: 'Machines who think? They\'re almost as terrifying as men who don\'t.',
+        author: 'Isaac Asimov',
+      ),
+      TechQuote(
+        text: 'We need not to be let alone. We need to be really bothered once in a while about something real.',
+        author: 'Ray Bradbury',
+      ),
+    ],
+    AppLanguage.german: [
+      TechQuote(
+        text: 'Phantasie ist wichtiger als Wissen, denn Wissen ist begrenzt.',
+        author: 'Albert Einstein',
+      ),
+      TechQuote(
+        text: 'Der beste Weg, die Zukunft vorauszusagen, ist, sie zu gestalten.',
+        author: 'Willy Brandt',
+      ),
+      TechQuote(
+        text: 'Erfolg hat drei Buchstaben: TUN.',
+        author: 'Johann Wolfgang von Goethe',
+      ),
+      TechQuote(
+        text: 'Die wahre Kunst ist, Komplexität in Einfachheit zu verwandeln.',
+        author: 'Konrad Zuse',
+      ),
+      TechQuote(
+        text: 'Es ist nicht genug zu wissen, man muss auch anwenden; es ist nicht genug zu wollen, man muss auch tun.',
+        author: 'Johann Wolfgang von Goethe',
+      ),
+      TechQuote(
+        text: 'Mehr als die Vergangenheit interessiert mich die Zukunft, denn in ihr gedenke ich zu leben.',
+        author: 'Albert Einstein',
+      ),
+      TechQuote(
+        text: 'Technik ist die Kunst, die Natur nach den Bedürfnissen des Menschen zu gestalten.',
+        author: 'Werner von Siemens',
+      ),
+      TechQuote(
+        text: 'Wenn die Notwendigkeit besteht, muss man das Unmögliche möglich machen.',
+        author: 'Konrad Zuse',
+      ),
+      TechQuote(
+        text: 'Zusammenkunft ist ein Anfang, Zusammenhalt ist ein Fortschritt, Zusammenarbeit ist der Erfolg.',
+        author: 'Henry Ford',
+      ),
+      TechQuote(
+        text: 'Probleme kann man niemals mit derselben Denkweise lösen, durch die sie entstanden sind.',
+        author: 'Albert Einstein',
+      ),
+      TechQuote(
+        text: 'Wer aufhört, besser werden zu wollen, hört auf, gut zu sein.',
+        author: 'Marie von Ebner-Eschenbach',
+      ),
+      TechQuote(
+        text: 'Ordnung und Disziplin sind der Schlüssel zu herausragender Produktivität.',
+        author: 'Gottfried Wilhelm Leibniz',
+      ),
+    ],
+    AppLanguage.belarusian: [
+      TechQuote(
+        text: 'Чалавек без працы — як дзень без сонца.',
+        author: 'Якуб Колас',
+      ),
+      TechQuote(
+        text: 'Шчасце не ў тым, каб мець усё, а ў тым, каб ствараць сваёй працай.',
+        author: 'Янка Купала',
+      ),
+      TechQuote(
+        text: 'Любіце і шануйце сваю справу, і яна адкажа вам поспехам.',
+        author: 'Францыск Скарына',
+      ),
+      TechQuote(
+        text: 'Толькі той дасягае мэты, хто не спыняецца перад цяжкасцямі.',
+        author: 'Максім Багдановіч',
+      ),
+      TechQuote(
+        text: 'Будучыня належыць тым, хто вучыцца і не баіцца новых тэхналогій.',
+        author: 'Кузьма Чорны',
+      ),
+      TechQuote(
+        text: 'Праца і навука адкрываюць дзверы ў новы свет магчымасцей.',
+        author: 'Васіль Быкаў',
+      ),
+      TechQuote(
+        text: 'Шлях да майстэрства пачынаецца з кожнага маленькага кроку.',
+        author: 'Якуб Колас',
+      ),
+      TechQuote(
+        text: 'Кожная новая тэхналогія павінна служыць дабру і развіццю чалавека.',
+        author: 'Уладзімір Караткевіч',
+      ),
+      TechQuote(
+        text: 'Сіла ў адзінстве каманды і імкненні да лепшага выніку.',
+        author: 'Янка Брыль',
+      ),
+      TechQuote(
+        text: 'Штодзённая сумленная праца — гэта фундамент вялікага поспеху.',
+        author: 'Максім Гарэцкі',
+      ),
+    ],
+  };
 
-  static TechQuote? currentQuote;
+  static List<TechQuote> get techQuotes =>
+      quotesByLanguage[LanguageService.instance.currentLanguage] ??
+      quotesByLanguage[AppLanguage.english]!;
+
+  static int _quoteIndex = 0;
+
+  static TechQuote get currentQuote {
+    final list = techQuotes;
+    if (list.isEmpty) {
+      return const TechQuote(
+        text: 'Work with dedication and excellence.',
+        author: 'BrandHRMS',
+      );
+    }
+    return list[_quoteIndex % list.length];
+  }
 
   static void pickNewQuote() {
     final random = math.Random();
+    final list = techQuotes;
+    if (list.length <= 1) {
+      _quoteIndex = 0;
+      return;
+    }
     int newIndex;
     do {
-      newIndex = random.nextInt(techQuotes.length);
-    } while (techQuotes.length > 1 && techQuotes[newIndex] == currentQuote);
-    currentQuote = techQuotes[newIndex];
+      newIndex = random.nextInt(list.length);
+    } while (newIndex == _quoteIndex % list.length);
+    _quoteIndex = newIndex;
   }
 
   @override
@@ -155,9 +269,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     LocationMonitorService.instance.addListener(_onLocationMonitorChanged);
-    if (DashboardScreen.currentQuote == null) {
-      DashboardScreen.pickNewQuote();
-    }
+    LanguageService.instance.addListener(_onLanguageChanged);
+    DashboardScreen.pickNewQuote();
     _currentTimeString = _getRealTimeClock();
     _startLiveTimer();
     _loadDashboardData();
@@ -166,8 +279,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void dispose() {
     LocationMonitorService.instance.removeListener(_onLocationMonitorChanged);
+    LanguageService.instance.removeListener(_onLanguageChanged);
     _liveTimer?.cancel();
     super.dispose();
+  }
+
+  void _onLanguageChanged() {
+    if (!mounted) return;
+    setState(() {});
   }
 
   void _onLocationMonitorChanged() {
@@ -426,6 +545,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _loadDashboardData() async {
+    DashboardScreen.pickNewQuote();
     setState(() => _isLoading = true);
 
     try {
@@ -690,9 +810,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   String _getGreeting() {
     final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good Morning';
-    if (hour < 17) return 'Good Afternoon';
-    return 'Good Evening';
+    if (hour < 12) return tr('good_morning');
+    if (hour < 17) return tr('good_afternoon');
+    return tr('good_evening');
   }
 
   String _formatTime(DateTime dt) {
@@ -969,7 +1089,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildDashboardPage(BuildContext context) {
     final employeeName = ApiService.currentEmployee?.fullName ?? 'Employee';
     final officeName = ApiService.assignedOffice?.name ?? 'BrandCrock Office';
-    final quote = DashboardScreen.currentQuote ?? DashboardScreen.techQuotes.first;
+    final quote = DashboardScreen.currentQuote;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7F9),
