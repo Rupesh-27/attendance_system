@@ -250,6 +250,26 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     return '$formattedHour:$minute $period';
   }
 
+  String _formatDuration(int seconds) {
+    final h = seconds ~/ 3600;
+    final m = (seconds % 3600) ~/ 60;
+    final s = seconds % 60;
+    if (h > 0) {
+      return '$h ${tr('unit_hr')} $m ${tr('unit_min')}';
+    } else if (m > 0) {
+      return '$m ${tr('unit_min')} $s ${tr('unit_sec')}';
+    } else {
+      return '$s ${tr('unit_sec')}';
+    }
+  }
+
+  String _formatWorkHours(int hours, int mins) {
+    if (hours > 0) {
+      return '$hours ${tr('unit_hr')} $mins ${tr('unit_min')}';
+    }
+    return '$mins ${tr('unit_min')}';
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
@@ -661,8 +681,8 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                         officeName: officeName,
                         sessions: daySessions,
                         totalWorkFormatted: totalDurationSec > 0
-                            ? '${hours}hr ${mins}mins'
-                            : '0hr 0mins',
+                            ? _formatDuration(totalDurationSec)
+                            : '0 ${tr('unit_min')}',
                       ),
                       borderRadius: BorderRadius.circular(20),
                       child: Container(
@@ -768,7 +788,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                     ),
                   ),
                   Text(
-                    '${hours}hr ${mins}mins',
+                    _formatWorkHours(hours, mins),
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
@@ -918,7 +938,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                               Row(
                                 children: [
                                   Text(
-                                    'Session #${sessions.length - index}',
+                                    '${tr('session')} #${sessions.length - index}',
                                     style: const TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.bold,
@@ -951,7 +971,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                   else
                                     Text(
                                       session.durationSeconds != null
-                                          ? 'Duration: ${session.durationSeconds! ~/ 60}m ${session.durationSeconds! % 60}s'
+                                          ? '${tr('duration')}: ${_formatDuration(session.durationSeconds!)}'
                                           : '',
                                       style: TextStyle(
                                         fontSize: 12,
@@ -1448,7 +1468,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              totalHours > 0 ? '${totalHours}h ${totalMins}m' : '0h 0m',
+                              totalHours > 0 ? '$totalHours ${tr('unit_hr')} $totalMins ${tr('unit_min')}' : '0 ${tr('unit_min')}',
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -1545,7 +1565,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                             borderRadius: BorderRadius.circular(10),
                                           ),
                                           child: Text(
-                                            '${daySessions.length} session${daySessions.length > 1 ? 's' : ''}${dayWorkSec > 0 ? ' • ${dayH}h ${dayM}m' : ''}',
+                                            '${daySessions.length} ${daySessions.length > 1 ? tr('log_sessions') : tr('log_session')}${dayWorkSec > 0 ? ' • ${_formatWorkHours(dayH, dayM)}' : ''}',
                                             style: const TextStyle(
                                               fontSize: 11,
                                               fontWeight: FontWeight.w600,
@@ -1585,7 +1605,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                             Row(
                                               children: [
                                                 Text(
-                                                  'Session #${daySessions.length - sIndex}',
+                                                  '${tr('session')} #${daySessions.length - sIndex}',
                                                   style: const TextStyle(
                                                     fontSize: 12,
                                                     fontWeight: FontWeight.bold,
@@ -1601,8 +1621,8 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                                       borderRadius: BorderRadius.circular(10),
                                                       border: Border.all(color: Colors.green.shade300),
                                                     ),
-                                                    child: const Text(
-                                                      'Active Now',
+                                                    child: Text(
+                                                      tr('active_now'),
                                                       style: TextStyle(
                                                         fontSize: 10,
                                                         fontWeight: FontWeight.bold,
@@ -1618,8 +1638,8 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                                       borderRadius: BorderRadius.circular(10),
                                                       border: Border.all(color: Colors.red.shade200),
                                                     ),
-                                                    child: const Text(
-                                                      'Out of Radius',
+                                                    child: Text(
+                                                      tr('out_of_radius'),
                                                       style: TextStyle(
                                                         fontSize: 10,
                                                         fontWeight: FontWeight.bold,
@@ -1629,7 +1649,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                                   )
                                                 else if (session.durationSeconds != null)
                                                   Text(
-                                                    '${session.durationSeconds! ~/ 60}m ${session.durationSeconds! % 60}s',
+                                                    _formatDuration(session.durationSeconds!),
                                                     style: TextStyle(
                                                       fontSize: 11,
                                                       color: Colors.grey.shade600,
@@ -1645,9 +1665,9 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                               children: [
                                                 const Icon(Icons.login, size: 15, color: Colors.green),
                                                 const SizedBox(width: 6),
-                                                const Text(
-                                                  'Check-in: ',
-                                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                                Text(
+                                                  '${tr('check_in')}: ',
+                                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                                                 ),
                                                 Text(
                                                   _formatTime(session.checkInTime),
@@ -1685,14 +1705,14 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                               children: [
                                                 const Icon(Icons.logout, size: 15, color: Colors.orange),
                                                 const SizedBox(width: 6),
-                                                const Text(
-                                                  'Check-out: ',
-                                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                                Text(
+                                                  '${tr('check_out')}: ',
+                                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                                                 ),
                                                 Text(
                                                   session.checkOutTime != null
                                                       ? _formatTime(session.checkOutTime!)
-                                                      : 'Active (Not yet checked out)',
+                                                      : tr('active_not_checked_out'),
                                                   style: TextStyle(
                                                     fontSize: 12,
                                                     fontWeight: FontWeight.bold,
