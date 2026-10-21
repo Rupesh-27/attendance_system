@@ -5,11 +5,14 @@ import '../services/api_service.dart';
 import '../services/language_service.dart';
 
 String _formatDate(DateTime dt) {
-  const months = [
+  final monthKey = 'month_${dt.month}';
+  final monthName = tr(monthKey);
+  const fallbackMonths = [
     'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
   ];
-  return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
+  final displayMonth = monthName == monthKey ? fallbackMonths[dt.month - 1] : monthName;
+  return '$displayMonth ${dt.day}, ${dt.year}';
 }
 
 String _formatDateIso(DateTime dt) {
@@ -1065,8 +1068,8 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
           Navigator.pop(context);
           refreshData();
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Leave application submitted successfully!'),
+            SnackBar(
+              content: Text(tr('leave_applied_success')),
               backgroundColor: primaryColor,
             ),
           );
@@ -1173,7 +1176,7 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
         final size = file.lengthSync() ?? (await file.length()) ?? 0;
         if (size > 10 * 1024 * 1024) {
           setState(() {
-            _errorMessage = 'Selected file exceeds the 10 MB limit.';
+            _errorMessage = tr('error_file_too_large');
           });
           return;
         }
@@ -1185,7 +1188,7 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
       }
     } catch (e) {
       setState(() {
-        _errorMessage = 'Unable to pick file. Please try again.';
+        _errorMessage = tr('error_pick_file');
       });
     }
   }
@@ -1209,21 +1212,21 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Add CC', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        title: Text(tr('add_cc'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Enter colleague name or email to keep them notified:',
-              style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+            Text(
+              tr('add_cc_desc'),
+              style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: controller,
               autofocus: true,
               decoration: InputDecoration(
-                hintText: 'e.g. Alice Smith, HR',
+                hintText: tr('add_cc_hint'),
                 filled: true,
                 fillColor: const Color(0xFFF8FAFC),
                 border: OutlineInputBorder(
@@ -1237,7 +1240,7 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
+            child: Text(tr('cancel'), style: const TextStyle(color: Color(0xFF64748B))),
           ),
           ElevatedButton(
             onPressed: () {
@@ -1251,7 +1254,7 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
               backgroundColor: primaryColor,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
-            child: const Text('Add', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: Text(tr('add'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -1308,16 +1311,16 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
 
   Future<void> _submit() async {
     if (_selectedTypeId == null) {
-      setState(() => _errorMessage = 'Please select a leave type');
+      setState(() => _errorMessage = tr('error_select_leave_type'));
       return;
     }
     if (_reasonController.text.trim().isEmpty) {
-      setState(() => _errorMessage = 'Please provide a reason for the leave');
+      setState(() => _errorMessage = tr('error_provide_reason'));
       return;
     }
 
     if (_isCasualLeave && _calculatedDays > 1.0) {
-      setState(() => _errorMessage = 'Casual Leave cannot exceed 1 day per application.');
+      setState(() => _errorMessage = tr('error_cl_max_1_day'));
       return;
     }
 
@@ -1377,9 +1380,9 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Apply for Leave',
-                  style: TextStyle(
+                Text(
+                  tr('apply_for_leave'),
+                  style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF0F172A),
@@ -1405,7 +1408,7 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
                     children: [
                       Text.rich(
                         TextSpan(
-                          text: 'Applying To ',
+                          text: '${tr('applying_to')} ',
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
@@ -1468,9 +1471,9 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'CC To',
-                      style: TextStyle(
+                    Text(
+                      tr('cc_to'),
+                      style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF334155),
@@ -1488,14 +1491,14 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: const Color(0xFFCBD5E1)),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.add_circle_outline, size: 16, color: primaryColor),
-                            SizedBox(width: 6),
+                            const Icon(Icons.add_circle_outline, size: 16, color: primaryColor),
+                            const SizedBox(width: 6),
                             Text(
-                              'Add',
-                              style: TextStyle(
+                              tr('add'),
+                              style: const TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
                                 color: primaryColor,
@@ -1533,9 +1536,9 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
             const SizedBox(height: 16),
 
             // Leave Type Dropdown
-            const Text(
-              'Leave Type',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+            Text(
+              tr('leave_type'),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
             ),
             const SizedBox(height: 6),
             DropdownButtonFormField<String>(
@@ -1590,14 +1593,14 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: const Color(0xFFBFDBFE)),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.info_outline, size: 14, color: Color(0xFF2563EB)),
-                    SizedBox(width: 6),
+                    const Icon(Icons.info_outline, size: 14, color: Color(0xFF2563EB)),
+                    const SizedBox(width: 6),
                     Expanded(
                       child: Text(
-                        'Casual Leave: Max 1 day • 1 application per calendar month',
-                        style: TextStyle(fontSize: 11, color: Color(0xFF1E40AF), fontWeight: FontWeight.w500),
+                        tr('cl_policy_banner'),
+                        style: const TextStyle(fontSize: 11, color: Color(0xFF1E40AF), fontWeight: FontWeight.w500),
                       ),
                     ),
                   ],
@@ -1614,14 +1617,14 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: const Color(0xFFFDE68A)),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.medical_services_outlined, size: 14, color: Color(0xFFD97706)),
-                    SizedBox(width: 6),
+                    const Icon(Icons.medical_services_outlined, size: 14, color: Color(0xFFD97706)),
+                    const SizedBox(width: 6),
                     Expanded(
                       child: Text(
-                        'Medical certificate document is required for Sick Leave of 2+ days',
-                        style: TextStyle(fontSize: 11, color: Color(0xFF92400E), fontWeight: FontWeight.w500),
+                        tr('sl_policy_banner'),
+                        style: const TextStyle(fontSize: 11, color: Color(0xFF92400E), fontWeight: FontWeight.w500),
                       ),
                     ),
                   ],
@@ -1635,16 +1638,16 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Column(
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Half Day Leave',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF334155)),
+                      tr('half_day_leave'),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF334155)),
                     ),
                     Text(
-                      '0.5 day deduction for partial shift',
-                      style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                      tr('half_day_desc'),
+                      style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                     ),
                   ],
                 ),
@@ -1696,7 +1699,7 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
                                   : const Color(0xFF64748B),
                             ),
                             const SizedBox(width: 6),
-                            const Text('Session 1 (AM)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                            Text(tr('session_1_am'), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                           ],
                         ),
                       ),
@@ -1733,7 +1736,7 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
                                   : const Color(0xFF64748B),
                             ),
                             const SizedBox(width: 6),
-                            const Text('Session 2 (PM)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                            Text(tr('session_2_pm'), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                           ],
                         ),
                       ),
@@ -1751,9 +1754,9 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'From Date',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
+                      Text(
+                        tr('from_date'),
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
                       ),
                       const SizedBox(height: 6),
                       InkWell(
@@ -1803,9 +1806,9 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'To Date',
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
+                        Text(
+                          tr('to_date'),
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
                         ),
                         const SizedBox(height: 6),
                         InkWell(
@@ -1861,7 +1864,7 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
                 children: [
                   Text('${tr('total_duration')}:', style: const TextStyle(fontSize: 13, color: Color(0xFF475569))),
                   Text(
-                    '${_calculatedDays.toStringAsFixed(_calculatedDays.truncateToDouble() == _calculatedDays ? 0 : 1)} ${_calculatedDays > 1 ? "Days" : "Day"}',
+                    '${_calculatedDays.toStringAsFixed(_calculatedDays.truncateToDouble() == _calculatedDays ? 0 : 1)} ${_calculatedDays > 1 ? tr("Days") : tr("day")}',
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -1874,16 +1877,16 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
             const SizedBox(height: 16),
 
             // Reason
-            const Text(
-              'Reason for Leave',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+            Text(
+              tr('reason_for_leave'),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
             ),
             const SizedBox(height: 6),
             TextField(
               controller: _reasonController,
               maxLines: 3,
               decoration: InputDecoration(
-                hintText: 'e.g. Doctor appointment, family function, personal work...',
+                hintText: tr('reason_hint'),
                 hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
                 filled: true,
                 fillColor: const Color(0xFFF8FAFC),
@@ -1899,16 +1902,16 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Attach File',
-                  style: TextStyle(
+                Text(
+                  tr('attach_file'),
+                  style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF334155),
                   ),
                 ),
                 Text(
-                  _attachedFile != null ? '1 file selected' : 'Optional (PDF, JPG, PNG)',
+                  _attachedFile != null ? tr('file_selected') : tr('optional_file_types'),
                   style: const TextStyle(
                     fontSize: 11,
                     color: Color(0xFF64748B),
@@ -1945,22 +1948,22 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      const Expanded(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Upload Supporting Document',
-                              style: TextStyle(
+                              tr('upload_supporting_doc'),
+                              style: const TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
                                 color: Color(0xFF1E293B),
                               ),
                             ),
-                            SizedBox(height: 2),
+                            const SizedBox(height: 2),
                             Text(
-                              'PDF or Images up to 10 MB',
-                              style: TextStyle(
+                              tr('upload_size_limit'),
+                              style: const TextStyle(
                                 fontSize: 11,
                                 color: Color(0xFF64748B),
                               ),
@@ -1973,10 +1976,11 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
                         decoration: BoxDecoration(
                           color: primaryColor,
                           borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: primaryColor),
                         ),
-                        child: const Text(
-                          'Browse',
-                          style: TextStyle(
+                        child: Text(
+                          tr('browse'),
+                          style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
@@ -2105,9 +2109,9 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
                         height: 20,
                         child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                       )
-                    : const Text(
-                        'Submit Leave Request',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                    : Text(
+                        tr('submit_leave_request'),
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                       ),
               ),
             ),
