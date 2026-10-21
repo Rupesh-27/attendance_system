@@ -227,22 +227,18 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
   }
 
   String _formatMonthYear(DateTime dt) {
-    const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-    return '${months[dt.month - 1]} ${dt.year}';
+    final monthName = tr('month_full_${dt.month}');
+    return '$monthName ${dt.year}';
   }
 
   String _formatDateFull(DateTime dt) {
-    const days = [
-      'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'
-    ];
-    const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-    return '${days[dt.weekday - 1]}, ${dt.day} ${months[dt.month - 1]} ${dt.year}';
+    final weekdayName = tr('weekday_full_${dt.weekday}');
+    final monthName = tr('month_genitive_${dt.month}');
+    final code = LanguageService.instance.currentCode;
+    if (code == 'de') {
+      return '$weekdayName, ${dt.day}. $monthName ${dt.year}';
+    }
+    return '$weekdayName, ${dt.day} $monthName ${dt.year}';
   }
 
   String _formatTime(DateTime dt) {
@@ -273,7 +269,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
           IconButton(
             onPressed: _fetchHistory,
             icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh',
+            tooltip: tr('refresh'),
           ),
         ],
       ),
@@ -332,10 +328,10 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
 
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Attendance Calendar',
-                  style: TextStyle(
+                  tr('attendance_calendar'),
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF1E293B),
@@ -352,7 +348,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(minWidth: 26, minHeight: 26),
                     onPressed: _previousMonth,
-                    tooltip: 'Previous Month',
+                    tooltip: tr('previous_month'),
                   ),
                   const SizedBox(width: 2),
                   Text(
@@ -369,7 +365,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(minWidth: 26, minHeight: 26),
                     onPressed: _nextMonth,
-                    tooltip: 'Next Month',
+                    tooltip: tr('next_month'),
                   ),
                 ],
               ),
@@ -533,7 +529,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
 
             if (label.isNotEmpty)
               Text(
-                label,
+                LanguageService.localizeAttendanceStatus(label),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -557,8 +553,8 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     final status = statusInfo['status'] as String;
     final holidayName = statusInfo['holidayName'] as String?;
 
-    String firstCheckIn = 'Not marked';
-    String lastCheckOut = 'Not marked';
+    String firstCheckIn = tr('not_marked');
+    String lastCheckOut = tr('not_marked');
     String officeName = '';
     int totalDurationSec = 0;
 
@@ -576,7 +572,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
       if (latestCheckoutSession.checkOutTime != null) {
         lastCheckOut = _formatTime(latestCheckoutSession.checkOutTime!);
       } else if (latestCheckoutSession.status == 'CHECKED_IN') {
-        lastCheckOut = 'Active Now';
+        lastCheckOut = tr('active_now');
       }
 
       for (final s in daySessions) {
@@ -638,10 +634,10 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                       officeName.isNotEmpty
                           ? officeName
                           : (holidayName != null
-                              ? '$holidayName (Government Holiday)'
+                              ? '$holidayName (${tr('govt_holiday')})'
                               : (status == 'WEEK_OFF'
-                                  ? 'Scheduled Week Off'
-                                  : 'General Shift (10:00 AM - 7:00 PM)')),
+                                  ? tr('scheduled_week_off')
+                                  : tr('general_shift'))),
                       style: TextStyle(
                         fontSize: 12,
                         color: holidayName != null
@@ -679,13 +675,13 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
-                          children: const [
-                            Icon(Icons.visibility_outlined,
+                          children: [
+                            const Icon(Icons.visibility_outlined,
                                 size: 16, color: Color(0xFF0284C7)),
-                            SizedBox(width: 4),
+                            const SizedBox(width: 4),
                             Text(
-                              'View',
-                              style: TextStyle(
+                              tr('view'),
+                              style: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
                                 color: Color(0xFF0284C7),
@@ -733,7 +729,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                 child: _buildTimeMetric(
                   icon: Icons.login,
                   iconColor: Colors.green,
-                  title: 'Check-in',
+                  title: tr('check_in'),
                   timeValue: firstCheckIn,
                 ),
               ),
@@ -742,7 +738,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                 child: _buildTimeMetric(
                   icon: Icons.logout,
                   iconColor: Colors.orange,
-                  title: 'Check-out',
+                  title: tr('check_out'),
                   timeValue: lastCheckOut,
                 ),
               ),
@@ -763,9 +759,9 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                   const Icon(Icons.timer_outlined,
                       size: 20, color: Color(0xFF475569)),
                   const SizedBox(width: 10),
-                  const Text(
-                    'Total Work Time: ',
-                    style: TextStyle(
+                  Text(
+                    '${tr('total_work_time')}: ',
+                    style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF334155),
@@ -828,9 +824,9 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Time Log',
-                        style: TextStyle(
+                      Text(
+                        tr('time_log'),
+                        style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF1E293B),
@@ -876,7 +872,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          '${sessions.length} Log Session${sessions.length > 1 ? 's' : ''}',
+                          '${sessions.length} ${sessions.length > 1 ? tr('log_sessions') : tr('log_session')}',
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
@@ -884,7 +880,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                           ),
                         ),
                         Text(
-                          'Total: $totalWorkFormatted',
+                          '${tr('total')}: $totalWorkFormatted',
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
@@ -943,9 +939,9 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                         border: Border.all(
                                             color: Colors.green.shade300),
                                       ),
-                                      child: const Text(
-                                        'Active Now',
-                                        style: TextStyle(
+                                      child: Text(
+                                        tr('active_now'),
+                                        style: const TextStyle(
                                           fontSize: 11,
                                           fontWeight: FontWeight.bold,
                                           color: Colors.green,
@@ -970,7 +966,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                   const Icon(Icons.login,
                                       size: 18, color: Colors.green),
                                   const SizedBox(width: 8),
-                                  const Text('Check-in: ',
+                                  Text('${tr('check_in')}: ',
                                       style: TextStyle(
                                           fontWeight: FontWeight.w600,
                                           fontSize: 13)),
@@ -995,7 +991,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                     const Icon(Icons.logout,
                                         size: 18, color: Colors.orange),
                                     const SizedBox(width: 8),
-                                    const Text('Check-out: ',
+                                    Text('${tr('check_out')}: ',
                                         style: TextStyle(
                                             fontWeight: FontWeight.w600,
                                             fontSize: 13)),
@@ -1012,8 +1008,8 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                           borderRadius: BorderRadius.circular(4),
                                           border: Border.all(color: Colors.red.shade200),
                                         ),
-                                        child: const Text(
-                                          'Out of Radius',
+                                        child: Text(
+                                          tr('out_of_radius'),
                                           style: TextStyle(
                                             color: Colors.red,
                                             fontSize: 10,
@@ -1033,9 +1029,9 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                     const Icon(Icons.location_on_outlined,
                                         size: 16, color: primaryColor),
                                     const SizedBox(width: 6),
-                                    const Text(
-                                      'Check-in Location: ',
-                                      style: TextStyle(
+                                    Text(
+                                      '${tr('check_in_location')}: ',
+                                      style: const TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,
                                         color: Color(0xFF334155),
@@ -1062,9 +1058,9 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                     Icon(Icons.location_on_outlined,
                                         size: 16, color: Colors.orange.shade700),
                                     const SizedBox(width: 6),
-                                    const Text(
-                                      'Check-out Location: ',
-                                      style: TextStyle(
+                                    Text(
+                                      '${tr('check_out_location')}: ',
+                                      style: const TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,
                                         color: Color(0xFF334155),
@@ -1111,8 +1107,9 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
           builder: (context, setModalState) {
             final now = DateTime.now();
             final months = [
-              'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-              'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+              tr('month_1'), tr('month_2'), tr('month_3'), tr('month_4'),
+              tr('month_5'), tr('month_6'), tr('month_7'), tr('month_8'),
+              tr('month_9'), tr('month_10'), tr('month_11'), tr('month_12')
             ];
 
             return Padding(
@@ -1135,21 +1132,21 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Column(
+                      Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Select Month',
-                            style: TextStyle(
+                            tr('select_month'),
+                            style: const TextStyle(
                               fontSize: 17,
                               fontWeight: FontWeight.bold,
                               color: Color(0xFF1E293B),
                             ),
                           ),
-                          SizedBox(height: 2),
+                          const SizedBox(height: 2),
                           Text(
-                            'View full check-in/out records for that month',
-                            style: TextStyle(
+                            tr('view_full_records_desc'),
+                            style: const TextStyle(
                               fontSize: 12,
                               color: Color(0xFF64748B),
                             ),
@@ -1368,9 +1365,9 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Monthly Attendance Log',
-                            style: TextStyle(
+                          Text(
+                            tr('monthly_attendance_log'),
+                            style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                               color: Color(0xFF1E293B),
@@ -1409,9 +1406,9 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                       children: [
                         Column(
                           children: [
-                            const Text(
-                              'Present Days',
-                              style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                            Text(
+                              tr('present_days'),
+                              style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                             ),
                             const SizedBox(height: 2),
                             Text(
@@ -1427,9 +1424,9 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                         Container(height: 24, width: 1, color: const Color(0xFFCBD5E1)),
                         Column(
                           children: [
-                            const Text(
-                              'Total Sessions',
-                              style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                            Text(
+                              tr('total_sessions'),
+                              style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                             ),
                             const SizedBox(height: 2),
                             Text(
@@ -1445,9 +1442,9 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                         Container(height: 24, width: 1, color: const Color(0xFFCBD5E1)),
                         Column(
                           children: [
-                            const Text(
-                              'Total Work',
-                              style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                            Text(
+                              tr('total_work'),
+                              style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                             ),
                             const SizedBox(height: 2),
                             Text(
@@ -1476,7 +1473,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                 Icon(Icons.event_busy_outlined, size: 48, color: Colors.grey.shade400),
                                 const SizedBox(height: 12),
                                 Text(
-                                  'No attendance records found for ${_formatMonthYear(month)}',
+                                  '${tr('no_attendance_records')} ${_formatMonthYear(month)}',
                                   style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                                 ),
                               ],
@@ -1797,27 +1794,27 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
 
     switch (status) {
       case 'PRESENT':
-        text = 'Present';
+        text = tr('present');
         color = const Color(0xFF15803D);
         bg = const Color(0xFFDCFCE7);
         break;
       case 'HOLIDAY':
-        text = 'Holiday';
+        text = tr('holiday');
         color = const Color(0xFF4338CA);
         bg = const Color(0xFFEEF2FF);
         break;
       case 'WEEK_OFF':
-        text = 'Week Off';
+        text = tr('week_off');
         color = const Color(0xFF475569);
         bg = const Color(0xFFF1F5F9);
         break;
       case 'ABSENT':
-        text = 'Absent';
+        text = tr('absent');
         color = const Color(0xFFDC2626);
         bg = const Color(0xFFFEE2E2);
         break;
       default:
-        text = 'Upcoming';
+        text = tr('upcoming');
         color = const Color(0xFF64748B);
         bg = const Color(0xFFF8FAFC);
         break;
@@ -1849,10 +1846,11 @@ class _WeekdayHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isWeekend = label == 'SUN' || label == 'SAT';
+    final translatedLabel = tr(label);
     return Expanded(
       child: Center(
         child: Text(
-          label,
+          translatedLabel,
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.bold,
