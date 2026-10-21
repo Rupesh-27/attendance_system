@@ -1307,6 +1307,8 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
     }
   }
 
+  bool get _isAttachmentMandatory => _isSickLeave && _calculatedDays > 2.0;
+
   double get _calculatedDays {
     if (_isHalfDay) return 0.5;
     return _endDate.difference(_startDate).inDays + 1.0;
@@ -1336,6 +1338,11 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
       return;
     }
 
+    if (_isAttachmentMandatory && _attachedFile == null) {
+      setState(() => _errorMessage = tr('error_sl_attachment_required'));
+      return;
+    }
+
     final bal = _selectedBalance;
     if (bal != null && bal.remainingDays < _calculatedDays) {
       setState(() => _errorMessage =
@@ -1357,6 +1364,7 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
       reason: _reasonController.text.trim(),
       applyingTo: _applyingTo,
       cc: _ccList.isNotEmpty ? _ccList.join(', ') : null,
+      attachmentUrl: _attachedFile?.name,
     );
 
     if (mounted) {
@@ -1631,7 +1639,7 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
               ),
             ],
 
-            if (_isSickLeave && _calculatedDays >= 2.0) ...[
+            if (_isAttachmentMandatory) ...[
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -1953,20 +1961,39 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  tr('attach_file'),
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF334155),
+                Text.rich(
+                  TextSpan(
+                    text: tr('attach_file'),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF334155),
+                    ),
+                    children: _isAttachmentMandatory
+                        ? const [
+                            TextSpan(
+                              text: ' *',
+                              style: TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.bold),
+                            ),
+                          ]
+                        : null,
                   ),
                 ),
                 Flexible(
                   child: Text(
-                    _attachedFile != null ? tr('file_selected') : tr('optional_file_types'),
-                    style: const TextStyle(
+                    _attachedFile != null
+                        ? tr('file_selected')
+                        : (_isAttachmentMandatory
+                            ? tr('mandatory_file_types')
+                            : tr('optional_file_types')),
+                    style: TextStyle(
                       fontSize: 11,
-                      color: Color(0xFF64748B),
+                      fontWeight: _isAttachmentMandatory && _attachedFile == null
+                          ? FontWeight.w600
+                          : FontWeight.normal,
+                      color: _isAttachmentMandatory && _attachedFile == null
+                          ? const Color(0xFFDC2626)
+                          : const Color(0xFF64748B),
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -1984,7 +2011,11 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
                   decoration: BoxDecoration(
                     color: const Color(0xFFF8FAFC),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFCBD5E1)),
+                    border: Border.all(
+                      color: _isAttachmentMandatory && _errorMessage != null && _attachedFile == null
+                          ? const Color(0xFFEF4444)
+                          : const Color(0xFFCBD5E1),
+                    ),
                   ),
                   child: Row(
                     children: [

@@ -732,6 +732,7 @@ class ApiService {
     required String reason,
     String? applyingTo,
     String? cc,
+    String? attachmentUrl,
   }) async {
     try {
       final payload = <String, dynamic>{
@@ -749,6 +750,9 @@ class ApiService {
       }
       if (cc != null && cc.isNotEmpty) {
         payload['cc'] = cc;
+      }
+      if (attachmentUrl != null && attachmentUrl.isNotEmpty) {
+        payload['attachmentUrl'] = attachmentUrl;
       }
 
       final response = await http.post(

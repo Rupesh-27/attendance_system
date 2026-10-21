@@ -151,40 +151,40 @@ func TestLeaveService_SickLeave_AttachmentRule(t *testing.T) {
 	svc, _, empID, _, slID, _ := setupLeaveService(t)
 	ctx := context.Background()
 
-	// SL >= 2 days without attachment should fail
+	// SL > 2 days (3 days) without attachment should fail
 	reqWithoutAttach := service.ApplyLeaveRequest{
 		LeaveTypeID: slID,
 		StartDate:   "2026-10-20",
-		EndDate:     "2026-10-21",
+		EndDate:     "2026-10-22",
 		Reason:      "Fever and flu",
 	}
 	_, err := svc.ApplyLeave(ctx, empID, reqWithoutAttach)
 	assert.ErrorIs(t, err, domain.ErrSickLeaveAttachmentRequired)
 
-	// SL >= 2 days with attachment should succeed
+	// SL > 2 days (3 days) with attachment should succeed
 	attachURL := "https://company.storage/medical_cert_123.pdf"
 	reqWithAttach := service.ApplyLeaveRequest{
 		LeaveTypeID:   slID,
 		StartDate:     "2026-10-20",
-		EndDate:       "2026-10-21",
+		EndDate:       "2026-10-22",
 		Reason:        "Fever with certificate",
 		AttachmentURL: &attachURL,
 	}
 	app, err := svc.ApplyLeave(ctx, empID, reqWithAttach)
 	require.NoError(t, err)
-	assert.Equal(t, float64(2), app.TotalDays)
+	assert.Equal(t, float64(3), app.TotalDays)
 	assert.Equal(t, &attachURL, app.AttachmentURL)
 
-	// SL for 1 day without attachment should succeed
-	reqOneDaySL := service.ApplyLeaveRequest{
+	// SL for 2 days without attachment should succeed (up to 2 days does not require attachment)
+	reqTwoDaySL := service.ApplyLeaveRequest{
 		LeaveTypeID: slID,
 		StartDate:   "2026-11-01",
-		EndDate:     "2026-11-01",
-		Reason:      "Headache",
+		EndDate:     "2026-11-02",
+		Reason:      "Migraine",
 	}
-	appOneDay, err := svc.ApplyLeave(ctx, empID, reqOneDaySL)
+	appTwoDay, err := svc.ApplyLeave(ctx, empID, reqTwoDaySL)
 	require.NoError(t, err)
-	assert.Equal(t, float64(1), appOneDay.TotalDays)
+	assert.Equal(t, float64(2), appTwoDay.TotalDays)
 }
 
 func TestLeaveService_ApplyLeave_InvalidDates(t *testing.T) {

@@ -40,5 +40,5 @@ var (
 	ErrLeaveNotPending            = errors.New("only pending leave applications can be reviewed or cancelled")
 	ErrCasualLeaveExceedsOneDay   = errors.New("casual leave cannot exceed 1 day per application")
 	ErrCasualLeaveMonthlyLimit    = errors.New("casual leave can only be applied once per calendar month")
-	ErrSickLeaveAttachmentRequired = errors.New("medical certificate required for sick leave of 2 or more days")
+	ErrSickLeaveAttachmentRequired = errors.New("medical certificate required for sick leave of more than 2 days")
 )

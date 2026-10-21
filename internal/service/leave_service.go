@@ -99,8 +99,8 @@ func (s *leaveService) ApplyLeave(ctx context.Context, employeeID uuid.UUID, req
 		}
 	}
 
-	// 1b. Sick Leave (SL) Policy: Medical certificate required if >= 2.0 days
-	if lt.Code == "SL" && totalDays >= 2.0 {
+	// 1b. Sick Leave (SL) Policy: Medical certificate required if > 2.0 days (more than 2 days)
+	if lt.Code == "SL" && totalDays > 2.0 {
 		if req.AttachmentURL == nil || *req.AttachmentURL == "" {
 			return nil, domain.ErrSickLeaveAttachmentRequired
 		}
