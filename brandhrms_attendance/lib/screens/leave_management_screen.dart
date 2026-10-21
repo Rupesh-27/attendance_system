@@ -1380,12 +1380,14 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  tr('apply_for_leave'),
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF0F172A),
+                Expanded(
+                  child: Text(
+                    tr('apply_for_leave'),
+                    style: const TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0F172A),
+                    ),
                   ),
                 ),
                 IconButton(
@@ -1542,6 +1544,7 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
             ),
             const SizedBox(height: 6),
             DropdownButtonFormField<String>(
+              isExpanded: true,
               initialValue: _selectedTypeId,
               items: widget.leaveTypes.map((t) {
                 final bal = widget.balances.firstWhere(
@@ -1563,7 +1566,12 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
                     : bal.remainingDays.toStringAsFixed(1);
                 return DropdownMenuItem<String>(
                   value: t.id,
-                  child: Text('${LanguageService.localizeLeaveType(t.name)} ($rem ${tr('days_left')})'),
+                  child: Text(
+                    '${LanguageService.localizeLeaveType(t.name)} ($rem ${tr('days_left')})',
+                    style: const TextStyle(fontSize: 13, color: Color(0xFF1E293B)),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
                 );
               }).toList(),
               onChanged: (val) {
@@ -1575,6 +1583,7 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
                 });
               },
               decoration: InputDecoration(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 filled: true,
                 fillColor: const Color(0xFFF8FAFC),
                 border: OutlineInputBorder(
@@ -1638,19 +1647,22 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      tr('half_day_leave'),
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF334155)),
-                    ),
-                    Text(
-                      tr('half_day_desc'),
-                      style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                    ),
-                  ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        tr('half_day_leave'),
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF334155)),
+                      ),
+                      Text(
+                        tr('half_day_desc'),
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
                 Switch(
                   value: _isHalfDay,
                   activeThumbColor: primaryColor,
@@ -1699,7 +1711,13 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
                                   : const Color(0xFF64748B),
                             ),
                             const SizedBox(width: 6),
-                            Text(tr('session_1_am'), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                            Flexible(
+                              child: Text(
+                                tr('session_1_am'),
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -1736,7 +1754,13 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
                                   : const Color(0xFF64748B),
                             ),
                             const SizedBox(width: 6),
-                            Text(tr('session_2_pm'), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                            Flexible(
+                              child: Text(
+                                tr('session_2_pm'),
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -1862,7 +1886,9 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('${tr('total_duration')}:', style: const TextStyle(fontSize: 13, color: Color(0xFF475569))),
+                  Expanded(
+                    child: Text('${tr('total_duration')}:', style: const TextStyle(fontSize: 13, color: Color(0xFF475569))),
+                  ),
                   Text(
                     '${_calculatedDays.toStringAsFixed(_calculatedDays.truncateToDouble() == _calculatedDays ? 0 : 1)} ${_calculatedDays > 1 ? tr("Days") : tr("day")}',
                     style: const TextStyle(
@@ -1910,11 +1936,14 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
                     color: Color(0xFF334155),
                   ),
                 ),
-                Text(
-                  _attachedFile != null ? tr('file_selected') : tr('optional_file_types'),
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: Color(0xFF64748B),
+                Flexible(
+                  child: Text(
+                    _attachedFile != null ? tr('file_selected') : tr('optional_file_types'),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF64748B),
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
