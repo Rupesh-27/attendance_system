@@ -329,9 +329,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               child: const Icon(Icons.notifications_active, color: primaryColor, size: 22),
                             ),
                             const SizedBox(width: 10),
-                            const Text(
-                              'Notifications',
-                              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            Text(
+                              tr('notifications'),
+                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),
@@ -344,7 +344,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               setSheetState(() {});
                               Navigator.pop(ctx);
                             },
-                            child: const Text('Clear All', style: TextStyle(color: Colors.red)),
+                            child: Text(tr('clear_all'), style: const TextStyle(color: Colors.red)),
                           ),
                       ],
                     ),
@@ -358,7 +358,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             Icon(Icons.notifications_none, size: 48, color: Colors.grey.shade400),
                             const SizedBox(height: 8),
                             Text(
-                              'No new notifications',
+                              tr('no_new_notifications'),
                               style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
                             ),
                           ],
@@ -488,9 +488,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ],
         ),
-        content: const Text(
-          'Your current GPS location is outside the configured office radius. Therefore, the system has automatically checked you out. Please retry check-in once you are within the office radius. For further assistance, please contact HR or your reporting in-charge.',
-          style: TextStyle(fontSize: 13.5, height: 1.45, color: Color(0xFF334155)),
+        content: Text(
+          tr('automatic_checkout_dialog_msg'),
+          style: const TextStyle(fontSize: 13.5, height: 1.45, color: Color(0xFF334155)),
         ),
         actions: [
           ElevatedButton(
@@ -504,7 +504,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Navigator.pop(ctx);
               _loadDashboardData();
             },
-            child: const Text('Understood', style: TextStyle(fontWeight: FontWeight.w600)),
+            child: Text(tr('understood'), style: const TextStyle(fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -825,41 +825,64 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   String _getDayName(DateTime dt) {
-    const days = [
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday',
-      'Sunday'
-    ];
-    return days[dt.weekday - 1];
+    return tr('weekday_full_${dt.weekday}');
   }
 
   String _formatMonthDayYear(DateTime dt) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec'
-    ];
-    return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
+    final code = LanguageService.instance.currentCode;
+    final monthName = tr('month_genitive_${dt.month}');
+    if (code == 'de') {
+      return '${dt.day}. $monthName ${dt.year}';
+    } else if (code == 'be') {
+      return '${dt.day} $monthName ${dt.year}';
+    }
+    return '${tr('month_${dt.month}')} ${dt.day}, ${dt.year}';
+  }
+
+  String _getLocalizedLocationSubtext(String officeName) {
+    if (_locationStatusSubtext.contains('Location will be validated') ||
+        _locationStatusSubtext.contains('validate_upon_checkin')) {
+      return tr('loc_subtext_validate_upon_checkin');
+    }
+    if (_locationStatusSubtext.contains('Off-site verified') ||
+        _locationStatusSubtext.contains('offsite_verified')) {
+      return tr('loc_subtext_offsite_verified');
+    }
+    if (_locationStatusSubtext.contains('turned ON') ||
+        _locationStatusSubtext.contains('gps_on')) {
+      return tr('loc_subtext_gps_on');
+    }
+    if (_locationStatusSubtext.contains('Within')) {
+      return '${tr('checked_in')} • $officeName';
+    }
+    if (_locationStatusSubtext.contains('Check in again') ||
+        _locationStatusSubtext.contains('check_in_again')) {
+      return tr('loc_subtext_check_in_again');
+    }
+    if (_locationStatusSubtext.contains('Coordinates will be logged') ||
+        _locationStatusSubtext.contains('offsite_enabled')) {
+      return tr('loc_subtext_offsite_enabled');
+    }
+    if (_locationStatusSubtext.contains('Check-in verified') ||
+        _locationStatusSubtext.contains('checkin_verified')) {
+      return tr('loc_subtext_checkin_verified');
+    }
+    if (_locationStatusSubtext.contains('Coordinates captured') ||
+        _locationStatusSubtext.contains('coords_captured')) {
+      return tr('loc_subtext_coords_captured');
+    }
+    if (_locationStatusSubtext.contains('Check-out verified') ||
+        _locationStatusSubtext.contains('checkout_verified')) {
+      return tr('loc_subtext_checkout_verified');
+    }
+    return tr(_locationStatusSubtext);
   }
 
   String _formatEffortHM(int totalSec) {
     if (totalSec < 0) totalSec = 0;
     final h = (totalSec ~/ 3600).toString().padLeft(2, '0');
     final m = ((totalSec % 3600) ~/ 60).toString().padLeft(2, '0');
-    return '${h}h ${m}m';
+    return '$h ${tr('unit_hr')} $m ${tr('unit_min')}';
   }
 
   Future<void> _handleAttendanceAction() async {
@@ -891,8 +914,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           permission == LocationPermission.deniedForever) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Location permission is required for attendance.'),
+            SnackBar(
+              content: Text(tr('location_permission_required')),
               backgroundColor: Colors.red,
             ),
           );
@@ -967,10 +990,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             });
           }
 
-          final actionName = _isCheckedIn ? 'Checked out' : 'Checked in';
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('$actionName successfully'),
+              content: Text(_isCheckedIn ? tr('checked_out_successfully') : tr('checked_in_successfully')),
               backgroundColor: Colors.green,
             ),
           );
@@ -1114,7 +1136,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   )
                 : const Icon(Icons.refresh),
-            tooltip: 'Refresh',
+            tooltip: tr('refresh'),
           ),
           Stack(
             alignment: Alignment.center,
@@ -1125,7 +1147,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   _unreadNotifications > 0 ? Icons.notifications_active : Icons.notifications_none,
                   color: _unreadNotifications > 0 ? Colors.amberAccent : Colors.white,
                 ),
-                tooltip: 'Notifications',
+                tooltip: tr('notifications'),
               ),
               if (_unreadNotifications > 0)
                 Positioned(
@@ -1248,9 +1270,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Out of Office Radius!',
-                        style: TextStyle(
+                      Text(
+                        tr('out_of_office_radius'),
+                        style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFFB91C1C),
@@ -1303,7 +1325,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                monitor.lastError ?? 'GPS location disabled. Please ensure Location is enabled on your device.',
+                monitor.lastError ?? tr('gps_disabled_banner'),
                 style: const TextStyle(fontSize: 12, color: Color(0xFF92400E)),
               ),
             ),
@@ -1330,9 +1352,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Actions',
-                style: TextStyle(
+              Text(
+                tr('actions'),
+                style: const TextStyle(
                   fontSize: 16.5,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF1E293B),
@@ -1382,7 +1404,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          '${hours}hr',
+                          '$hours ${tr('unit_hr')}',
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -1390,7 +1412,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                         ),
                         Text(
-                          '$mins mins',
+                          '$mins ${tr('unit_min')}',
                           style: TextStyle(
                             fontSize: 10.5,
                             color: Colors.grey.shade600,
@@ -1683,7 +1705,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Row(
                   children: [
                     Text(
-                      _locationStatus,
+                      LanguageService.localizeAttendanceStatus(_locationStatus),
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -1702,7 +1724,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                       ),
                       child: Text(
-                        _locationStatusBadge,
+                        tr(_locationStatusBadge),
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
@@ -1715,7 +1737,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 if (_locationStatusSubtext.isNotEmpty) ...[
                   const SizedBox(height: 2),
                   Text(
-                    _locationStatusSubtext,
+                    _getLocalizedLocationSubtext(ApiService.assignedOffice?.name ?? 'Office'),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -1754,9 +1776,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Today Login Status',
-                          style: TextStyle(
+                        Text(
+                          tr('today_login_status'),
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: Color(0xFF1E293B),
@@ -1765,10 +1787,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         const SizedBox(height: 2),
                         Text(
                           _isCarriedOver
-                              ? 'Active overnight shift carried over from $_attendanceDay'
+                              ? '${tr('carried_over_shift_from')} $_attendanceDay'
                               : (_todaySessions.isEmpty
-                                  ? 'Tap to view today\'s Logs'
-                                  : '${_todaySessions.length} Log${_todaySessions.length > 1 ? 's' : ''} recorded today'),
+                                  ? tr('tap_to_view_logs')
+                                  : '${_todaySessions.length} ${_todaySessions.length > 1 ? tr('logs_recorded_today') : tr('log_recorded_today')}'),
                           style: TextStyle(
                             fontSize: 12,
                             color: _isCarriedOver
@@ -1807,7 +1829,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           size: 40, color: Colors.grey.shade400),
                       const SizedBox(height: 6),
                       Text(
-                        'No Logs recorded today yet.',
+                        tr('no_logs_today'),
                         style: TextStyle(
                           color: Colors.grey.shade600,
                           fontSize: 13,
