@@ -324,6 +324,10 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                 _buildDateDetailsCard(),
               ],
 
+              const SizedBox(height: 16),
+
+              _buildLedgerSectionCard(),
+
               const SizedBox(height: 30),
             ],
           ),
@@ -441,6 +445,402 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  String _getWeekdayShort(int weekday) {
+    const map = {
+      1: 'MON',
+      2: 'TUE',
+      3: 'WED',
+      4: 'THU',
+      5: 'FRI',
+      6: 'SAT',
+      7: 'SUN',
+    };
+    return tr(map[weekday] ?? 'SUN');
+  }
+
+  Widget _buildLedgerSectionCard() {
+    final daysInMonth =
+        DateTime(_currentMonth.year, _currentMonth.month + 1, 0).day;
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: primaryColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.format_list_bulleted_rounded,
+                    color: primaryColor,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        tr('attendance_ledger'),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1E293B),
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _formatMonthYear(_currentMonth),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF64748B),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.chevron_left, size: 20),
+                  padding: const EdgeInsets.all(6),
+                  constraints:
+                      const BoxConstraints(minWidth: 34, minHeight: 34),
+                  onPressed: _previousMonth,
+                  tooltip: tr('previous_month'),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.chevron_right, size: 20),
+                  padding: const EdgeInsets.all(6),
+                  constraints:
+                      const BoxConstraints(minWidth: 34, minHeight: 34),
+                  onPressed: _nextMonth,
+                  tooltip: tr('next_month'),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+          Container(
+            color: const Color(0xFFF8FAFC),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: Text(
+                    tr('ledger_date'),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF475569),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 3,
+                  child: Text(
+                    tr('first_check_in'),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF475569),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 3,
+                  child: Text(
+                    tr('last_check_out'),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF475569),
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  width: 44,
+                  child: Center(
+                    child: Text(
+                      tr('view'),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF475569),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: Color(0xFFE2E8F0)),
+          if (_isLoading)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 32),
+              child: Center(
+                child: CircularProgressIndicator(color: primaryColor),
+              ),
+            )
+          else
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: daysInMonth,
+              separatorBuilder: (context, index) =>
+                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
+              itemBuilder: (context, index) {
+                final dayNum = index + 1;
+                final dayDate = DateTime(
+                    _currentMonth.year, _currentMonth.month, dayNum);
+                return _buildLedgerDayRow(dayDate);
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLedgerDayRow(DateTime dayDate) {
+    final now = DateTime.now();
+    final isToday = dayDate.year == now.year &&
+        dayDate.month == now.month &&
+        dayDate.day == now.day;
+    final isWeekend = dayDate.weekday == DateTime.saturday ||
+        dayDate.weekday == DateTime.sunday;
+
+    final sessions = _getRecordsForDay(dayDate);
+    String firstIn = '—';
+    String lastOut = '—';
+    final bool hasPunches = sessions.isNotEmpty;
+
+    if (hasPunches) {
+      final earliest = sessions.last;
+      firstIn = _formatTime(earliest.checkInTime);
+
+      final latestCheckoutSession = sessions.firstWhere(
+        (s) => s.checkOutTime != null,
+        orElse: () => earliest,
+      );
+
+      if (latestCheckoutSession.checkOutTime != null) {
+        lastOut = _formatTime(latestCheckoutSession.checkOutTime!);
+      } else if (latestCheckoutSession.status == 'CHECKED_IN') {
+        lastOut = tr('active_now');
+      }
+    }
+
+    final weekdayName = _getWeekdayShort(dayDate.weekday);
+    final monthShort = tr('month_${dayDate.month}');
+
+    return Container(
+      color: isToday
+          ? const Color(0xFFF0FDF4)
+          : (isWeekend ? const Color(0xFFFAFAFA) : Colors.white),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 3,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '${dayDate.day.toString().padLeft(2, '0')} $monthShort',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: isToday ? FontWeight.bold : FontWeight.w600,
+                    color: isToday
+                        ? primaryColor
+                        : (isWeekend
+                            ? const Color(0xFF64748B)
+                            : const Color(0xFF1E293B)),
+                  ),
+                ),
+                const SizedBox(height: 1),
+                Text(
+                  weekdayName,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: isWeekend
+                        ? const Color(0xFF94A3B8)
+                        : const Color(0xFF64748B),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              firstIn,
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: hasPunches ? FontWeight.w600 : FontWeight.normal,
+                color: hasPunches
+                    ? const Color(0xFF16A34A)
+                    : const Color(0xFF94A3B8),
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              lastOut,
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: hasPunches ? FontWeight.w600 : FontWeight.normal,
+                color: lastOut == tr('active_now')
+                    ? const Color(0xFFD97706)
+                    : (hasPunches
+                        ? const Color(0xFF2563EB)
+                        : const Color(0xFF94A3B8)),
+              ),
+            ),
+          ),
+          SizedBox(
+            width: 44,
+            child: Center(
+              child: IconButton(
+                icon: Icon(
+                  Icons.visibility_outlined,
+                  size: 20,
+                  color: hasPunches
+                      ? primaryColor
+                      : const Color(0xFFCBD5E1),
+                ),
+                padding: EdgeInsets.zero,
+                constraints:
+                    const BoxConstraints(minWidth: 36, minHeight: 36),
+                splashRadius: 18,
+                tooltip: tr('view_details'),
+                onPressed: () => _showDayAttendanceHistory(dayDate),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDayAttendanceHistory(DateTime date) {
+    final statusInfo = _getDayStatus(date);
+    final sessions = statusInfo['sessions'] as List<AttendanceRecord>;
+
+    if (sessions.isEmpty) {
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: Colors.white,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        builder: (ctx) {
+          return Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Icon(
+                  Icons.event_busy_rounded,
+                  size: 48,
+                  color: Colors.grey.shade400,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  _formatDateFull(date),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E293B),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  tr('no_records_for_day'),
+                  textAlign: TextAlign.center,
+                  style:
+                      TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(tr('close')),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+      return;
+    }
+
+    final officeName = sessions.first.officeSnapshotName;
+    int totalSec = 0;
+    for (final s in sessions) {
+      if (s.durationSeconds != null) {
+        totalSec += s.durationSeconds!;
+      } else if (s.checkOutTime == null) {
+        totalSec +=
+            DateTime.now().difference(s.checkInTime.toLocal()).inSeconds;
+      }
+    }
+    final totalHours = totalSec ~/ 3600;
+    final totalMins = (totalSec % 3600) ~/ 60;
+    final totalWorkFormatted = _formatWorkHours(totalHours, totalMins);
+
+    _showSwipesBreakdownModal(
+      date: date,
+      officeName: officeName,
+      sessions: sessions,
+      totalWorkFormatted: totalWorkFormatted,
     );
   }
 
