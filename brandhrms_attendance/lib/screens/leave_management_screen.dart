@@ -681,7 +681,7 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
                   _selectedLeaveTypeFilter = null;
                 }),
                 icon: const Icon(Icons.refresh, size: 16),
-                label: const Text('Show All Requests'),
+                label: Text(tr('show_all_requests')),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primaryColor,
                   foregroundColor: Colors.white,
@@ -1091,7 +1091,7 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Back'),
+            child: Text(tr('back')),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -1859,7 +1859,7 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Total Duration:', style: TextStyle(fontSize: 13, color: Color(0xFF475569))),
+                  Text('${tr('total_duration')}:', style: const TextStyle(fontSize: 13, color: Color(0xFF475569))),
                   Text(
                     '${_calculatedDays.toStringAsFixed(_calculatedDays.truncateToDouble() == _calculatedDays ? 0 : 1)} ${_calculatedDays > 1 ? "Days" : "Day"}',
                     style: const TextStyle(

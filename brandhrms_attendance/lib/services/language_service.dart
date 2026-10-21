@@ -195,6 +195,11 @@ class LanguageService extends ChangeNotifier {
       'rule_sl': 'Medical certificate required for 2+ consecutive days',
       'rule_pl': 'Privilege leave for planned holidays and family events',
       'rule_standard': 'Annual allowance for standard employee entitlement',
+      'show_all_requests': 'Show All Requests',
+      'Show All Requests': 'Show All Requests',
+      'back': 'Back',
+      'Back': 'Back',
+      'total_duration': 'Total Duration',
 
       // Attendance History
       'attendance_history': 'Attendance History',
@@ -326,6 +331,11 @@ class LanguageService extends ChangeNotifier {
       'rule_sl': 'Ärztliches Attest ab 2 aufeinanderfolgenden Tagen erforderlich',
       'rule_pl': 'Erholungsurlaub für geplante Ferien und Familienfeiern',
       'rule_standard': 'Jahreskontingent für regulären Mitarbeiteranspruch',
+      'show_all_requests': 'Alle Anträge anzeigen',
+      'Show All Requests': 'Alle Anträge anzeigen',
+      'back': 'Zurück',
+      'Back': 'Zurück',
+      'total_duration': 'Gesamtdauer',
 
       // Attendance History
       'attendance_history': 'Anwesenheitsverlauf',
@@ -457,6 +467,11 @@ class LanguageService extends ChangeNotifier {
       'rule_sl': 'Медыцынская даведка патрабуецца на 2+ дні запар',
       'rule_pl': 'Прывілеяваны водпуск для планаванага адпачынку і сямейных падзей',
       'rule_standard': 'Штогадовая норма для стандартнага права супрацоўніка',
+      'show_all_requests': 'Паказаць усе заяўкі',
+      'Show All Requests': 'Паказаць усе заяўкі',
+      'back': 'Назад',
+      'Back': 'Назад',
+      'total_duration': 'Агульная працягласць',
 
       // Attendance History
       'attendance_history': 'Гісторыя наведвальнасці',
