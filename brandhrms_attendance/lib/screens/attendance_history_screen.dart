@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
+import '../services/geocoding_service.dart';
 import '../services/language_service.dart';
 
 class AttendanceHistoryScreen extends StatefulWidget {
@@ -166,10 +167,10 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     if (sessions.isNotEmpty) {
       return {
         'status': 'PRESENT',
-        'label': 'Present',
-        'color': const Color(0xFF1E88E5),
-        'bgColor': const Color(0xFFEBF5FB),
-        'borderColor': const Color(0xFF64B5F6),
+        'label': 'P',
+        'color': const Color(0xFF16A34A),
+        'bgColor': const Color(0xFFF0FDF4),
+        'borderColor': const Color(0xFF86EFAC),
         'icon': Icons.business,
         'sessions': sessions,
         'holidayName': holidayName,
@@ -179,7 +180,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     if (holidayName != null) {
       return {
         'status': 'HOLIDAY',
-        'label': 'Holiday',
+        'label': 'H',
         'holidayName': holidayName,
         'color': const Color(0xFF4338CA),
         'bgColor': const Color(0xFFEEF2FF),
@@ -194,8 +195,8 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     if (isWeekend) {
       return {
         'status': 'WEEK_OFF',
-        'label': 'Week Off',
-        'color': const Color(0xFF455A64),
+        'label': 'WO',
+        'color': const Color(0xFF475569),
         'bgColor': const Color(0xFFF1F5F9),
         'borderColor': const Color(0xFFCFD8DC),
         'icon': Icons.local_cafe_outlined,
@@ -206,10 +207,10 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     if (targetDate.isBefore(today)) {
       return {
         'status': 'ABSENT',
-        'label': 'Absent',
-        'color': const Color(0xFFE53935),
-        'bgColor': const Color(0xFFFEECEB),
-        'borderColor': const Color(0xFFFFCDD2),
+        'label': 'A',
+        'color': const Color(0xFFDC2626),
+        'bgColor': const Color(0xFFFEF2F2),
+        'borderColor': const Color(0xFFFECACA),
         'icon': Icons.cancel_outlined,
         'sessions': <AttendanceRecord>[],
       };
@@ -251,15 +252,24 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
   }
 
   String _formatDuration(int seconds) {
+    if (seconds < 0) seconds = 0;
     final h = seconds ~/ 3600;
     final m = (seconds % 3600) ~/ 60;
     final s = seconds % 60;
-    if (h > 0) {
-      return '$h ${tr('unit_hr')} $m ${tr('unit_min')}';
-    } else if (m > 0) {
-      return '$m ${tr('unit_min')} $s ${tr('unit_sec')}';
+    return '${h}h ${m}m ${s}s';
+  }
+
+  String _formatSessionLocation(String? address, String officeSnapshotName) {
+    if (ApiService.isLocationAttendanceRequired) {
+      if (officeSnapshotName.isNotEmpty) {
+        return officeSnapshotName;
+      }
+      return ApiService.assignedOffice?.name ?? tr('office');
     } else {
-      return '$s ${tr('unit_sec')}';
+      if (address != null && address.trim().isNotEmpty) {
+        return GeocodingService.formatCityDistrictStateCountry(address);
+      }
+      return tr('off_site');
     }
   }
 
@@ -512,30 +522,20 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
 
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '$dayNumber',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: isSelected || isToday
-                        ? FontWeight.bold
-                        : FontWeight.w600,
-                    color: isSelected
-                        ? const Color(0xFF1D4ED8)
-                        : (isToday ? primaryColor : const Color(0xFF1E293B)),
-                  ),
+            Align(
+              alignment: Alignment.topLeft,
+              child: Text(
+                '$dayNumber',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: isSelected || isToday
+                      ? FontWeight.bold
+                      : FontWeight.w600,
+                  color: isSelected
+                      ? const Color(0xFF1D4ED8)
+                      : (isToday ? primaryColor : const Color(0xFF1E293B)),
                 ),
-                Text(
-                  'GEN',
-                  style: TextStyle(
-                    fontSize: 8,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.grey.shade500,
-                  ),
-                ),
-              ],
+              ),
             ),
 
             if (icon != null)
@@ -549,17 +549,17 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
 
             if (label.isNotEmpty)
               Text(
-                LanguageService.localizeAttendanceStatus(label),
+                label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 8.5,
+                  fontSize: 11,
                   fontWeight: FontWeight.bold,
                   color: color,
                 ),
               )
             else
-              const SizedBox(height: 8),
+              const SizedBox(height: 11),
           ],
         ),
       ),
@@ -923,12 +923,14 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                         final session = sessions[index];
                         final isCurrent = session.status == 'CHECKED_IN' &&
                             session.checkOutTime == null;
-                        final inLoc = (session.checkInAddress != null && session.checkInAddress!.isNotEmpty)
-                            ? session.checkInAddress!
-                            : session.officeSnapshotName;
-                        final outLoc = (session.checkOutAddress != null && session.checkOutAddress!.isNotEmpty)
-                            ? session.checkOutAddress!
-                            : session.officeSnapshotName;
+                        final inLoc = _formatSessionLocation(
+                          session.checkInAddress,
+                          session.officeSnapshotName,
+                        );
+                        final outLoc = _formatSessionLocation(
+                          session.checkOutAddress,
+                          session.officeSnapshotName,
+                        );
 
                         return Padding(
                           padding: const EdgeInsets.symmetric(vertical: 4),
@@ -994,14 +996,16 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                     _formatTime(session.checkInTime),
                                     style: const TextStyle(fontSize: 13),
                                   ),
-                                  const Spacer(),
-                                  Text(
-                                    session.officeSnapshotName,
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey.shade500,
+                                  if (ApiService.isLocationAttendanceRequired && session.officeSnapshotName.isNotEmpty) ...[
+                                    const Spacer(),
+                                    Text(
+                                      session.officeSnapshotName,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.grey.shade500,
+                                      ),
                                     ),
-                                  ),
+                                  ],
                                 ],
                               ),
                               if (session.checkOutTime != null) ...[
@@ -1608,12 +1612,14 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                       final sIndex = entry.key;
                                       final session = entry.value;
                                       final isCurrent = session.status == 'CHECKED_IN' && session.checkOutTime == null;
-                                      final inLoc = (session.checkInAddress != null && session.checkInAddress!.isNotEmpty)
-                                          ? session.checkInAddress!
-                                          : session.officeSnapshotName;
-                                      final outLoc = (session.checkOutAddress != null && session.checkOutAddress!.isNotEmpty)
-                                          ? session.checkOutAddress!
-                                          : session.officeSnapshotName;
+                                      final inLoc = _formatSessionLocation(
+                                        session.checkInAddress,
+                                        session.officeSnapshotName,
+                                      );
+                                      final outLoc = _formatSessionLocation(
+                                        session.checkOutAddress,
+                                        session.officeSnapshotName,
+                                      );
 
                                       return Container(
                                         margin: EdgeInsets.only(top: sIndex > 0 ? 10 : 0),

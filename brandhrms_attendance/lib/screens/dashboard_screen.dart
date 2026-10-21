@@ -885,6 +885,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return '$h ${tr('unit_hr')} $m ${tr('unit_min')}';
   }
 
+  String _formatMonthlyEffortDHM(int totalSec) {
+    if (totalSec < 0) totalSec = 0;
+    final d = totalSec ~/ 86400;
+    final h = (totalSec % 86400) ~/ 3600;
+    final m = (totalSec % 3600) ~/ 60;
+    return '${d}d ${h}h ${m}m';
+  }
+
+  String _formatSessionDurationHMS(int totalSec) {
+    if (totalSec < 0) totalSec = 0;
+    final h = totalSec ~/ 3600;
+    final m = (totalSec % 3600) ~/ 60;
+    final s = totalSec % 60;
+    return '${h}h ${m}m ${s}s';
+  }
+
+  String _formatSessionLocation(String? address, String officeSnapshotName) {
+    if (ApiService.isLocationAttendanceRequired) {
+      if (officeSnapshotName.isNotEmpty) {
+        return officeSnapshotName;
+      }
+      return ApiService.assignedOffice?.name ?? tr('office');
+    } else {
+      if (address != null && address.trim().isNotEmpty) {
+        return GeocodingService.formatCityDistrictStateCountry(address);
+      }
+      return tr('off_site');
+    }
+  }
+
   Future<void> _handleAttendanceAction() async {
     if (_isSubmittingAttendance) return;
 
@@ -933,6 +963,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final address = await GeocodingService.getAddressFromCoordinates(
         position.latitude,
         position.longitude,
+        cityDistrictStateCountryOnly: !ApiService.isLocationAttendanceRequired,
       );
 
       final result = _isCheckedIn
@@ -1568,7 +1599,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             iconColor: const Color(0xFF1E88E5),
             iconBg: const Color(0xFFE3F2FD),
             title: tr('monthly_effort'),
-            value: _formatEffortHM(_monthlyWorkSeconds),
+            value: _formatMonthlyEffortDHM(_monthlyWorkSeconds),
           ),
         ),
         const SizedBox(width: 8),
@@ -1637,13 +1668,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           const SizedBox(height: 6),
           Center(
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.2,
-                color: Color(0xFF1E293B),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.2,
+                  color: Color(0xFF1E293B),
+                ),
               ),
             ),
           ),
@@ -1902,7 +1936,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           else
                             Text(
                               session.durationSeconds != null
-                                  ? "${tr('duration')}: ${session.durationSeconds! ~/ 60} ${tr('unit_min')} ${session.durationSeconds! % 60} ${tr('unit_sec')}"
+                                  ? "${tr('duration')}: ${_formatSessionDurationHMS(session.durationSeconds!)}"
                                   : '',
                               style: TextStyle(
                                 fontSize: 12,
@@ -1912,94 +1946,133 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ],
                       ),
                       const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          const Icon(Icons.login,
-                              size: 16, color: Colors.green),
-                          const SizedBox(width: 6),
-                          Text(
-                            "${tr('check_in')}: ",
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w600, fontSize: 13),
-                          ),
-                          Text(
-                            _formatTime(session.checkInTime),
-                            style: const TextStyle(fontSize: 13),
-                          ),
-                          const Spacer(),
-                          Flexible(
-                            child: Text(
-                              session.officeSnapshotName,
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey.shade500,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (session.checkInAddress != null && session.checkInAddress!.isNotEmpty) ...[
-                        const SizedBox(height: 2),
-                        Row(
+                      // Check-in info
+                      () {
+                        final inLoc = _formatSessionLocation(
+                          session.checkInAddress,
+                          session.officeSnapshotName,
+                        );
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const SizedBox(width: 22),
-                            Icon(Icons.location_on_outlined, size: 12, color: Colors.grey.shade500),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                session.checkInAddress!,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.grey.shade600,
+                            Row(
+                              children: [
+                                const Icon(Icons.login,
+                                    size: 16, color: Colors.green),
+                                const SizedBox(width: 6),
+                                Text(
+                                  "${tr('check_in')}: ",
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w600, fontSize: 13),
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                      if (session.checkOutTime != null) ...[
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            const Icon(Icons.logout,
-                                size: 16, color: Colors.orange),
-                            const SizedBox(width: 6),
-                            Text(
-                              "${tr('check_out')}: ",
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w600, fontSize: 13),
-                            ),
-                            Text(
-                              _formatTime(session.checkOutTime!),
-                              style: const TextStyle(fontSize: 13),
-                            ),
-                          ],
-                        ),
-                        if (session.checkOutAddress != null && session.checkOutAddress!.isNotEmpty) ...[
-                          const SizedBox(height: 2),
-                          Row(
-                            children: [
-                              const SizedBox(width: 22),
-                              Icon(Icons.location_on_outlined, size: 12, color: Colors.grey.shade500),
-                              const SizedBox(width: 4),
-                              Expanded(
-                                child: Text(
-                                  session.checkOutAddress!,
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.grey.shade600,
+                                Text(
+                                  _formatTime(session.checkInTime),
+                                  style: const TextStyle(fontSize: 13),
+                                ),
+                                if (ApiService.isLocationAttendanceRequired && inLoc.isNotEmpty) ...[
+                                  const Spacer(),
+                                  Flexible(
+                                    child: Text(
+                                      inLoc,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.grey.shade500,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                    ),
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
+                                ],
+                              ],
+                            ),
+                            if (!ApiService.isLocationAttendanceRequired && inLoc.isNotEmpty) ...[
+                              const SizedBox(height: 2),
+                              Row(
+                                children: [
+                                  const SizedBox(width: 22),
+                                  Icon(Icons.location_on_outlined, size: 12, color: Colors.grey.shade500),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      inLoc,
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
-                          ),
-                        ],
+                          ],
+                        );
+                      }(),
+                      if (session.checkOutTime != null) ...[
+                        const SizedBox(height: 4),
+                        () {
+                          final outLoc = _formatSessionLocation(
+                            session.checkOutAddress,
+                            session.officeSnapshotName,
+                          );
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.logout,
+                                      size: 16, color: Colors.orange),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    "${tr('check_out')}: ",
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.w600, fontSize: 13),
+                                  ),
+                                  Text(
+                                    _formatTime(session.checkOutTime!),
+                                    style: const TextStyle(fontSize: 13),
+                                  ),
+                                  if (ApiService.isLocationAttendanceRequired && outLoc.isNotEmpty) ...[
+                                    const Spacer(),
+                                    Flexible(
+                                      child: Text(
+                                        outLoc,
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.grey.shade500,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              if (!ApiService.isLocationAttendanceRequired && outLoc.isNotEmpty) ...[
+                                const SizedBox(height: 2),
+                                Row(
+                                  children: [
+                                    const SizedBox(width: 22),
+                                    Icon(Icons.location_on_outlined, size: 12, color: Colors.grey.shade500),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        outLoc,
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.grey.shade600,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ],
+                          );
+                        }(),
                       ],
                     ],
                   );

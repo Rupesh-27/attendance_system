@@ -91,6 +91,7 @@ class _LocationVerificationScreenState
       final address = await GeocodingService.getAddressFromCoordinates(
         position.latitude,
         position.longitude,
+        cityDistrictStateCountryOnly: !ApiService.isLocationAttendanceRequired,
       );
 
       final result = widget.isCheckOut
