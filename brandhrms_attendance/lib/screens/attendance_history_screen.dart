@@ -24,8 +24,17 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
 
   bool _isCalendarExpanded = false;
 
+  // Independent Ledger Section State
+  late DateTime _ledgerMonth;
+  List<AttendanceRecord> _ledgerRecords = [];
+  bool _isLedgerExpanded = false;
+  bool _isLedgerLoading = false;
+
   void fetchHistory() {
     _fetchHistory();
+    if (_isLedgerExpanded) {
+      _fetchLedgerHistory();
+    }
   }
 
   @override
@@ -34,7 +43,73 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     final now = DateTime.now();
     _currentMonth = DateTime(now.year, now.month, 1);
     _selectedDay = DateTime(now.year, now.month, now.day);
+    _ledgerMonth = DateTime(now.year, now.month, 1);
     _fetchHistory();
+  }
+
+  Future<void> _fetchLedgerHistory() async {
+    setState(() => _isLedgerLoading = true);
+
+    try {
+      final startOfMonth = DateTime(_ledgerMonth.year, _ledgerMonth.month, 1);
+      final daysInMonth =
+          DateTime(_ledgerMonth.year, _ledgerMonth.month + 1, 0).day;
+      final endOfMonth =
+          DateTime(_ledgerMonth.year, _ledgerMonth.month, daysInMonth);
+
+      final from =
+          '${startOfMonth.year}-${startOfMonth.month.toString().padLeft(2, '0')}-01';
+      final to =
+          '${endOfMonth.year}-${endOfMonth.month.toString().padLeft(2, '0')}-${endOfMonth.day.toString().padLeft(2, '0')}';
+
+      final records = await ApiService.getHistory(from: from, to: to);
+
+      if (mounted) {
+        setState(() {
+          _ledgerRecords = records;
+          _isLedgerLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isLedgerLoading = false);
+      }
+    }
+  }
+
+  void _previousLedgerMonth() {
+    setState(() {
+      _ledgerMonth = DateTime(_ledgerMonth.year, _ledgerMonth.month - 1, 1);
+    });
+    _fetchLedgerHistory();
+  }
+
+  void _nextLedgerMonth() {
+    setState(() {
+      _ledgerMonth = DateTime(_ledgerMonth.year, _ledgerMonth.month + 1, 1);
+    });
+    _fetchLedgerHistory();
+  }
+
+  void _selectLedgerMonth(DateTime month) {
+    setState(() {
+      _ledgerMonth = DateTime(month.year, month.month, 1);
+    });
+    _fetchLedgerHistory();
+  }
+
+  List<AttendanceRecord> _getLedgerRecordsForDay(DateTime day) {
+    final dayStr =
+        '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
+    return _ledgerRecords.where((r) {
+      if (r.attendanceDay != null && r.attendanceDay!.isNotEmpty) {
+        return r.attendanceDay == dayStr;
+      }
+      final local = r.checkInTime.toLocal();
+      return local.year == day.year &&
+          local.month == day.month &&
+          local.day == day.day;
+    }).toList();
   }
 
   Future<void> _fetchHistory() async {
@@ -328,6 +403,11 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
 
               _buildLedgerSectionCard(),
 
+              if (_isLedgerExpanded) ...[
+                const SizedBox(height: 16),
+                _buildLedgerDetailsCard(),
+              ],
+
               const SizedBox(height: 30),
             ],
           ),
@@ -462,8 +542,276 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
   }
 
   Widget _buildLedgerSectionCard() {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            _isLedgerExpanded = !_isLedgerExpanded;
+          });
+          if (_isLedgerExpanded && _ledgerRecords.isEmpty && !_isLedgerLoading) {
+            _fetchLedgerHistory();
+          }
+        },
+        borderRadius: BorderRadius.circular(18),
+        child: Ink(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: _isLedgerExpanded
+                  ? primaryColor.withValues(alpha: 0.4)
+                  : const Color(0xFFE2E8F0),
+              width: 1.2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: _isLedgerExpanded
+                    ? primaryColor.withValues(alpha: 0.08)
+                    : Colors.black.withValues(alpha: 0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.format_list_bulleted_rounded,
+                  color: primaryColor,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      tr('attendance_ledger'),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E293B),
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      _isLedgerExpanded
+                          ? tr('tap_to_collapse')
+                          : '${_formatMonthYear(_ledgerMonth)} • ${tr('tap_to_view_ledger')}',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: _isLedgerExpanded
+                            ? primaryColor
+                            : const Color(0xFF64748B),
+                        fontWeight: _isLedgerExpanded
+                            ? FontWeight.w600
+                            : FontWeight.w400,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              AnimatedRotation(
+                turns: _isLedgerExpanded ? 0.5 : 0.0,
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeInOut,
+                child: Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: _isLedgerExpanded
+                        ? primaryColor.withValues(alpha: 0.12)
+                        : const Color(0xFFF1F5F9),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: _isLedgerExpanded
+                        ? primaryColor
+                        : const Color(0xFF475569),
+                    size: 22,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showLedgerMonthPicker() {
+    int selectedYear = _ledgerMonth.year;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final months = [
+              tr('month_1'), tr('month_2'), tr('month_3'), tr('month_4'),
+              tr('month_5'), tr('month_6'), tr('month_7'), tr('month_8'),
+              tr('month_9'), tr('month_10'), tr('month_11'), tr('month_12')
+            ];
+
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        tr('select_month'),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1E293B),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 20),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.chevron_left),
+                          onPressed: () {
+                            setModalState(() {
+                              selectedYear--;
+                            });
+                          },
+                        ),
+                        Text(
+                          '$selectedYear',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1E293B),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.chevron_right),
+                          onPressed: () {
+                            setModalState(() {
+                              selectedYear++;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                      childAspectRatio: 2.2,
+                    ),
+                    itemCount: 12,
+                    itemBuilder: (context, index) {
+                      final monthIndex = index + 1;
+                      final isSelected = selectedYear == _ledgerMonth.year &&
+                          monthIndex == _ledgerMonth.month;
+
+                      return InkWell(
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          _selectLedgerMonth(
+                              DateTime(selectedYear, monthIndex, 1));
+                        },
+                        borderRadius: BorderRadius.circular(10),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? primaryColor
+                                : const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: isSelected
+                                  ? primaryColor
+                                  : const Color(0xFFCBD5E1),
+                            ),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            months[index],
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: isSelected
+                                  ? FontWeight.bold
+                                  : FontWeight.w500,
+                              color: isSelected
+                                  ? Colors.white
+                                  : const Color(0xFF334155),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildLedgerDetailsCard() {
     final daysInMonth =
-        DateTime(_currentMonth.year, _currentMonth.month + 1, 0).day;
+        DateTime(_ledgerMonth.year, _ledgerMonth.month + 1, 0).day;
 
     return Container(
       width: double.infinity,
@@ -482,46 +830,46 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
             child: Row(
               children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: primaryColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.format_list_bulleted_rounded,
-                    color: primaryColor,
-                    size: 22,
-                  ),
-                ),
-                const SizedBox(width: 12),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        tr('attendance_ledger'),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1E293B),
-                          letterSpacing: -0.2,
-                        ),
+                  child: InkWell(
+                    onTap: _showLedgerMonthPicker,
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              _formatMonthYear(_ledgerMonth),
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF1E293B),
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Icon(
+                              Icons.calendar_today_outlined,
+                              size: 14,
+                              color: Color(0xFF475569),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        _formatMonthYear(_currentMonth),
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF64748B),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
                 IconButton(
@@ -529,7 +877,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                   padding: const EdgeInsets.all(6),
                   constraints:
                       const BoxConstraints(minWidth: 34, minHeight: 34),
-                  onPressed: _previousMonth,
+                  onPressed: _previousLedgerMonth,
                   tooltip: tr('previous_month'),
                 ),
                 IconButton(
@@ -537,7 +885,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                   padding: const EdgeInsets.all(6),
                   constraints:
                       const BoxConstraints(minWidth: 34, minHeight: 34),
-                  onPressed: _nextMonth,
+                  onPressed: _nextLedgerMonth,
                   tooltip: tr('next_month'),
                 ),
               ],
@@ -599,7 +947,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
             ),
           ),
           const Divider(height: 1, color: Color(0xFFE2E8F0)),
-          if (_isLoading)
+          if (_isLedgerLoading)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 32),
               child: Center(
@@ -616,7 +964,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
               itemBuilder: (context, index) {
                 final dayNum = index + 1;
                 final dayDate = DateTime(
-                    _currentMonth.year, _currentMonth.month, dayNum);
+                    _ledgerMonth.year, _ledgerMonth.month, dayNum);
                 return _buildLedgerDayRow(dayDate);
               },
             ),
@@ -633,7 +981,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     final isWeekend = dayDate.weekday == DateTime.saturday ||
         dayDate.weekday == DateTime.sunday;
 
-    final sessions = _getRecordsForDay(dayDate);
+    final sessions = _getLedgerRecordsForDay(dayDate);
     String firstIn = '—';
     String lastOut = '—';
     final bool hasPunches = sessions.isNotEmpty;
@@ -750,8 +1098,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
   }
 
   void _showDayAttendanceHistory(DateTime date) {
-    final statusInfo = _getDayStatus(date);
-    final sessions = statusInfo['sessions'] as List<AttendanceRecord>;
+    final sessions = _getLedgerRecordsForDay(date);
 
     if (sessions.isEmpty) {
       showModalBottomSheet(
