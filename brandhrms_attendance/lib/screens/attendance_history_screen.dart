@@ -581,6 +581,8 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     String firstCheckIn = tr('not_marked');
     String lastCheckOut = tr('not_marked');
     String officeName = '';
+    String? firstCheckInLoc;
+    String? lastCheckOutLoc;
     int totalDurationSec = 0;
 
     if (daySessions.isNotEmpty) {
@@ -588,6 +590,10 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
       final earliest = daySessions.last;
       firstCheckIn = _formatTime(earliest.checkInTime);
       officeName = earliest.officeSnapshotName;
+      firstCheckInLoc = _formatSessionLocation(
+        earliest.checkInAddress,
+        earliest.officeSnapshotName,
+      );
 
       final latestCheckoutSession = daySessions.firstWhere(
         (s) => s.checkOutTime != null,
@@ -596,6 +602,10 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
 
       if (latestCheckoutSession.checkOutTime != null) {
         lastCheckOut = _formatTime(latestCheckoutSession.checkOutTime!);
+        lastCheckOutLoc = _formatSessionLocation(
+          latestCheckoutSession.checkOutAddress,
+          latestCheckoutSession.officeSnapshotName,
+        );
       } else if (latestCheckoutSession.status == 'CHECKED_IN') {
         lastCheckOut = tr('active_now');
       }
@@ -689,30 +699,19 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                             ? _formatDuration(totalDurationSec)
                             : '0 ${tr('unit_min')}',
                       ),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(10),
                       child: Container(
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        width: 34,
+                        height: 34,
                         decoration: BoxDecoration(
                           color: const Color(0xFFE0F2FE),
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(10),
                           border: Border.all(color: const Color(0xFF7DD3FC)),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.visibility_outlined,
-                                size: 16, color: Color(0xFF0284C7)),
-                            const SizedBox(width: 4),
-                            Text(
-                              tr('view'),
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF0284C7),
-                              ),
-                            ),
-                          ],
+                        child: const Icon(
+                          Icons.visibility_outlined,
+                          size: 18,
+                          color: Color(0xFF0284C7),
                         ),
                       ),
                     )
@@ -721,21 +720,19 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                   const SizedBox(width: 8),
                   InkWell(
                     onTap: _showMonthFilterPicker,
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(10),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      width: 34,
+                      height: 34,
                       decoration: BoxDecoration(
                         color: const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(10),
                         border: Border.all(color: const Color(0xFFCBD5E1)),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: const [
-                          Icon(Icons.filter_list_rounded, size: 16, color: Color(0xFF334155)),
-                          SizedBox(width: 4),
-                          Icon(Icons.arrow_drop_down, size: 16, color: Color(0xFF64748B)),
-                        ],
+                      child: const Icon(
+                        Icons.filter_alt_outlined,
+                        size: 18,
+                        color: Color(0xFF334155),
                       ),
                     ),
                   ),
@@ -756,6 +753,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                   iconColor: Colors.green,
                   title: tr('check_in'),
                   timeValue: firstCheckIn,
+                  location: firstCheckInLoc,
                 ),
               ),
               const SizedBox(width: 12),
@@ -765,6 +763,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                   iconColor: Colors.orange,
                   title: tr('check_out'),
                   timeValue: lastCheckOut,
+                  location: lastCheckOutLoc,
                 ),
               ),
             ],
@@ -994,25 +993,39 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                       size: 18, color: Colors.green),
                                   const SizedBox(width: 8),
                                   Text('${tr('check_in')}: ',
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                           fontWeight: FontWeight.w600,
                                           fontSize: 13)),
                                   Text(
                                     _formatTime(session.checkInTime),
                                     style: const TextStyle(fontSize: 13),
                                   ),
-                                  if (ApiService.isLocationAttendanceRequired && session.officeSnapshotName.isNotEmpty) ...[
-                                    const Spacer(),
-                                    Text(
-                                      session.officeSnapshotName,
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: Colors.grey.shade500,
-                                      ),
-                                    ),
-                                  ],
                                 ],
                               ),
+                              if (inLoc.isNotEmpty) ...[
+                                const SizedBox(height: 3),
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 26),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Icon(Icons.location_on_outlined,
+                                          size: 14, color: Colors.green),
+                                      const SizedBox(width: 4),
+                                      Expanded(
+                                        child: Text(
+                                          inLoc,
+                                          style: TextStyle(
+                                            fontSize: 11.5,
+                                            color: Colors.grey.shade700,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                               if (session.checkOutTime != null) ...[
                                 const SizedBox(height: 6),
                                 Row(
@@ -1021,7 +1034,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                         size: 18, color: Colors.orange),
                                     const SizedBox(width: 8),
                                     Text('${tr('check_out')}: ',
-                                        style: TextStyle(
+                                        style: const TextStyle(
                                             fontWeight: FontWeight.w600,
                                             fontSize: 13)),
                                     Text(
@@ -1039,7 +1052,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                         ),
                                         child: Text(
                                           tr('out_of_radius'),
-                                          style: TextStyle(
+                                          style: const TextStyle(
                                             color: Colors.red,
                                             fontSize: 10,
                                             fontWeight: FontWeight.bold,
@@ -1049,64 +1062,30 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                     ],
                                   ],
                                 ),
-                              ],
-                              if (inLoc.isNotEmpty) ...[
-                                const SizedBox(height: 5),
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Icon(Icons.location_on_outlined,
-                                        size: 16, color: primaryColor),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      '${tr('check_in_location')}: ',
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: Color(0xFF334155),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: Text(
-                                        inLoc,
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey.shade800,
-                                          fontWeight: FontWeight.w500,
+                                if (outLoc.isNotEmpty) ...[
+                                  const SizedBox(height: 3),
+                                  Padding(
+                                    padding: const EdgeInsets.only(left: 26),
+                                    child: Row(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Icon(Icons.location_on_outlined,
+                                            size: 14, color: Colors.orange.shade700),
+                                        const SizedBox(width: 4),
+                                        Expanded(
+                                          child: Text(
+                                            outLoc,
+                                            style: TextStyle(
+                                              fontSize: 11.5,
+                                              color: Colors.grey.shade700,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
                                         ),
-                                      ),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                              ],
-                              if (session.checkOutTime != null && outLoc.isNotEmpty) ...[
-                                const SizedBox(height: 5),
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Icon(Icons.location_on_outlined,
-                                        size: 16, color: Colors.orange.shade700),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      '${tr('check_out_location')}: ',
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: Color(0xFF334155),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: Text(
-                                        outLoc,
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey.shade800,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ],
                             ],
                           ),
@@ -1803,9 +1782,10 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     required Color iconColor,
     required String title,
     required String timeValue,
+    String? location,
   }) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
         color: const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(12),
@@ -1816,7 +1796,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
         children: [
           Row(
             children: [
-              Icon(icon, size: 18, color: iconColor),
+              Icon(icon, size: 17, color: iconColor),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
@@ -1843,6 +1823,32 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
               color: Color(0xFF1E293B),
             ),
           ),
+          if (location != null && location.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.location_on_outlined,
+                  size: 13,
+                  color: iconColor,
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    location,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey.shade700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
