@@ -1197,6 +1197,7 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
     setState(() {
       _attachedFile = null;
       _attachedFileSize = 0;
+      _errorMessage = null;
     });
   }
 
@@ -1246,7 +1247,10 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
             onPressed: () {
               final text = controller.text.trim();
               if (text.isNotEmpty && !_ccList.contains(text)) {
-                setState(() => _ccList.add(text));
+                setState(() {
+                  _ccList.add(text);
+                  _errorMessage = null;
+                });
               }
               Navigator.pop(ctx);
             },
@@ -1267,10 +1271,18 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
     if (widget.leaveTypes.isNotEmpty) {
       _selectedTypeId = widget.leaveTypes.first.id;
     }
+    _reasonController.addListener(_onReasonChanged);
+  }
+
+  void _onReasonChanged() {
+    if (_errorMessage != null) {
+      setState(() => _errorMessage = null);
+    }
   }
 
   @override
   void dispose() {
+    _reasonController.removeListener(_onReasonChanged);
     _reasonController.dispose();
     super.dispose();
   }
@@ -1529,6 +1541,7 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
                     onDeleted: () {
                       setState(() {
                         _ccList.remove(cc);
+                        _errorMessage = null;
                       });
                     },
                   );
@@ -1577,6 +1590,7 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
               onChanged: (val) {
                 setState(() {
                   _selectedTypeId = val;
+                  _errorMessage = null;
                   if (_isCasualLeave) {
                     _endDate = _startDate; // CL max 1 day lock
                   }
@@ -1669,6 +1683,7 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
                   onChanged: (val) {
                     setState(() {
                       _isHalfDay = val;
+                      _errorMessage = null;
                       if (val) {
                         _endDate = _startDate;
                       }
@@ -1683,7 +1698,10 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
                 children: [
                   Expanded(
                     child: InkWell(
-                      onTap: () => setState(() => _halfDaySession = 'FIRST_HALF'),
+                      onTap: () => setState(() {
+                        _halfDaySession = 'FIRST_HALF';
+                        _errorMessage = null;
+                      }),
                       borderRadius: BorderRadius.circular(8),
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
@@ -1726,7 +1744,10 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: InkWell(
-                      onTap: () => setState(() => _halfDaySession = 'SECOND_HALF'),
+                      onTap: () => setState(() {
+                        _halfDaySession = 'SECOND_HALF';
+                        _errorMessage = null;
+                      }),
                       borderRadius: BorderRadius.circular(8),
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
@@ -1794,6 +1815,7 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
                           if (picked != null) {
                             setState(() {
                               _startDate = picked;
+                              _errorMessage = null;
                               if (_isCasualLeave || _isHalfDay || _endDate.isBefore(picked)) {
                                 _endDate = picked;
                               }
@@ -1844,7 +1866,10 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
                               lastDate: DateTime(2027),
                             );
                             if (picked != null) {
-                              setState(() => _endDate = picked);
+                              setState(() {
+                                _endDate = picked;
+                                _errorMessage = null;
+                              });
                             }
                           },
                           child: Container(
@@ -2099,10 +2124,11 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
             if (_errorMessage != null) ...[
               const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFEE2E2),
                   borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFFECACA)),
                 ),
                 child: Row(
                   children: [
@@ -2112,6 +2138,15 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
                       child: Text(
                         _errorMessage!,
                         style: const TextStyle(color: Color(0xFFB91C1C), fontSize: 12),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    InkWell(
+                      onTap: () => setState(() => _errorMessage = null),
+                      borderRadius: BorderRadius.circular(12),
+                      child: const Padding(
+                        padding: EdgeInsets.all(2.0),
+                        child: Icon(Icons.close, size: 16, color: Color(0xFFB91C1C)),
                       ),
                     ),
                   ],
