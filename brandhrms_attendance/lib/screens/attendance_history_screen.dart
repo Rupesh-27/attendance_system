@@ -436,7 +436,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                 crossAxisCount: 7,
                 crossAxisSpacing: 4,
                 mainAxisSpacing: 6,
-                childAspectRatio: 0.82,
+                childAspectRatio: 0.74,
               ),
               itemBuilder: (context, index) {
 
@@ -517,23 +517,27 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                 ]
               : null,
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 3),
+        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2.5),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
 
             Align(
               alignment: Alignment.topLeft,
-              child: Text(
-                '$dayNumber',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: isSelected || isToday
-                      ? FontWeight.bold
-                      : FontWeight.w600,
-                  color: isSelected
-                      ? const Color(0xFF1D4ED8)
-                      : (isToday ? primaryColor : const Color(0xFF1E293B)),
+              child: Padding(
+                padding: const EdgeInsets.only(left: 2, top: 1),
+                child: Text(
+                  '$dayNumber',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    height: 1.0,
+                    fontWeight: isSelected || isToday
+                        ? FontWeight.bold
+                        : FontWeight.w600,
+                    color: isSelected
+                        ? const Color(0xFF1D4ED8)
+                        : (isToday ? primaryColor : const Color(0xFF1E293B)),
+                  ),
                 ),
               ),
             ),
@@ -541,11 +545,11 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
             if (icon != null)
               Icon(
                 icon,
-                size: 16,
+                size: 15,
                 color: color,
               )
             else
-              const SizedBox(height: 16),
+              const SizedBox(height: 15),
 
             if (label.isNotEmpty)
               Text(
@@ -553,13 +557,14 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: 10.5,
+                  height: 1.0,
                   fontWeight: FontWeight.bold,
                   color: color,
                 ),
               )
             else
-              const SizedBox(height: 11),
+              const SizedBox(height: 10),
           ],
         ),
       ),
