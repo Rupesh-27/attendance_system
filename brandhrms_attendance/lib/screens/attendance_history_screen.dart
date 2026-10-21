@@ -22,6 +22,8 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
 
   late DateTime _selectedDay;
 
+  bool _isCalendarExpanded = false;
+
   void fetchHistory() {
     _fetchHistory();
   }
@@ -313,11 +315,14 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
 
-              _buildCalendarCard(),
+              _buildCalendarSectionCard(),
 
-              const SizedBox(height: 16),
-
-              _buildDateDetailsCard(),
+              if (_isCalendarExpanded) ...[
+                const SizedBox(height: 16),
+                _buildCalendarCard(),
+                const SizedBox(height: 16),
+                _buildDateDetailsCard(),
+              ],
 
               const SizedBox(height: 30),
             ],
@@ -328,6 +333,116 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
   },
 );
 }
+
+  Widget _buildCalendarSectionCard() {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            _isCalendarExpanded = !_isCalendarExpanded;
+          });
+        },
+        borderRadius: BorderRadius.circular(18),
+        child: Ink(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: _isCalendarExpanded
+                  ? primaryColor.withValues(alpha: 0.4)
+                  : const Color(0xFFE2E8F0),
+              width: 1.2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: _isCalendarExpanded
+                    ? primaryColor.withValues(alpha: 0.08)
+                    : Colors.black.withValues(alpha: 0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.calendar_month_rounded,
+                  color: primaryColor,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      tr('attendance_calendar'),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E293B),
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      _isCalendarExpanded
+                          ? tr('tap_to_collapse')
+                          : '${_formatMonthYear(_currentMonth)} • ${tr('tap_to_view_calendar')}',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: _isCalendarExpanded
+                            ? primaryColor
+                            : const Color(0xFF64748B),
+                        fontWeight: _isCalendarExpanded
+                            ? FontWeight.w600
+                            : FontWeight.w400,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              AnimatedRotation(
+                turns: _isCalendarExpanded ? 0.5 : 0.0,
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeInOut,
+                child: Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: _isCalendarExpanded
+                        ? primaryColor.withValues(alpha: 0.12)
+                        : const Color(0xFFF1F5F9),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: _isCalendarExpanded
+                        ? primaryColor
+                        : const Color(0xFF475569),
+                    size: 22,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _buildCalendarCard() {
     final daysInMonth =

@@ -321,6 +321,8 @@ class LanguageService extends ChangeNotifier {
       // Attendance History & Calendar
       'attendance_history': 'Attendance History',
       'attendance_calendar': 'Attendance Calendar',
+      'tap_to_view_calendar': 'Tap to view calendar & details',
+      'tap_to_collapse': 'Tap to collapse',
       'previous_month': 'Previous Month',
       'next_month': 'Next Month',
       'SUN': 'SUN',
@@ -632,6 +634,8 @@ class LanguageService extends ChangeNotifier {
       // Attendance History & Calendar
       'attendance_history': 'Anwesenheitsverlauf',
       'attendance_calendar': 'Anwesenheitskalender',
+      'tap_to_view_calendar': 'Tippen, um Kalender und Details anzuzeigen',
+      'tap_to_collapse': 'Tippen zum Einklappen',
       'previous_month': 'Vorheriger Monat',
       'next_month': 'Nächster Monat',
       'SUN': 'SO',
@@ -943,6 +947,8 @@ class LanguageService extends ChangeNotifier {
       // Attendance History & Calendar
       'attendance_history': 'Гісторыя наведвальнасці',
       'attendance_calendar': 'Каляндар наведвальнасці',
+      'tap_to_view_calendar': 'Націсніце, каб убачыць каляндар і дэталі',
+      'tap_to_collapse': 'Націсніце, каб згарнуць',
       'previous_month': 'Папярэдні месяц',
       'next_month': 'Наступны месяц',
       'SUN': 'НД',
