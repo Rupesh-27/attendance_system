@@ -60,7 +60,10 @@ class LanguageService extends ChangeNotifier {
   static String tr(String key) {
     final lang = instance._currentLanguage;
     final dict = _translations[lang] ?? _translations[AppLanguage.english]!;
-    return dict[key] ?? _translations[AppLanguage.english]?[key] ?? key;
+    final direct = dict[key] ?? _translations[AppLanguage.english]?[key];
+    if (direct != null) return direct;
+    final normalized = key.toLowerCase().replaceAll('-', '_').replaceAll(' ', '_');
+    return dict[normalized] ?? _translations[AppLanguage.english]?[normalized] ?? key;
   }
 
   static String localizeLeaveType(String? nameOrCode) {
@@ -132,10 +135,15 @@ class LanguageService extends ChangeNotifier {
 
       // Dashboard
       'welcome_back': 'Welcome back',
-      'check_in': 'Check In',
-      'check_out': 'Check Out',
+      'check_in': 'Check-in',
+      'check_out': 'Check-out',
+      'Check-in': 'Check-in',
+      'Check-out': 'Check-out',
+      'Check In': 'Check-in',
+      'Check Out': 'Check-out',
       'checked_in': 'Checked In',
       'checked_out': 'Checked Out',
+      'carried_over_shift': 'Carried Over Shift',
       'todays_attendance': 'Today\'s Attendance',
       'working_hours': 'Working Hours',
       'current_location': 'Current Location',
@@ -378,10 +386,15 @@ class LanguageService extends ChangeNotifier {
 
       // Dashboard
       'welcome_back': 'Willkommen zurück',
-      'check_in': 'Einchecken',
-      'check_out': 'Auschecken',
+      'check_in': 'Kommen',
+      'check_out': 'Gehen',
+      'Check-in': 'Kommen',
+      'Check-out': 'Gehen',
+      'Check In': 'Kommen',
+      'Check Out': 'Gehen',
       'checked_in': 'Eingecheckt',
       'checked_out': 'Ausgecheckt',
+      'carried_over_shift': 'Übertragene Schicht',
       'todays_attendance': 'Heutige Anwesenheit',
       'working_hours': 'Arbeitszeit',
       'current_location': 'Aktueller Standort',
@@ -624,10 +637,15 @@ class LanguageService extends ChangeNotifier {
 
       // Dashboard
       'welcome_back': 'З вяртаннем',
-      'check_in': 'Адзначыць прыход',
-      'check_out': 'Адзначыць сыход',
-      'checked_in': 'На працы',
-      'checked_out': 'Не на працы',
+      'check_in': 'Прыход',
+      'check_out': 'Сыход',
+      'Check-in': 'Прыход',
+      'Check-out': 'Сыход',
+      'Check In': 'Прыход',
+      'Check Out': 'Сыход',
+      'checked_in': 'Адзначаны прыход',
+      'checked_out': 'Адзначаны сыход',
+      'carried_over_shift': 'Перанесенная змена',
       'todays_attendance': 'Сённяшняя наведвальнасць',
       'working_hours': 'Працоўны час',
       'current_location': 'Бягучае месцазнаходжанне',

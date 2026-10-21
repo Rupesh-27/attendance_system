@@ -1719,7 +1719,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       Row(
                         children: [
                           Text(
-                            'Session #${_todaySessions.length - index}',
+                            "${tr('session')} #${_todaySessions.length - index}",
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
@@ -1746,8 +1746,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               ),
                               child: Text(
                                 isSessionCarriedOver
-                                    ? 'Carried Over Shift'
-                                    : 'Active Now',
+                                    ? tr('carried_over_shift')
+                                    : tr('active_now'),
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
@@ -1760,8 +1760,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           else
                             Text(
                               session.durationSeconds != null
-
-                                  ? 'Duration: ${session.durationSeconds! ~/ 60}m ${session.durationSeconds! % 60}s'
+                                  ? "${tr('duration')}: ${session.durationSeconds! ~/ 60} ${tr('unit_min')} ${session.durationSeconds! % 60} ${tr('unit_sec')}"
                                   : '',
                               style: TextStyle(
                                 fontSize: 12,
@@ -1776,9 +1775,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           const Icon(Icons.login,
                               size: 16, color: Colors.green),
                           const SizedBox(width: 6),
-                          const Text(
-                            'Check-in: ',
-                            style: TextStyle(
+                          Text(
+                            "${tr('check_in')}: ",
+                            style: const TextStyle(
                                 fontWeight: FontWeight.w600, fontSize: 13),
                           ),
                           Text(
@@ -1786,11 +1785,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             style: const TextStyle(fontSize: 13),
                           ),
                           const Spacer(),
-                          Text(
-                            session.officeSnapshotName,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey.shade500,
+                          Flexible(
+                            child: Text(
+                              session.officeSnapshotName,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey.shade500,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
                             ),
                           ),
                         ],
@@ -1823,9 +1826,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             const Icon(Icons.logout,
                                 size: 16, color: Colors.orange),
                             const SizedBox(width: 6),
-                            const Text(
-                              'Check-out: ',
-                              style: TextStyle(
+                            Text(
+                              "${tr('check_out')}: ",
+                              style: const TextStyle(
                                   fontWeight: FontWeight.w600, fontSize: 13),
                             ),
                             Text(
