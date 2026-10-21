@@ -910,17 +910,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F7F9),
-      body: IndexedStack(
-        index: _selectedTabIndex,
-        children: [
-          _buildDashboardPage(context),
-          AttendanceHistoryScreen(key: _historyKey),
-          LeaveManagementScreen(key: _leaveKey),
-          const ProfileScreen(),
-        ],
-      ),
+    return ListenableBuilder(
+      listenable: LanguageService.instance,
+      builder: (context, _) {
+        return Scaffold(
+          backgroundColor: const Color(0xFFF5F7F9),
+          body: IndexedStack(
+            index: _selectedTabIndex,
+            children: [
+              _buildDashboardPage(context),
+              AttendanceHistoryScreen(key: _historyKey),
+              LeaveManagementScreen(key: _leaveKey),
+              const ProfileScreen(),
+            ],
+          ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedTabIndex,
         onDestinationSelected: (index) {
@@ -959,7 +962,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ],
       ),
     );
-  }
+  },
+);
+}
 
   Widget _buildDashboardPage(BuildContext context) {
     final employeeName = ApiService.currentEmployee?.fullName ?? 'Employee';

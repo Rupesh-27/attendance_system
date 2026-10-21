@@ -63,6 +63,25 @@ class LanguageService extends ChangeNotifier {
     return dict[key] ?? _translations[AppLanguage.english]?[key] ?? key;
   }
 
+  static String localizeLeaveType(String? nameOrCode) {
+    if (nameOrCode == null || nameOrCode.isEmpty) return '';
+    final trimmed = nameOrCode.trim();
+    final direct = tr(trimmed);
+    if (direct != trimmed) return direct;
+
+    final lower = trimmed.toLowerCase();
+    if (lower.contains('casual') || trimmed.toUpperCase() == 'CL') {
+      return tr('Casual Leave');
+    }
+    if (lower.contains('sick') || trimmed.toUpperCase() == 'SL') {
+      return tr('Sick Leave');
+    }
+    if (lower.contains('paid') || trimmed.toUpperCase() == 'PL') {
+      return tr('Paid Leave');
+    }
+    return trimmed;
+  }
+
   static final Map<AppLanguage, Map<String, String>> _translations = {
     AppLanguage.english: {
       // General & Bottom Nav
@@ -83,11 +102,17 @@ class LanguageService extends ChangeNotifier {
       'active': 'Active',
       'inactive': 'Inactive',
       'role': 'Role',
+      'EMPLOYEE': 'Employee',
+      'Employee': 'Employee',
+      'ADMIN': 'Administrator',
+      'HR': 'HR',
       'work_information': 'Work Information',
       'assigned_office': 'Assigned Office',
       'geofence_radius': 'Geofence Radius',
       'meters': 'meters',
       'app_preferences': 'App Preferences',
+      'language_preferences': 'Language Preferences',
+      'Language preferences': 'Language Preferences',
       'language': 'Language',
       'language_selection': 'Language Selection',
       'choose_language': 'Select Language',
@@ -149,6 +174,27 @@ class LanguageService extends ChangeNotifier {
       'request_cancellation': 'Request Cancellation',
       'day': 'Day',
       'days': 'Days',
+      'Days': 'Days',
+      'days_left': 'days left',
+      'history': 'History',
+      'History': 'History',
+      'allocated': 'Allocated',
+      'Allocated': 'Allocated',
+      'used': 'Used',
+      'Used': 'Used',
+      'available': 'Available',
+      'Available': 'Available',
+      'Casual Leave': 'Casual Leave',
+      'Paid Leave': 'Paid Leave',
+      'Sick Leave': 'Sick Leave',
+      'casual_leave': 'Casual Leave',
+      'paid_leave': 'Paid Leave',
+      'sick_leave': 'Sick Leave',
+      'filtered_by': 'Filtered by',
+      'rule_cl': 'Max 1 day per application • Urgent personal work',
+      'rule_sl': 'Medical certificate required for 2+ consecutive days',
+      'rule_pl': 'Privilege leave for planned holidays and family events',
+      'rule_standard': 'Annual allowance for standard employee entitlement',
 
       // Attendance History
       'attendance_history': 'Attendance History',
@@ -187,11 +233,17 @@ class LanguageService extends ChangeNotifier {
       'active': 'Aktiv',
       'inactive': 'Inaktiv',
       'role': 'Rolle',
+      'EMPLOYEE': 'Mitarbeiter',
+      'Employee': 'Mitarbeiter',
+      'ADMIN': 'Administrator',
+      'HR': 'Personalabteilung',
       'work_information': 'Arbeitsinformationen',
       'assigned_office': 'Zugewiesenes Büro',
-      'geofence_radius': 'Geofence-Radius',
+      'geofence_radius': 'Standortradius (Geofence)',
       'meters': 'Meter',
       'app_preferences': 'App-Einstellungen',
+      'language_preferences': 'Spracheinstellungen',
+      'Language preferences': 'Spracheinstellungen',
       'language': 'Sprache',
       'language_selection': 'Sprachauswahl',
       'choose_language': 'Sprache auswählen',
@@ -253,6 +305,27 @@ class LanguageService extends ChangeNotifier {
       'request_cancellation': 'Stornierung beantragen',
       'day': 'Tag',
       'days': 'Tage',
+      'Days': 'Tage',
+      'days_left': 'Tage übrig',
+      'history': 'Verlauf',
+      'History': 'Verlauf',
+      'allocated': 'Zugewiesen',
+      'Allocated': 'Zugewiesen',
+      'used': 'Genommen',
+      'Used': 'Genommen',
+      'available': 'Verfügbar',
+      'Available': 'Verfügbar',
+      'Casual Leave': 'Sonderurlaub',
+      'Paid Leave': 'Erholungsurlaub',
+      'Sick Leave': 'Krankenurlaub',
+      'casual_leave': 'Sonderurlaub',
+      'paid_leave': 'Erholungsurlaub',
+      'sick_leave': 'Krankenurlaub',
+      'filtered_by': 'Gefiltert nach',
+      'rule_cl': 'Max. 1 Tag pro Antrag • Dringende persönliche Angelegenheiten',
+      'rule_sl': 'Ärztliches Attest ab 2 aufeinanderfolgenden Tagen erforderlich',
+      'rule_pl': 'Erholungsurlaub für geplante Ferien und Familienfeiern',
+      'rule_standard': 'Jahreskontingent für regulären Mitarbeiteranspruch',
 
       // Attendance History
       'attendance_history': 'Anwesenheitsverlauf',
@@ -291,11 +364,17 @@ class LanguageService extends ChangeNotifier {
       'active': 'Актыўны',
       'inactive': 'Неактыўны',
       'role': 'Роля',
+      'EMPLOYEE': 'Супрацоўнік',
+      'Employee': 'Супрацоўнік',
+      'ADMIN': 'Адміністратар',
+      'HR': 'HR',
       'work_information': 'Працоўная інфармацыя',
       'assigned_office': 'Прызначаны офіс',
       'geofence_radius': 'Радыус геазоны',
       'meters': 'метраў',
       'app_preferences': 'Налады праграмы',
+      'language_preferences': 'Налады мовы',
+      'Language preferences': 'Налады мовы',
       'language': 'Мова',
       'language_selection': 'Выбар мовы',
       'choose_language': 'Выберыце мову',
@@ -357,6 +436,27 @@ class LanguageService extends ChangeNotifier {
       'request_cancellation': 'Запытаць адмену',
       'day': 'дзень',
       'days': 'дзён',
+      'Days': 'дзён',
+      'days_left': 'дзён засталося',
+      'history': 'Гісторыя',
+      'History': 'Гісторыя',
+      'allocated': 'Выдзелена',
+      'Allocated': 'Выдзелена',
+      'used': 'Выкарыстана',
+      'Used': 'Выкарыстана',
+      'available': 'Даступна',
+      'Available': 'Даступна',
+      'Casual Leave': 'Казуальны адпачынак',
+      'Paid Leave': 'Аплачваны адпачынак',
+      'Sick Leave': 'Бальнічны',
+      'casual_leave': 'Казуальны адпачынак',
+      'paid_leave': 'Аплачваны адпачынак',
+      'sick_leave': 'Бальнічны',
+      'filtered_by': 'Фільтр па',
+      'rule_cl': 'Максімум 1 дзень на заяўку • Неадкладныя асабістыя справы',
+      'rule_sl': 'Медыцынская даведка патрабуецца на 2+ дні запар',
+      'rule_pl': 'Прывілеяваны водпуск для планаванага адпачынку і сямейных падзей',
+      'rule_standard': 'Штогадовая норма для стандартнага права супрацоўніка',
 
       // Attendance History
       'attendance_history': 'Гісторыя наведвальнасці',

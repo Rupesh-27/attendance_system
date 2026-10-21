@@ -256,7 +256,10 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return ListenableBuilder(
+      listenable: LanguageService.instance,
+      builder: (context, _) {
+        return Scaffold(
       backgroundColor: const Color(0xFFF5F7F9),
       appBar: AppBar(
         automaticallyImplyLeading: false,
@@ -296,7 +299,9 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
         ),
       ),
     );
-  }
+  },
+);
+}
 
   Widget _buildCalendarCard() {
     final daysInMonth =

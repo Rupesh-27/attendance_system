@@ -70,7 +70,10 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return ListenableBuilder(
+      listenable: LanguageService.instance,
+      builder: (context, _) {
+        return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: Text(
@@ -113,6 +116,8 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
                 ),
               ],
             ),
+        );
+      },
     );
   }
 
@@ -319,13 +324,13 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
         ? bal.usedDays.toInt().toString()
         : bal.usedDays.toStringAsFixed(1);
 
-    String ruleText = 'Annual allowance for standard employee entitlement';
+    String ruleText = tr('rule_standard');
     if (bal.leaveTypeCode == 'CL' || bal.leaveTypeName.toLowerCase().contains('casual')) {
-      ruleText = 'Max 1 day per application • Urgent personal work';
+      ruleText = tr('rule_cl');
     } else if (bal.leaveTypeCode == 'SL' || bal.leaveTypeName.toLowerCase().contains('sick')) {
-      ruleText = 'Medical certificate required for 2+ consecutive days';
+      ruleText = tr('rule_sl');
     } else if (bal.leaveTypeCode == 'PL' || bal.leaveTypeName.toLowerCase().contains('paid')) {
-      ruleText = 'Privilege leave for planned holidays and family events';
+      ruleText = tr('rule_pl');
     }
 
     return Container(
@@ -380,7 +385,7 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
                         ),
                         const SizedBox(width: 10),
                         Text(
-                          bal.leaveTypeName,
+                          LanguageService.localizeLeaveType(bal.leaveTypeName),
                           style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
@@ -393,7 +398,7 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'History',
+                          tr('History'),
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
@@ -422,13 +427,13 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Allocated',
-                            style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                          Text(
+                            tr('Allocated'),
+                            style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            '${bal.allocatedDays.toInt()} Days',
+                            '${bal.allocatedDays.toInt()} ${tr('Days')}',
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -440,13 +445,13 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Used',
-                            style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                          Text(
+                            tr('Used'),
+                            style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            '$usedText Days',
+                            '$usedText ${tr('Days')}',
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -458,13 +463,13 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          const Text(
-                            'Available',
-                            style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                          Text(
+                            tr('Available'),
+                            style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            '$remainingText Days',
+                            '$remainingText ${tr('Days')}',
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.bold,
@@ -547,7 +552,7 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Filtered by: $leaveTypeName',
+                    '${tr('filtered_by')}: ${LanguageService.localizeLeaveType(leaveTypeName)}',
                     style: const TextStyle(
                       fontSize: 12.5,
                       fontWeight: FontWeight.bold,
@@ -824,7 +829,7 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
                     const SizedBox(width: 8),
                     Flexible(
                       child: Text(
-                        app.leaveTypeName,
+                        LanguageService.localizeLeaveType(app.leaveTypeName),
                         style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
@@ -1555,7 +1560,7 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
                     : bal.remainingDays.toStringAsFixed(1);
                 return DropdownMenuItem<String>(
                   value: t.id,
-                  child: Text('${t.name} ($rem days left)'),
+                  child: Text('${LanguageService.localizeLeaveType(t.name)} ($rem ${tr('days_left')})'),
                 );
               }).toList(),
               onChanged: (val) {

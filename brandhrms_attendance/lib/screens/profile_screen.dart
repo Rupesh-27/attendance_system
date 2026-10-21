@@ -11,106 +11,116 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final emp = ApiService.currentEmployee;
-    final office = ApiService.assignedOffice;
+    return ListenableBuilder(
+      listenable: LanguageService.instance,
+      builder: (context, _) {
+        final emp = ApiService.currentEmployee;
+        final office = ApiService.assignedOffice;
 
-    final initial = (emp != null && emp.fullName.isNotEmpty)
-        ? emp.fullName[0].toUpperCase()
-        : 'E';
-    final name = emp?.fullName ?? 'Employee';
-    final code = emp?.employeeCode ?? 'EMP1001';
-    final email = (emp?.email != null && emp!.email!.isNotEmpty)
-        ? emp.email!
-        : '${code.toLowerCase()}@brandcrock.com';
-    final officeName = office?.name ?? 'Assigned Office';
+        final initial = (emp != null && emp.fullName.isNotEmpty)
+            ? emp.fullName[0].toUpperCase()
+            : 'E';
+        final name = (emp != null && emp.fullName.isNotEmpty)
+            ? emp.fullName
+            : tr('Employee');
+        final code = emp?.employeeCode ?? 'EMP1001';
+        final email = (emp?.email != null && emp!.email!.isNotEmpty)
+            ? emp.email!
+            : '${code.toLowerCase()}@brandcrock.com';
+        final officeName = (office?.name != null &&
+                office!.name.isNotEmpty &&
+                office.name != 'Assigned Office')
+            ? office.name
+            : tr('assigned_office');
+        final roleName = tr(emp?.role ?? 'EMPLOYEE');
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F7F9),
+        return Scaffold(
+          backgroundColor: const Color(0xFFF5F7F9),
 
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: primaryColor,
-        foregroundColor: Colors.white,
-        title: Text(
-          tr('my_profile'),
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-      ),
+          appBar: AppBar(
+            automaticallyImplyLeading: false,
+            backgroundColor: primaryColor,
+            foregroundColor: Colors.white,
+            title: Text(
+              tr('my_profile'),
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
 
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            const SizedBox(height: 10),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                const SizedBox(height: 10),
 
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Column(
-                children: [
-                  Container(
-                    width: 90,
-                    height: 90,
-                    decoration: const BoxDecoration(
-                      color: primaryColor,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Text(
-                        initial,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 36,
-                          fontWeight: FontWeight.bold,
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 90,
+                        height: 90,
+                        decoration: const BoxDecoration(
+                          color: primaryColor,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Text(
+                            initial,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 36,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                       ),
+
+                      const SizedBox(height: 14),
+
+                      Text(
+                        name,
+                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                      ),
+
+                      const SizedBox(height: 5),
+
+                      Text(
+                        roleName,
+                        style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                _sectionCard(
+                  title: tr('employee_information'),
+                  children: [
+                    _profileItem(Icons.badge_outlined, tr('employee_id'), code),
+                    _profileItem(
+                      Icons.email_outlined,
+                      tr('email'),
+                      email,
                     ),
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  Text(
-                    name,
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                  ),
-
-                  const SizedBox(height: 5),
-
-                  Text(
-                    emp?.role ?? 'Employee',
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            _sectionCard(
-              title: tr('employee_information'),
-              children: [
-                _profileItem(Icons.badge_outlined, tr('employee_id'), code),
-                _profileItem(
-                  Icons.email_outlined,
-                  tr('email'),
-                  email,
+                    _profileItem(
+                      Icons.phone_outlined,
+                      tr('status'),
+                      emp?.isActive == true ? tr('active') : tr('inactive'),
+                    ),
+                    _profileItem(
+                      Icons.business_outlined,
+                      tr('role'),
+                      roleName,
+                    ),
+                  ],
                 ),
-                _profileItem(
-                  Icons.phone_outlined,
-                  tr('status'),
-                  emp?.isActive == true ? tr('active') : tr('inactive'),
-                ),
-                _profileItem(
-                  Icons.business_outlined,
-                  tr('role'),
-                  emp?.role ?? 'EMPLOYEE',
-                ),
-              ],
-            ),
 
             const SizedBox(height: 16),
 
@@ -134,7 +144,7 @@ class ProfileScreen extends StatelessWidget {
 
             // App Preferences / Language Selection
             _sectionCard(
-              title: tr('Language preferences'),
+              title: tr('language_preferences'),
               children: [
                 _languageSelectionTile(context),
               ],
@@ -163,6 +173,8 @@ class ProfileScreen extends StatelessWidget {
           ],
         ),
       ),
+        );
+      },
     );
   }
 
