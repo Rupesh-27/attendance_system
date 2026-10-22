@@ -1971,23 +1971,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   _formatTime(session.checkInTime),
                                   style: const TextStyle(fontSize: 13),
                                 ),
-                                if (ApiService.isLocationAttendanceRequired && inLoc.isNotEmpty) ...[
-                                  const Spacer(),
-                                  Flexible(
-                                    child: Text(
-                                      inLoc,
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: Colors.grey.shade500,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                      maxLines: 1,
-                                    ),
-                                  ),
-                                ],
                               ],
                             ),
-                            if (!ApiService.isLocationAttendanceRequired && inLoc.isNotEmpty) ...[
+                            if (inLoc.isNotEmpty) ...[
                               const SizedBox(height: 2),
                               Row(
                                 children: [
@@ -2001,8 +1987,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                         fontSize: 11,
                                         color: Colors.grey.shade600,
                                       ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
                                 ],
@@ -2035,23 +2019,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     _formatTime(session.checkOutTime!),
                                     style: const TextStyle(fontSize: 13),
                                   ),
-                                  if (ApiService.isLocationAttendanceRequired && outLoc.isNotEmpty) ...[
-                                    const Spacer(),
-                                    Flexible(
-                                      child: Text(
-                                        outLoc,
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: Colors.grey.shade500,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                        maxLines: 1,
-                                      ),
-                                    ),
-                                  ],
                                 ],
                               ),
-                              if (!ApiService.isLocationAttendanceRequired && outLoc.isNotEmpty) ...[
+                              if (outLoc.isNotEmpty) ...[
                                 const SizedBox(height: 2),
                                 Row(
                                   children: [
@@ -2065,8 +2035,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                           fontSize: 11,
                                           color: Colors.grey.shade600,
                                         ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
                                   ],
