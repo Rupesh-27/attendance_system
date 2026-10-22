@@ -220,10 +220,10 @@ func (m *MockAttendanceRepo) GetHistoryByEmployeeID(
 	var employeeSessions []*domain.AttendanceSession
 	for _, s := range m.sessions {
 		if s.EmployeeID == employeeID {
-			if from != nil && s.CheckInTime.Before(*from) {
+			if to != nil && s.CheckInTime.After(*to) {
 				continue
 			}
-			if to != nil && s.CheckInTime.After(*to) {
+			if from != nil && s.CheckInTime.Before(*from) && (s.CheckOutTime != nil && s.CheckOutTime.Before(*from)) {
 				continue
 			}
 			cp := *s

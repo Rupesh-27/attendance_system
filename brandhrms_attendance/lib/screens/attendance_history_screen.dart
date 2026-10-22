@@ -98,18 +98,52 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     _fetchLedgerHistory();
   }
 
-  List<AttendanceRecord> _getLedgerRecordsForDay(DateTime day) {
-    final dayStr =
-        '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
-    return _ledgerRecords.where((r) {
-      if (r.attendanceDay != null && r.attendanceDay!.isNotEmpty) {
-        return r.attendanceDay == dayStr;
+  bool _recordCoversDay(AttendanceRecord r, DateTime day) {
+    final targetDay = DateTime(day.year, day.month, day.day);
+
+    DateTime startDay;
+    if (r.attendanceDay != null && r.attendanceDay!.isNotEmpty) {
+      try {
+        final parts = r.attendanceDay!.split('-');
+        if (parts.length == 3) {
+          startDay = DateTime(
+            int.parse(parts[0]),
+            int.parse(parts[1]),
+            int.parse(parts[2]),
+          );
+        } else {
+          final cin = r.checkInTime.toLocal();
+          startDay = DateTime(cin.year, cin.month, cin.day);
+        }
+      } catch (_) {
+        final cin = r.checkInTime.toLocal();
+        startDay = DateTime(cin.year, cin.month, cin.day);
       }
-      final local = r.checkInTime.toLocal();
-      return local.year == day.year &&
-          local.month == day.month &&
-          local.day == day.day;
-    }).toList();
+    } else {
+      final cin = r.checkInTime.toLocal();
+      startDay = DateTime(cin.year, cin.month, cin.day);
+    }
+
+    DateTime endDay;
+    if (r.checkOutTime != null) {
+      final cout = r.checkOutTime!.toLocal();
+      endDay = DateTime(cout.year, cout.month, cout.day);
+    } else if (r.status == 'CHECKED_IN' || r.status == 'CARRIED_OVER') {
+      final now = DateTime.now();
+      endDay = DateTime(now.year, now.month, now.day);
+    } else {
+      endDay = startDay;
+    }
+
+    if (endDay.isBefore(startDay)) {
+      endDay = startDay;
+    }
+
+    return !targetDay.isBefore(startDay) && !targetDay.isAfter(endDay);
+  }
+
+  List<AttendanceRecord> _getLedgerRecordsForDay(DateTime day) {
+    return _ledgerRecords.where((r) => _recordCoversDay(r, day)).toList();
   }
 
   Future<void> _fetchHistory() async {
@@ -167,17 +201,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
   }
 
   List<AttendanceRecord> _getRecordsForDay(DateTime day) {
-    final dayStr =
-        '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
-    return _records.where((r) {
-      if (r.attendanceDay != null && r.attendanceDay!.isNotEmpty) {
-        return r.attendanceDay == dayStr;
-      }
-      final local = r.checkInTime.toLocal();
-      return local.year == day.year &&
-          local.month == day.month &&
-          local.day == day.day;
-    }).toList();
+    return _records.where((r) => _recordCoversDay(r, day)).toList();
   }
 
   static const Map<String, String> _govtHolidays = {
@@ -239,9 +263,25 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     final dateKey =
         '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
     final holidayName = _govtHolidays[dateKey];
+    final isWeekend = date.weekday == DateTime.saturday ||
+        date.weekday == DateTime.sunday;
 
     final sessions = _getRecordsForDay(date);
     if (sessions.isNotEmpty) {
+      if (isWeekend) {
+        return {
+          'status': 'PRESENT_WEEK_OFF',
+          'label': tr('label_present'),
+          'subLabel': tr('wo_worked'),
+          'color': const Color(0xFF16A34A),
+          'bgColor': const Color(0xFFF0FDF4),
+          'borderColor': const Color(0xFF86EFAC),
+          'icon': Icons.business,
+          'sessions': sessions,
+          'holidayName': holidayName,
+          'isWeekend': true,
+        };
+      }
       return {
         'status': 'PRESENT',
         'label': tr('label_present'),
@@ -251,6 +291,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
         'icon': Icons.business,
         'sessions': sessions,
         'holidayName': holidayName,
+        'isWeekend': false,
       };
     }
 
@@ -264,11 +305,10 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
         'borderColor': const Color(0xFFC7D2FE),
         'icon': Icons.ac_unit,
         'sessions': <AttendanceRecord>[],
+        'isWeekend': isWeekend,
       };
     }
 
-    final isWeekend = date.weekday == DateTime.saturday ||
-        date.weekday == DateTime.sunday;
     if (isWeekend) {
       return {
         'status': 'WEEK_OFF',
@@ -278,6 +318,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
         'borderColor': const Color(0xFFCFD8DC),
         'icon': Icons.local_cafe_outlined,
         'sessions': <AttendanceRecord>[],
+        'isWeekend': true,
       };
     }
 
@@ -988,7 +1029,15 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
 
     if (hasPunches) {
       final earliest = sessions.last;
-      firstIn = _formatTime(earliest.checkInTime);
+      final cinLocal = earliest.checkInTime.toLocal();
+      if (cinLocal.year == dayDate.year &&
+          cinLocal.month == dayDate.month &&
+          cinLocal.day == dayDate.day) {
+        firstIn = _formatTime(earliest.checkInTime);
+      } else {
+        firstIn =
+            '${cinLocal.day}/${cinLocal.month} ${_formatTime(earliest.checkInTime)}';
+      }
 
       final latestCheckoutSession = sessions.firstWhere(
         (s) => s.checkOutTime != null,
@@ -996,8 +1045,17 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
       );
 
       if (latestCheckoutSession.checkOutTime != null) {
-        lastOut = _formatTime(latestCheckoutSession.checkOutTime!);
-      } else if (latestCheckoutSession.status == 'CHECKED_IN') {
+        final coutLocal = latestCheckoutSession.checkOutTime!.toLocal();
+        if (coutLocal.year == dayDate.year &&
+            coutLocal.month == dayDate.month &&
+            coutLocal.day == dayDate.day) {
+          lastOut = _formatTime(latestCheckoutSession.checkOutTime!);
+        } else {
+          lastOut =
+              '${coutLocal.day}/${coutLocal.month} ${_formatTime(latestCheckoutSession.checkOutTime!)}';
+        }
+      } else if (latestCheckoutSession.status == 'CHECKED_IN' ||
+          latestCheckoutSession.status == 'CARRIED_OVER') {
         lastOut = tr('active_now');
       }
     }
@@ -1172,9 +1230,11 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     final officeName = sessions.first.officeSnapshotName;
     int totalSec = 0;
     for (final s in sessions) {
-      if (s.durationSeconds != null) {
+      if (s.durationSeconds != null && s.durationSeconds! > 0) {
         totalSec += s.durationSeconds!;
-      } else if (s.checkOutTime == null) {
+      } else if (s.checkOutTime != null) {
+        totalSec += s.checkOutTime!.difference(s.checkInTime).inSeconds;
+      } else {
         totalSec +=
             DateTime.now().difference(s.checkInTime.toLocal()).inSeconds;
       }
@@ -1453,11 +1513,24 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     String? firstCheckInLoc;
     String? lastCheckOutLoc;
     int totalDurationSec = 0;
+    bool isCarriedOverShift = false;
 
     if (daySessions.isNotEmpty) {
-
       final earliest = daySessions.last;
-      firstCheckIn = _formatTime(earliest.checkInTime);
+      final cinLocal = earliest.checkInTime.toLocal();
+      final isStartDay = cinLocal.year == _selectedDay.year &&
+          cinLocal.month == _selectedDay.month &&
+          cinLocal.day == _selectedDay.day;
+
+      isCarriedOverShift = !isStartDay;
+
+      if (isStartDay) {
+        firstCheckIn = _formatTime(earliest.checkInTime);
+      } else {
+        firstCheckIn =
+            '${cinLocal.day} ${tr('month_${cinLocal.month}')}, ${_formatTime(earliest.checkInTime)}';
+      }
+
       officeName = earliest.officeSnapshotName;
       firstCheckInLoc = _formatSessionLocation(
         earliest.checkInAddress,
@@ -1470,12 +1543,22 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
       );
 
       if (latestCheckoutSession.checkOutTime != null) {
-        lastCheckOut = _formatTime(latestCheckoutSession.checkOutTime!);
+        final coutLocal = latestCheckoutSession.checkOutTime!.toLocal();
+        final isEndDay = coutLocal.year == _selectedDay.year &&
+            coutLocal.month == _selectedDay.month &&
+            coutLocal.day == _selectedDay.day;
+        if (isEndDay) {
+          lastCheckOut = _formatTime(latestCheckoutSession.checkOutTime!);
+        } else {
+          lastCheckOut =
+              '${coutLocal.day} ${tr('month_${coutLocal.month}')}, ${_formatTime(latestCheckoutSession.checkOutTime!)}';
+        }
         lastCheckOutLoc = _formatSessionLocation(
           latestCheckoutSession.checkOutAddress,
           latestCheckoutSession.officeSnapshotName,
         );
-      } else if (latestCheckoutSession.status == 'CHECKED_IN') {
+      } else if (latestCheckoutSession.status == 'CHECKED_IN' ||
+          latestCheckoutSession.status == 'CARRIED_OVER') {
         lastCheckOut = tr('active_now');
       }
 
@@ -1485,6 +1568,9 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
         } else if (s.checkOutTime != null) {
           totalDurationSec +=
               s.checkOutTime!.difference(s.checkInTime).inSeconds;
+        } else {
+          totalDurationSec +=
+              DateTime.now().difference(s.checkInTime.toLocal()).inSeconds;
         }
       }
     }
@@ -1535,19 +1621,23 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      officeName.isNotEmpty
-                          ? officeName
-                          : (holidayName != null
-                              ? '${tr(holidayName)} (${tr('govt_holiday')})'
-                              : (status == 'WEEK_OFF'
-                                  ? tr('scheduled_week_off')
-                                  : tr('general_shift'))),
+                      isCarriedOverShift
+                          ? '${tr('continuous_shift_from')} ${daySessions.last.checkInTime.toLocal().day} ${tr('month_${daySessions.last.checkInTime.toLocal().month}')}, ${_formatTime(daySessions.last.checkInTime)}'
+                          : (officeName.isNotEmpty
+                              ? officeName
+                              : (holidayName != null
+                                  ? '${tr(holidayName)} (${tr('govt_holiday')})'
+                                  : (status == 'WEEK_OFF'
+                                      ? tr('scheduled_week_off')
+                                      : tr('general_shift')))),
                       style: TextStyle(
                         fontSize: 12,
                         color: holidayName != null
                             ? const Color(0xFF4338CA)
-                            : Colors.grey.shade600,
-                        fontWeight: holidayName != null
+                            : (isCarriedOverShift
+                                ? const Color(0xFF0F9D8A)
+                                : Colors.grey.shade600),
+                        fontWeight: (holidayName != null || isCarriedOverShift)
                             ? FontWeight.w600
                             : FontWeight.normal,
                       ),
@@ -1558,7 +1648,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (daySessions.isNotEmpty)
+                  if (daySessions.isNotEmpty) ...[
                     InkWell(
                       onTap: () => _showSwipesBreakdownModal(
                         date: _selectedDay,
@@ -1583,13 +1673,43 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                           color: Color(0xFF0284C7),
                         ),
                       ),
-                    )
-                  else
-                    _buildBadge(status),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  _buildBadge(status),
                 ],
               ),
             ],
           ),
+
+          if (status == 'PRESENT_WEEK_OFF') ...[
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0FDF4),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFF86EFAC)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline, size: 16, color: Color(0xFF16A34A)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      tr('scheduled_week_off_active_work'),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF15803D),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
 
           const SizedBox(height: 16),
           const Divider(height: 1, color: Color(0xFFECEFF1)),
@@ -1775,7 +1895,8 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                           const Divider(height: 14),
                       itemBuilder: (context, index) {
                         final session = sessions[index];
-                        final isCurrent = session.status == 'CHECKED_IN' &&
+                        final isCurrent = (session.status == 'CHECKED_IN' ||
+                                session.status == 'CARRIED_OVER') &&
                             session.checkOutTime == null;
                         final inLoc = _formatSessionLocation(
                           session.checkInAddress,
@@ -1847,7 +1968,9 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                           fontWeight: FontWeight.w600,
                                           fontSize: 13)),
                                   Text(
-                                    _formatTime(session.checkInTime),
+                                    session.checkInTime.toLocal().day != date.day
+                                        ? '${session.checkInTime.toLocal().day} ${tr('month_${session.checkInTime.toLocal().month}')}, ${_formatTime(session.checkInTime)}'
+                                        : _formatTime(session.checkInTime),
                                     style: const TextStyle(fontSize: 13),
                                   ),
                                 ],
@@ -1888,7 +2011,9 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                             fontWeight: FontWeight.w600,
                                             fontSize: 13)),
                                     Text(
-                                      _formatTime(session.checkOutTime!),
+                                      session.checkOutTime!.toLocal().day != date.day
+                                          ? '${session.checkOutTime!.toLocal().day} ${tr('month_${session.checkOutTime!.toLocal().month}')}, ${_formatTime(session.checkOutTime!)}'
+                                          : _formatTime(session.checkOutTime!),
                                       style: const TextStyle(fontSize: 13),
                                     ),
                                     if (session.checkoutReason == 'FORCE_CHECKOUT_OUT_OF_RADIUS') ...[
@@ -2174,15 +2299,53 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     int totalWorkSec = 0;
 
     for (final r in records) {
-      final dateKey = (r.attendanceDay != null && r.attendanceDay!.isNotEmpty)
-          ? r.attendanceDay!
-          : '${r.checkInTime.toLocal().year}-${r.checkInTime.toLocal().month.toString().padLeft(2, '0')}-${r.checkInTime.toLocal().day.toString().padLeft(2, '0')}';
-      groupedByDay.putIfAbsent(dateKey, () => []).add(r);
-
       if (r.durationSeconds != null && r.durationSeconds! > 0) {
         totalWorkSec += r.durationSeconds!;
       } else if (r.checkOutTime != null) {
         totalWorkSec += r.checkOutTime!.difference(r.checkInTime).inSeconds;
+      } else {
+        totalWorkSec +=
+            DateTime.now().difference(r.checkInTime.toLocal()).inSeconds;
+      }
+
+      final cin = r.checkInTime.toLocal();
+      DateTime startDay = DateTime(cin.year, cin.month, cin.day);
+      if (r.attendanceDay != null && r.attendanceDay!.isNotEmpty) {
+        try {
+          final parts = r.attendanceDay!.split('-');
+          if (parts.length == 3) {
+            startDay = DateTime(
+              int.parse(parts[0]),
+              int.parse(parts[1]),
+              int.parse(parts[2]),
+            );
+          }
+        } catch (_) {}
+      }
+
+      DateTime endDay;
+      if (r.checkOutTime != null) {
+        final cout = r.checkOutTime!.toLocal();
+        endDay = DateTime(cout.year, cout.month, cout.day);
+      } else if (r.status == 'CHECKED_IN' || r.status == 'CARRIED_OVER') {
+        final now = DateTime.now();
+        endDay = DateTime(now.year, now.month, now.day);
+      } else {
+        endDay = startDay;
+      }
+
+      if (endDay.isBefore(startDay)) {
+        endDay = startDay;
+      }
+
+      DateTime cur = startDay;
+      while (!cur.isAfter(endDay)) {
+        if (cur.year == month.year && cur.month == month.month) {
+          final dateKey =
+              '${cur.year}-${cur.month.toString().padLeft(2, '0')}-${cur.day.toString().padLeft(2, '0')}';
+          groupedByDay.putIfAbsent(dateKey, () => []).add(r);
+        }
+        cur = cur.add(const Duration(days: 1));
       }
     }
 
@@ -2445,7 +2608,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                     ...daySessions.asMap().entries.map((entry) {
                                       final sIndex = entry.key;
                                       final session = entry.value;
-                                      final isCurrent = session.status == 'CHECKED_IN' && session.checkOutTime == null;
+                                      final isCurrent = (session.status == 'CHECKED_IN' || session.status == 'CARRIED_OVER') && session.checkOutTime == null;
                                       final inLoc = _formatSessionLocation(
                                         session.checkInAddress,
                                         session.officeSnapshotName,
@@ -2534,7 +2697,9 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                                                 ),
                                                 Text(
-                                                  _formatTime(session.checkInTime),
+                                                  session.checkInTime.toLocal().day != parsedDate.day
+                                                      ? '${session.checkInTime.toLocal().day} ${tr('month_${session.checkInTime.toLocal().month}')}, ${_formatTime(session.checkInTime)}'
+                                                      : _formatTime(session.checkInTime),
                                                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                                                 ),
                                               ],
@@ -2710,6 +2875,11 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     Color bg;
 
     switch (status) {
+      case 'PRESENT_WEEK_OFF':
+        text = tr('present_week_off_duty');
+        color = const Color(0xFF15803D);
+        bg = const Color(0xFFDCFCE7);
+        break;
       case 'PRESENT':
         text = tr('present');
         color = const Color(0xFF15803D);

@@ -341,8 +341,8 @@ func (r *attendanceRepo) GetHistoryByEmployeeID(
 		SELECT COUNT(*)
 		FROM attendance_sessions
 		WHERE employee_id = $1
-		  AND ($2::timestamptz IS NULL OR check_in_time >= $2)
 		  AND ($3::timestamptz IS NULL OR check_in_time <= $3)
+		  AND ($2::timestamptz IS NULL OR check_in_time >= $2 OR check_out_time IS NULL OR check_out_time >= $2)
 	`
 	var total int64
 	if err := r.db.Pool.QueryRow(ctx, countQuery, employeeID, from, to).Scan(&total); err != nil {
@@ -358,8 +358,8 @@ func (r *attendanceRepo) GetHistoryByEmployeeID(
 			duration_seconds, checkout_reason, initial_out_of_radius_at, status, attendance_day, created_at, updated_at
 		FROM attendance_sessions
 		WHERE employee_id = $1
-		  AND ($2::timestamptz IS NULL OR check_in_time >= $2)
 		  AND ($3::timestamptz IS NULL OR check_in_time <= $3)
+		  AND ($2::timestamptz IS NULL OR check_in_time >= $2 OR check_out_time IS NULL OR check_out_time >= $2)
 		ORDER BY check_in_time DESC
 		LIMIT $4 OFFSET $5
 	`
