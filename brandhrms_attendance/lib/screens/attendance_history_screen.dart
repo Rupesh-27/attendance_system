@@ -333,7 +333,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     final h = seconds ~/ 3600;
     final m = (seconds % 3600) ~/ 60;
     final s = seconds % 60;
-    return '${h}h ${m}m ${s}s';
+    return '$h ${tr('unit_hr')} $m ${tr('unit_min')} $s ${tr('unit_sec')}';
   }
 
   String _formatSessionLocation(String? address, String officeSnapshotName) {
@@ -1538,7 +1538,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                       officeName.isNotEmpty
                           ? officeName
                           : (holidayName != null
-                              ? '$holidayName (${tr('govt_holiday')})'
+                              ? '${tr(holidayName)} (${tr('govt_holiday')})'
                               : (status == 'WEEK_OFF'
                                   ? tr('scheduled_week_off')
                                   : tr('general_shift'))),
@@ -2163,7 +2163,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to load attendance records for selected month')),
+          SnackBar(content: Text(tr('failed_load_month_attendance'))),
         );
       }
     }

@@ -113,7 +113,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (identifier.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your Employee ID or Email and Password')),
+        SnackBar(content: Text(tr('enter_credentials_prompt'))),
       );
       return;
     }
@@ -148,7 +148,9 @@ class _LoginScreenState extends State<LoginScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(result['message'] ?? 'Login failed. Please check credentials.'),
+          content: Text(result['message'] != null
+              ? tr(result['message'] as String)
+              : tr('login_failed')),
           backgroundColor: Colors.red.shade700,
         ),
       );
@@ -164,7 +166,41 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 50),
+              Align(
+                alignment: Alignment.topRight,
+                child: TextButton.icon(
+                  onPressed: () => LanguageService.showLanguagePickerModal(context),
+                  icon: Text(
+                    LanguageService.instance.currentLanguage.flag,
+                    style: const TextStyle(fontSize: 18),
+                  ),
+                  label: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        LanguageService.instance.currentLanguage.nativeName,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.keyboard_arrow_down,
+                        size: 16,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ],
+                  ),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
 
               Image.asset('assets/images/brandcrock_logo.png', height: 100),
 

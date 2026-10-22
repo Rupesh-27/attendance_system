@@ -380,14 +380,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 child: Icon(item.icon, color: item.color, size: 20),
                               ),
                               title: Text(
-                                item.title,
+                                tr(item.title),
                                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                               ),
                               subtitle: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   const SizedBox(height: 3),
-                                  Text(item.message, style: const TextStyle(fontSize: 12.5)),
+                                  Text(tr(item.message), style: const TextStyle(fontSize: 12.5)),
                                   const SizedBox(height: 4),
                                   Text(timeStr, style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
                                 ],
@@ -410,8 +410,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (!mounted) return;
 
     final notice = InAppNotificationItem(
-      title: 'Automatic Check-Out',
-      message: 'You were automatically checked out because your GPS remained outside the office boundary for over 2 minutes.',
+      title: tr('automatic_checkout'),
+      message: tr('automatic_checkout_dialog_msg'),
       timestamp: DateTime.now(),
       icon: Icons.exit_to_app_rounded,
       color: const Color(0xFFDC2626),
@@ -442,19 +442,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: const Icon(Icons.notifications_active, color: Colors.amberAccent, size: 20),
             ),
             const SizedBox(width: 12),
-            const Expanded(
+            Expanded(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Automatic Check-Out Notice',
-                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13.5),
+                    tr('automatic_checkout_notice'),
+                    style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 13.5),
                   ),
-                  SizedBox(height: 2),
+                  const SizedBox(height: 2),
                   Text(
-                    'Outside office radius > 2 mins. Tap bell icon for details.',
-                    style: TextStyle(color: Colors.white70, fontSize: 11.5),
+                    tr('out_of_radius_banner_desc'),
+                    style: const TextStyle(color: Colors.white70, fontSize: 11.5),
                   ),
                 ],
               ),
@@ -480,10 +480,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: const Icon(Icons.exit_to_app_rounded, color: Color(0xFFDC2626), size: 24),
             ),
             const SizedBox(width: 10),
-            const Expanded(
+            Expanded(
               child: Text(
-                'Automatic Check-Out',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+                tr('automatic_checkout'),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
               ),
             ),
           ],
@@ -890,7 +890,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final d = totalSec ~/ 86400;
     final h = (totalSec % 86400) ~/ 3600;
     final m = (totalSec % 3600) ~/ 60;
-    return '${d}d ${h}h ${m}m';
+    return '$d ${tr('unit_day')} $h ${tr('unit_hr')} $m ${tr('unit_min')}';
   }
 
   String _formatSessionDurationHMS(int totalSec) {
@@ -898,7 +898,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final h = totalSec ~/ 3600;
     final m = (totalSec % 3600) ~/ 60;
     final s = totalSec % 60;
-    return '${h}h ${m}m ${s}s';
+    return '$h ${tr('unit_hr')} $m ${tr('unit_min')} $s ${tr('unit_sec')}';
   }
 
   String _formatSessionLocation(String? address, String officeSnapshotName) {
@@ -1063,7 +1063,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: ${e.toString()}'),
+            content: Text('${tr('error')}: ${e.toString()}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -1328,7 +1328,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Current distance: ${dist.toStringAsFixed(1)}m (Allowed: ${radius.toStringAsFixed(0)}m). Please return within the office boundary to avoid automatic checkout.',
+                    '${tr('current_distance')}: ${dist.toStringAsFixed(1)} ${tr('meters')} (${tr('allowed')}: ${radius.toStringAsFixed(0)} ${tr('meters')}). ${tr('breach_warning_return_prompt')}',
                     style: const TextStyle(
                       fontSize: 12,
                       color: Color(0xFF7F1D1D),

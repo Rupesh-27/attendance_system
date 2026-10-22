@@ -12,6 +12,10 @@ String _formatDate(DateTime dt) {
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
   ];
   final displayMonth = monthName == monthKey ? fallbackMonths[dt.month - 1] : monthName;
+  if (LanguageService.instance.currentLanguage == AppLanguage.german ||
+      LanguageService.instance.currentLanguage == AppLanguage.belarusian) {
+    return '${dt.day}. $displayMonth ${dt.year}';
+  }
   return '$displayMonth ${dt.day}, ${dt.year}';
 }
 
@@ -90,7 +94,7 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
           IconButton(
             onPressed: refreshData,
             icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh',
+            tooltip: tr('refresh'),
           ),
         ],
       ),
@@ -752,41 +756,45 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
     final startStr = _formatDate(app.startDate);
     final endStr = _formatDate(app.endDate);
     final durationDisplay = app.isHalfDay
-        ? '0.5 Day (${app.halfDaySession == "SECOND_HALF" || app.halfDaySession == "Session 2" ? "Session 2 (PM)" : "Session 1 (AM)"})'
-        : '${app.totalDays.toInt()} ${app.totalDays > 1 ? "Days" : "Day"}';
+        ? '0.5 ${tr('day')} (${app.halfDaySession == "SECOND_HALF" || app.halfDaySession == "Session 2" ? tr('session_2_pm') : tr('session_1_am')})'
+        : '${app.totalDays.toInt()} ${app.totalDays > 1 ? tr('days') : tr('day')}';
     final appliedOnStr = _formatDate(app.createdAt);
 
     Color statusColor;
     Color statusBg;
-    String statusDisplay = app.status;
+    String statusDisplay;
 
     switch (app.status) {
       case 'APPROVED':
         statusColor = const Color(0xFF10B981);
         statusBg = const Color(0xFFD1FAE5);
+        statusDisplay = tr('approved');
         break;
       case 'REJECTED':
         statusColor = const Color(0xFFEF4444);
         statusBg = const Color(0xFFFEE2E2);
+        statusDisplay = tr('rejected');
         break;
       case 'WITHDRAWN':
         statusColor = const Color(0xFF64748B);
         statusBg = const Color(0xFFF1F5F9);
-        statusDisplay = 'WITHDRAWN';
+        statusDisplay = tr('withdrawn');
         break;
       case 'CANCELLATION_PENDING':
         statusColor = const Color(0xFF6366F1);
         statusBg = const Color(0xFFEEF2FF);
-        statusDisplay = 'CANCEL REQUESTED';
+        statusDisplay = tr('cancel_requested');
         break;
       case 'CANCELLED':
         statusColor = const Color(0xFF6B7280);
         statusBg = const Color(0xFFF3F4F6);
+        statusDisplay = tr('cancelled');
         break;
       case 'PENDING':
       default:
         statusColor = const Color(0xFFF59E0B);
         statusBg = const Color(0xFFFEF3C7);
+        statusDisplay = tr('pending');
         break;
     }
 
@@ -1080,11 +1088,11 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
 
   Future<void> _confirmCancelApplication(LeaveApplication app) async {
     final isPending = app.status == 'PENDING';
-    final title = isPending ? 'Withdraw Leave Application?' : 'Request Leave Cancellation?';
+    final title = isPending ? tr('withdraw_leave_title') : tr('request_cancellation_title');
     final content = isPending
-        ? 'Are you sure you want to withdraw this application? It will be cancelled immediately and held days returned.'
-        : 'Your leave has already been approved. Cancelling will submit a request to your manager for approval.';
-    final buttonText = isPending ? 'Withdraw' : 'Submit Request';
+        ? tr('withdraw_leave_confirm')
+        : tr('cancel_leave_confirm');
+    final buttonText = isPending ? tr('withdraw') : tr('submit_request');
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -1113,8 +1121,8 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(isPending
-                  ? 'Application withdrawn successfully'
-                  : 'Cancellation request submitted to manager'),
+                  ? tr('application_withdrawn_success')
+                  : tr('cancellation_submitted_success')),
               backgroundColor: primaryColor,
             ),
           );
@@ -1122,9 +1130,9 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to process cancellation request'),
-              backgroundColor: Color(0xFFEF4444),
+            SnackBar(
+              content: Text(tr('cancellation_failed')),
+              backgroundColor: const Color(0xFFEF4444),
             ),
           );
         }
@@ -1346,7 +1354,7 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
     final bal = _selectedBalance;
     if (bal != null && bal.remainingDays < _calculatedDays) {
       setState(() => _errorMessage =
-          'Insufficient balance: You have ${bal.remainingDays} days remaining, but requested $_calculatedDays days.');
+          '${tr('insufficient_balance')}: ${tr('you_have')} ${bal.remainingDays} ${tr('days_remaining')}, ${tr('requested')} $_calculatedDays ${tr('days')}.');
       return;
     }
 
@@ -1373,7 +1381,9 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
         widget.onApplied();
       } else {
         setState(() {
-          _errorMessage = result['message'] ?? 'Failed to apply leave';
+          _errorMessage = result['message'] != null
+              ? tr(result['message'] as String)
+              : tr('failed_apply_leave');
         });
       }
     }

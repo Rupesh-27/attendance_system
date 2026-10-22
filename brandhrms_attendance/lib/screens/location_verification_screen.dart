@@ -22,10 +22,17 @@ class _LocationVerificationScreenState
     extends State<LocationVerificationScreen> {
   static const Color primaryColor = Color(0xFF0F9D8A);
 
-  String locationStatus = 'Location not checked';
-  String locationDetails = 'Tap the button to verify your location and submit attendance.';
+  String locationStatus = '';
+  String locationDetails = '';
   bool isChecking = false;
   bool isSuccess = false;
+
+  @override
+  void initState() {
+    super.initState();
+    locationStatus = tr('location_not_checked');
+    locationDetails = tr('tap_button_to_verify');
+  }
 
   Future<void> verifyLocation() async {
     if (isChecking) {
@@ -34,8 +41,8 @@ class _LocationVerificationScreenState
 
     setState(() {
       isChecking = true;
-      locationStatus = 'Acquiring GPS location...';
-      locationDetails = 'Please wait while we get high-precision coordinates from your device.';
+      locationStatus = tr('acquiring_gps');
+      locationDetails = tr('gps_wait_precision');
     });
 
     try {
@@ -43,8 +50,8 @@ class _LocationVerificationScreenState
 
       if (!serviceEnabled) {
         setState(() {
-          locationStatus = 'Location service is disabled';
-          locationDetails = 'Please turn on Location/GPS and try again.';
+          locationStatus = tr('Location service is disabled');
+          locationDetails = tr('turn_on_gps_retry');
           isChecking = false;
         });
         return;
@@ -58,8 +65,8 @@ class _LocationVerificationScreenState
 
       if (permission == LocationPermission.denied) {
         setState(() {
-          locationStatus = 'Location permission denied';
-          locationDetails = 'Allow location permission and try again.';
+          locationStatus = tr('location_permission_denied');
+          locationDetails = tr('allow_location_retry');
           isChecking = false;
         });
         return;
@@ -67,9 +74,8 @@ class _LocationVerificationScreenState
 
       if (permission == LocationPermission.deniedForever) {
         setState(() {
-          locationStatus = 'Location permission blocked';
-          locationDetails =
-              'Please enable location permission in phone settings.';
+          locationStatus = tr('location_permission_blocked');
+          locationDetails = tr('enable_location_settings');
           isChecking = false;
         });
         return;
@@ -82,7 +88,7 @@ class _LocationVerificationScreenState
       );
 
       setState(() {
-        locationStatus = 'Verifying with office geofence...';
+        locationStatus = tr('verifying_office_geofence');
         locationDetails =
             'Coordinates: ${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}\n'
             'Accuracy: ±${position.accuracy.toStringAsFixed(1)}m\n'
@@ -126,12 +132,12 @@ class _LocationVerificationScreenState
 
         setState(() {
           isSuccess = true;
-          locationStatus = 'Available';
+          locationStatus = tr('ready');
           locationDetails =
-              'Status: ${result['status']}\n'
-              'Distance to Office: ${distance.toString()} m\n'
-              'Allowed Radius: ${allowedRadius.toString()} m\n'
-              'Server Timestamp: $formattedTime';
+              '${tr('status')}: ${tr(result['status']?.toString() ?? 'SUCCESS')}\n'
+              '${tr('distance_to_office')}: ${distance.toString()} ${tr('meters')}\n'
+              '${tr('allowed')}: ${allowedRadius.toString()} ${tr('meters')}\n'
+              '${tr('server_time')}: $formattedTime';
           isChecking = false;
         });
 
@@ -143,12 +149,12 @@ class _LocationVerificationScreenState
         );
       } else {
         setState(() {
-          locationStatus = 'Unavailable';
-          locationDetails = result['message'] ?? 'Location verification failed.';
+          locationStatus = tr('unavailable');
+          locationDetails = result['message'] != null ? tr(result['message']) : tr('verification_failed');
           isChecking = false;
         });
 
-        _showErrorDialog(result['message'] ?? 'Could not record attendance.');
+        _showErrorDialog(result['message'] != null ? tr(result['message']) : tr('verification_failed'));
       }
     } catch (e) {
       setState(() {
@@ -176,7 +182,7 @@ class _LocationVerificationScreenState
             const Icon(Icons.check_circle, color: Colors.green, size: 28),
             const SizedBox(width: 10),
             Text(
-              widget.isCheckOut ? 'Checked Out' : 'Checked In',
+              widget.isCheckOut ? tr('checked_out') : tr('checked_in'),
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ],
@@ -187,18 +193,18 @@ class _LocationVerificationScreenState
           children: [
             Text(
               widget.isCheckOut
-                  ? 'Your check-out has been verified and recorded.'
-                  : 'Your check-in has been verified and recorded.',
+                  ? tr('checkout_verified_msg')
+                  : tr('checkin_verified_msg'),
               style: TextStyle(color: Colors.grey.shade700),
             ),
             const SizedBox(height: 16),
-            _dialogRow('Status', status),
+            _dialogRow(tr('status'), tr(status)),
             const SizedBox(height: 8),
-            _dialogRow('Server Time', serverTime),
+            _dialogRow(tr('server_time'), serverTime),
             const SizedBox(height: 8),
-            _dialogRow('Distance to Office', '$distance m'),
+            _dialogRow(tr('distance_to_office'), '$distance ${tr('meters')}'),
             const SizedBox(height: 8),
-            _dialogRow('Office Geofence', '$radius m'),
+            _dialogRow(tr('office_geofence'), '$radius ${tr('meters')}'),
           ],
         ),
         actions: [
@@ -223,11 +229,11 @@ class _LocationVerificationScreenState
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.error_outline, color: Colors.red, size: 28),
-            SizedBox(width: 10),
-            Text('Verification Failed', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Icon(Icons.error_outline, color: Colors.red, size: 28),
+            const SizedBox(width: 10),
+            Text(tr('verification_failed'), style: const TextStyle(fontWeight: FontWeight.bold)),
           ],
         ),
         content: Text(
@@ -237,7 +243,7 @@ class _LocationVerificationScreenState
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('OK', style: TextStyle(color: primaryColor)),
+            child: Text(tr('ok'), style: const TextStyle(color: primaryColor)),
           ),
         ],
       ),
@@ -256,159 +262,164 @@ class _LocationVerificationScreenState
 
   @override
   Widget build(BuildContext context) {
-    final officeName = ApiService.assignedOffice?.name ?? 'BrandCrock Office';
+    return ListenableBuilder(
+      listenable: LanguageService.instance,
+      builder: (context, _) {
+        final officeName = ApiService.assignedOffice?.name ?? 'BrandCrock Office';
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F7F9),
+        return Scaffold(
+          backgroundColor: const Color(0xFFF5F7F9),
 
-      appBar: AppBar(
-        backgroundColor: primaryColor,
-        foregroundColor: Colors.white,
-        title: Text(
-          widget.isCheckOut ? 'Check Out Verification' : 'Location Verification',
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-      ),
-
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            const SizedBox(height: 20),
-
-            Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                color: (isSuccess ? Colors.green : primaryColor).withValues(alpha: 0.10),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                isSuccess
-                    ? Icons.check_circle
-                    : (widget.isCheckOut ? Icons.logout : Icons.location_on),
-                size: 55,
-                color: isSuccess ? Colors.green : primaryColor,
-              ),
+          appBar: AppBar(
+            backgroundColor: primaryColor,
+            foregroundColor: Colors.white,
+            title: Text(
+              widget.isCheckOut ? tr('check_out_verification') : tr('location_verification'),
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
+          ),
 
-            const SizedBox(height: 24),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                const SizedBox(height: 20),
 
-            Text(
-              widget.isCheckOut ? 'Verify Your Check-Out' : 'Verify Your Location',
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-
-            const SizedBox(height: 10),
-
-            Text(
-              widget.isCheckOut
-                  ? 'We need your current location to verify that you are checking out within your assigned office.'
-                  : 'We need your current location to verify whether you are at your assigned office.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-            ),
-
-            const SizedBox(height: 28),
-
-            _infoCard(
-              icon: Icons.business,
-              title: 'Assigned Office',
-              value: officeName,
-            ),
-
-            const SizedBox(height: 14),
-
-            _infoCard(
-              icon: isSuccess ? Icons.verified : Icons.gps_fixed,
-              title: 'Location Status',
-              value: locationStatus,
-              valueColor: isSuccess ? Colors.green : (locationStatus.contains('Failed') ? Colors.red : null),
-            ),
-
-            const SizedBox(height: 14),
-
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    isSuccess ? Icons.check_circle_outline : Icons.info_outline,
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: (isSuccess ? Colors.green : primaryColor).withValues(alpha: 0.10),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    isSuccess
+                        ? Icons.check_circle
+                        : (widget.isCheckOut ? Icons.logout : Icons.location_on),
+                    size: 55,
                     color: isSuccess ? Colors.green : primaryColor,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      locationDetails,
-                      style: const TextStyle(fontSize: 13, height: 1.4),
-                    ),
+                ),
+
+                const SizedBox(height: 24),
+
+                Text(
+                  widget.isCheckOut ? tr('verify_your_checkout') : tr('verify_your_location'),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+
+                const SizedBox(height: 10),
+
+                Text(
+                  widget.isCheckOut
+                      ? tr('loc_verify_checkout_desc')
+                      : tr('loc_verify_checkin_desc'),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                ),
+
+                const SizedBox(height: 28),
+
+                _infoCard(
+                  icon: Icons.business,
+                  title: tr('assigned_office'),
+                  value: officeName,
+                ),
+
+                const SizedBox(height: 14),
+
+                _infoCard(
+                  icon: isSuccess ? Icons.verified : Icons.gps_fixed,
+                  title: tr('geofence_status'),
+                  value: locationStatus,
+                  valueColor: isSuccess ? Colors.green : (locationStatus.contains('Failed') ? Colors.red : null),
+                ),
+
+                const SizedBox(height: 14),
+
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: FilledButton.icon(
-                onPressed: isChecking ? null : verifyLocation,
-                icon: isChecking
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        isSuccess ? Icons.check_circle_outline : Icons.info_outline,
+                        color: isSuccess ? Colors.green : primaryColor,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          locationDetails,
+                          style: const TextStyle(fontSize: 13, height: 1.4),
                         ),
-                      )
-                    : Icon(widget.isCheckOut ? Icons.logout : Icons.my_location),
-                label: Text(
-                  isChecking
-                      ? 'Verifying Location...'
-                      : (widget.isCheckOut ? 'Verify & Check Out' : 'Verify & Check In'),
-                  style: const TextStyle(fontSize: 16),
+                      ),
+                    ],
+                  ),
                 ),
-                style: FilledButton.styleFrom(
-                  backgroundColor: widget.isCheckOut ? Colors.orange.shade800 : primaryColor,
-                ),
-              ),
-            ),
 
-            const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.security, color: primaryColor),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Your location is securely verified against your office geofence radius for attendance records.',
-                      style: TextStyle(fontSize: 13),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: FilledButton.icon(
+                    onPressed: isChecking ? null : verifyLocation,
+                    icon: isChecking
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Icon(widget.isCheckOut ? Icons.logout : Icons.my_location),
+                    label: Text(
+                      isChecking
+                          ? tr('verifying_location')
+                          : (widget.isCheckOut ? tr('verify_and_checkout') : tr('verify_and_checkin')),
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: widget.isCheckOut ? Colors.orange.shade800 : primaryColor,
                     ),
                   ),
-                ],
-              ),
+                ),
+
+                const SizedBox(height: 24),
+
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.security, color: primaryColor),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          tr('secure_geofence_desc'),
+                          style: const TextStyle(fontSize: 13),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 

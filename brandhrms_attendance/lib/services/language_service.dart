@@ -57,6 +57,152 @@ class LanguageService extends ChangeNotifier {
     } catch (_) {}
   }
 
+  static void showLanguagePickerModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      backgroundColor: Colors.white,
+      builder: (ctx) {
+        final primaryColor = Theme.of(context).colorScheme.primary;
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    tr('choose_language'),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1E293B),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    icon: const Icon(Icons.close, size: 20, color: Color(0xFF64748B)),
+                    splashRadius: 20,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                tr('choose_language_desc'),
+                style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+              ),
+              const SizedBox(height: 18),
+              ...AppLanguage.values.map((lang) {
+                final isSelected = LanguageService.instance.currentLanguage == lang;
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? primaryColor.withValues(alpha: 0.08)
+                        : Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: isSelected ? primaryColor : const Color(0xFFE2E8F0),
+                      width: isSelected ? 1.8 : 1,
+                    ),
+                  ),
+                  child: InkWell(
+                    onTap: () async {
+                      await LanguageService.instance.setLanguage(lang);
+                      if (ctx.mounted) {
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(tr('language_updated')),
+                            backgroundColor: primaryColor,
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        );
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(14),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      child: Row(
+                        children: [
+                          Text(
+                            lang.flag,
+                            style: const TextStyle(fontSize: 26),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  lang.name,
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                                    color: const Color(0xFF1E293B),
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  lang.nativeName,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: isSelected ? primaryColor : const Color(0xFF64748B),
+                                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (isSelected)
+                            Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: primaryColor,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.check, size: 16, color: Colors.white),
+                            )
+                          else
+                            Container(
+                              width: 22,
+                              height: 22,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(color: const Color(0xFFCBD5E1), width: 1.5),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   static String tr(String key) {
     final lang = instance._currentLanguage;
     final dict = _translations[lang] ?? _translations[AppLanguage.english]!;
@@ -541,6 +687,81 @@ class LanguageService extends ChangeNotifier {
       'password': 'Password',
       'remember_me': 'Remember Me',
       'login': 'Login',
+      'error': 'Error',
+      'submit_request': 'Submit Request',
+      'first_in': 'First In',
+      'last_out': 'Last Out',
+      'date': 'Date',
+      'current_distance': 'Current distance',
+      'allowed': 'Allowed',
+      'breach_warning_return_prompt': 'Please return within the office boundary to avoid automatic checkout.',
+      'verification_failed': 'Verification Failed',
+      'withdraw_leave_title': 'Withdraw Leave Application?',
+      'request_cancellation_title': 'Request Leave Cancellation?',
+      'withdraw_leave_confirm': 'Are you sure you want to withdraw this application? It will be cancelled immediately and held days returned.',
+      'cancel_leave_confirm': 'Your leave has already been approved. Cancelling will submit a request to your manager for approval.',
+      'application_withdrawn_success': 'Application withdrawn successfully',
+      'cancellation_submitted_success': 'Cancellation request submitted to manager',
+      'cancellation_failed': 'Failed to process cancellation request',
+      'failed_apply_leave': 'Failed to apply leave',
+      'insufficient_balance': 'Insufficient balance',
+      'you_have': 'You have',
+      'days_remaining': 'days remaining',
+      'requested': 'but requested',
+      'failed_load_month_attendance': 'Failed to load attendance records for selected month',
+      'enter_credentials_prompt': 'Please enter your Employee ID or Email and Password',
+      'login_failed': 'Login failed. Please check credentials.',
+
+      // Holidays
+      "New Year's Day": "New Year's Day",
+      'Pongal': 'Pongal',
+      'Thiruvalluvar Day': 'Thiruvalluvar Day',
+      'Uzhavar Thirunal': 'Uzhavar Thirunal',
+      'Republic Day': 'Republic Day',
+      'Good Friday': 'Good Friday',
+      'May Day': 'May Day',
+      'Independence Day': 'Independence Day',
+      'Gandhi Jayanti': 'Gandhi Jayanti',
+      'Ayutha Pooja': 'Ayutha Pooja',
+      'Vijaya Dasami': 'Vijaya Dasami',
+      'Deepavali': 'Deepavali',
+      'Christmas': 'Christmas',
+      'Ramzan (Id-ul-Fitr)': 'Ramzan (Id-ul-Fitr)',
+      'Bakrid': 'Bakrid',
+      'Bakrid (Eid al-Adha)': 'Bakrid (Eid al-Adha)',
+      'Muharram': 'Muharram',
+      'Milad-un-Nabi': 'Milad-un-Nabi',
+      'Vinayakar Chathurthi': 'Vinayakar Chathurthi',
+      'Tamil New Year': 'Tamil New Year',
+      'Tamil New Year / Dr. Ambedkar Jayanti': 'Tamil New Year / Dr. Ambedkar Jayanti',
+      'Tamil New Year / Dr. B.R. Ambedkar Jayanti': 'Tamil New Year / Dr. B.R. Ambedkar Jayanti',
+
+      // Location Verification & Actions
+      'ok': 'OK',
+      'check_out_verification': 'Check Out Verification',
+      'location_verification': 'Location Verification',
+      'verify_your_checkout': 'Verify Your Check-Out',
+      'verify_your_location': 'Verify Your Location',
+      'loc_verify_checkout_desc': 'We need your current location to verify that you are checking out within your assigned office.',
+      'loc_verify_checkin_desc': 'We need your current location to verify whether you are at your assigned office.',
+      'verify_and_checkout': 'Verify & Check Out',
+      'verify_and_checkin': 'Verify & Check In',
+      'secure_geofence_desc': 'Your location is securely verified against your office geofence radius for attendance records.',
+      'server_time': 'Server Time',
+      'distance_to_office': 'Distance to Office',
+      'office_geofence': 'Office Geofence',
+      'checkout_verified_msg': 'Your check-out has been verified and recorded.',
+      'checkin_verified_msg': 'Your check-in has been verified and recorded.',
+      'location_not_checked': 'Location not checked',
+      'tap_button_to_verify': 'Tap the button to verify your location and submit attendance.',
+      'acquiring_gps': 'Acquiring GPS location...',
+      'gps_wait_precision': 'Please wait while we get high-precision coordinates from your device.',
+      'turn_on_gps_retry': 'Please turn on Location/GPS and try again.',
+      'location_permission_denied': 'Location permission denied',
+      'allow_location_retry': 'Allow location permission and try again.',
+      'location_permission_blocked': 'Location permission blocked',
+      'enable_location_settings': 'Please enable location permission in phone settings.',
+      'verifying_office_geofence': 'Verifying with office geofence...',
     },
 
     AppLanguage.german: {
@@ -900,6 +1121,81 @@ class LanguageService extends ChangeNotifier {
       'password': 'Passwort',
       'remember_me': 'Angemeldet bleiben',
       'login': 'Anmelden',
+      'error': 'Fehler',
+      'submit_request': 'Antrag einreichen',
+      'first_in': 'Erster Eingang',
+      'last_out': 'Letzter Ausgang',
+      'date': 'Datum',
+      'current_distance': 'Aktuelle Entfernung',
+      'allowed': 'Erlaubt',
+      'breach_warning_return_prompt': 'Bitte kehren Sie in den Bürobereich zurück, um ein automatisches Austempeln zu vermeiden.',
+      'verification_failed': 'Überprüfung fehlgeschlagen',
+      'withdraw_leave_title': 'Urlaubsantrag zurückziehen?',
+      'request_cancellation_title': 'Stornierung beantragen?',
+      'withdraw_leave_confirm': 'Möchten Sie diesen Antrag wirklich zurückziehen? Er wird sofort storniert und die Tage werden gutgeschrieben.',
+      'cancel_leave_confirm': 'Ihr Urlaub wurde bereits genehmigt. Eine Stornierung reicht einen Antrag zur Genehmigung bei Ihrer Führungskraft ein.',
+      'application_withdrawn_success': 'Antrag erfolgreich zurückgezogen',
+      'cancellation_submitted_success': 'Stornierungsantrag an Manager übermittelt',
+      'cancellation_failed': 'Stornierungsantrag konnte nicht verarbeitet werden',
+      'failed_apply_leave': 'Urlaubsantrag konnte nicht gesendet werden',
+      'insufficient_balance': 'Unzureichendes Guthaben',
+      'you_have': 'Sie haben',
+      'days_remaining': 'Tage verbleibend',
+      'requested': 'aber beantragt',
+      'failed_load_month_attendance': 'Anwesenheitsdaten für den ausgewählten Monat konnten nicht geladen werden',
+      'enter_credentials_prompt': 'Bitte geben Sie Ihre Mitarbeiter-ID oder E-Mail und Ihr Passwort ein',
+      'login_failed': 'Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Zugangsdaten.',
+
+      // Holidays
+      "New Year's Day": 'Neujahr',
+      'Pongal': 'Pongal',
+      'Thiruvalluvar Day': 'Thiruvalluvar-Tag',
+      'Uzhavar Thirunal': 'Uzhavar Thirunal',
+      'Republic Day': 'Tag der Republik',
+      'Good Friday': 'Karfreitag',
+      'May Day': 'Tag der Arbeit',
+      'Independence Day': 'Unabhängigkeitstag',
+      'Gandhi Jayanti': 'Gandhi Jayanti',
+      'Ayutha Pooja': 'Ayutha Pooja',
+      'Vijaya Dasami': 'Vijaya Dasami',
+      'Deepavali': 'Deepavali (Diwali)',
+      'Christmas': 'Weihnachten',
+      'Ramzan (Id-ul-Fitr)': 'Ramadan (Eid al-Fitr)',
+      'Bakrid': 'Opferfest (Bakrid)',
+      'Bakrid (Eid al-Adha)': 'Opferfest (Eid al-Adha)',
+      'Muharram': 'Muharram',
+      'Milad-un-Nabi': 'Milad-un-Nabi',
+      'Vinayakar Chathurthi': 'Ganesh Chaturthi',
+      'Tamil New Year': 'Tamilisches Neujahr',
+      'Tamil New Year / Dr. Ambedkar Jayanti': 'Tamilisches Neujahr / Dr. Ambedkar Jayanti',
+      'Tamil New Year / Dr. B.R. Ambedkar Jayanti': 'Tamilisches Neujahr / Dr. B.R. Ambedkar Jayanti',
+
+      // Location Verification & Actions
+      'ok': 'OK',
+      'check_out_verification': 'Ausstempel-Überprüfung',
+      'location_verification': 'Standortüberprüfung',
+      'verify_your_checkout': 'Überprüfen Sie Ihr Austempeln',
+      'verify_your_location': 'Überprüfen Sie Ihren Standort',
+      'loc_verify_checkout_desc': 'Wir benötigen Ihren aktuellen Standort, um zu überprüfen, ob Sie sich im zugewiesenen Büro ausstempeln.',
+      'loc_verify_checkin_desc': 'Wir benötigen Ihren aktuellen Standort, um zu überprüfen, ob Sie sich in Ihrem zugewiesenen Büro befinden.',
+      'verify_and_checkout': 'Überprüfen & Austempeln',
+      'verify_and_checkin': 'Überprüfen & Einstempeln',
+      'secure_geofence_desc': 'Ihr Standort wird zur Anwesenheitserfassung sicher anhand des Geofence-Radius Ihres Büros überprüft.',
+      'server_time': 'Serverzeit',
+      'distance_to_office': 'Entfernung zum Büro',
+      'office_geofence': 'Büro-Geofence',
+      'checkout_verified_msg': 'Ihr Austempeln wurde überprüft und erfasst.',
+      'checkin_verified_msg': 'Ihr Einstempeln wurde überprüft und erfasst.',
+      'location_not_checked': 'Standort nicht überprüft',
+      'tap_button_to_verify': 'Tippen Sie auf die Schaltfläche, um Ihren Standort zu überprüfen und die Anwesenheit zu übermitteln.',
+      'acquiring_gps': 'GPS-Standort wird ermittelt...',
+      'gps_wait_precision': 'Bitte warten Sie, während wir hochpräzise Koordinaten von Ihrem Gerät abrufen.',
+      'turn_on_gps_retry': 'Bitte schalten Sie Standort/GPS ein und versuchen Sie es erneut.',
+      'location_permission_denied': 'Standortberechtigung verweigert',
+      'allow_location_retry': 'Erlauben Sie die Standortberechtigung und versuchen Sie es erneut.',
+      'location_permission_blocked': 'Standortberechtigung blockiert',
+      'enable_location_settings': 'Bitte aktivieren Sie die Standortberechtigung in den Telefoneinstellungen.',
+      'verifying_office_geofence': 'Überprüfung mit dem Büro-Geofence...',
     },
 
     AppLanguage.belarusian: {
@@ -1259,6 +1555,81 @@ class LanguageService extends ChangeNotifier {
       'password': 'Пароль',
       'remember_me': 'Запомніць мяне',
       'login': 'Увайсці',
+      'error': 'Памылка',
+      'submit_request': 'Адправіць запыт',
+      'first_in': 'Першы прыход',
+      'last_out': 'Апошні сыход',
+      'date': 'Дата',
+      'current_distance': 'Бягучая адлегласць',
+      'allowed': 'Дазволена',
+      'breach_warning_return_prompt': 'Калі ласка, вярніцеся ў межы офіса, каб пазбегнуць аўтаматычнага сыходу.',
+      'verification_failed': 'Праверка не атрымалася',
+      'withdraw_leave_title': 'Адазваць заяву на адпачынак?',
+      'request_cancellation_title': 'Запытаць адмену адпачынку?',
+      'withdraw_leave_confirm': 'Вы сапраўды хочаце адазваць гэтую заяву? Яна будзе неадкладна адменена, а дні вернуты.',
+      'cancel_leave_confirm': 'Ваш адпачынак ужо ўзгоднены. Пры адмене будзе накіраваны запыт кіраўніку на зацвярджэнне.',
+      'application_withdrawn_success': 'Заява паспяхова адклікана',
+      'cancellation_submitted_success': 'Запыт на адмену накіраваны кіраўніку',
+      'cancellation_failed': 'Не ўдалося апрацаваць запыт на адмену',
+      'failed_apply_leave': 'Не ўдалося падаць заяву на адпачынак',
+      'insufficient_balance': 'Недастаткова дзён',
+      'you_have': 'У вас ёсць',
+      'days_remaining': 'дзён засталося',
+      'requested': 'але запытана',
+      'failed_load_month_attendance': 'Не ўдалося загрузіць дадзеныя наведвальнасці за абраны месяц',
+      'enter_credentials_prompt': 'Калі ласка, увядзіце ID супрацоўніка або Email і пароль',
+      'login_failed': 'Памылка ўваходу. Калі ласка, праверце ўведзеныя дадзеныя.',
+
+      // Holidays
+      "New Year's Day": 'Новы год',
+      'Pongal': 'Понгал',
+      'Thiruvalluvar Day': 'Дзень Цірувалувара',
+      'Uzhavar Thirunal': 'Ужавар Цірунал',
+      'Republic Day': 'Дзень Рэспублікі',
+      'Good Friday': 'Вялікая пятніца',
+      'May Day': 'Дзень працы',
+      'Independence Day': 'Дзень незалежнасці',
+      'Gandhi Jayanti': 'Гандзі Джаянці',
+      'Ayutha Pooja': 'Аюта Пуджа',
+      'Vijaya Dasami': 'Віджая Дасамі',
+      'Deepavali': 'Дзівалі (Дзіпавалі)',
+      'Christmas': 'Раство',
+      'Ramzan (Id-ul-Fitr)': 'Рамазан (Ураза-байрам)',
+      'Bakrid': 'Курбан-байрам',
+      'Bakrid (Eid al-Adha)': 'Курбан-байрам',
+      'Muharram': 'Мухарам',
+      'Milad-un-Nabi': 'Мілад ан-Набі',
+      'Vinayakar Chathurthi': 'Вінаяка Чатурці',
+      'Tamil New Year': 'Тамільскі Новы год',
+      'Tamil New Year / Dr. Ambedkar Jayanti': 'Тамільскі Новы год / Дзень д-ра Амбедкара',
+      'Tamil New Year / Dr. B.R. Ambedkar Jayanti': 'Тамільскі Новы год / Дзень д-ра Амбедкара',
+
+      // Location Verification & Actions
+      'ok': 'ОК',
+      'check_out_verification': 'Праверка сыходу',
+      'location_verification': 'Праверка месцазнаходжання',
+      'verify_your_checkout': 'Пацвердзіце ваш сыход',
+      'verify_your_location': 'Пацвердзіце ваша месцазнаходжанне',
+      'loc_verify_checkout_desc': 'Нам патрэбна ваша бягучае месцазнаходжанне, каб пацвердзіць, што вы адзначаеце сыход у прызначаным офісе.',
+      'loc_verify_checkin_desc': 'Нам патрэбна ваша бягучае месцазнаходжанне, каб праверыць, ці знаходзіцеся вы ў прызначаным офісе.',
+      'verify_and_checkout': 'Праверыць і адзначыць сыход',
+      'verify_and_checkin': 'Праверыць і адзначыць прыход',
+      'secure_geofence_desc': 'Ваша месцазнаходжанне бяспечна правяраецца па радыусе геазоны офіса для ўліку наведвальнасці.',
+      'server_time': 'Час сервера',
+      'distance_to_office': 'Адлегласць да офіса',
+      'office_geofence': 'Геазона офіса',
+      'checkout_verified_msg': 'Ваш сыход быў правераны і зафіксаваны.',
+      'checkin_verified_msg': 'Ваш прыход быў правераны і зафіксаваны.',
+      'location_not_checked': 'Месцазнаходжанне не праверана',
+      'tap_button_to_verify': 'Націсніце кнопку, каб праверыць месцазнаходжанне і адправіць наведвальнасць.',
+      'acquiring_gps': 'Вызначэнне месцазнаходжання па GPS...',
+      'gps_wait_precision': 'Калі ласка, пачакайце, пакуль мы атрымліваем высокадакладныя каардынаты з вашай прылады.',
+      'turn_on_gps_retry': 'Калі ласка, уключыце геалакацыю/GPS і паспрабуйце зноў.',
+      'location_permission_denied': 'Дазвол на геалакацыю адхілены',
+      'allow_location_retry': 'Дайце дазвол на вызначэнне месцазнаходжання і паспрабуйце зноў.',
+      'location_permission_blocked': 'Дазвол на геалакацыю заблакіраваны',
+      'enable_location_settings': 'Калі ласка, уключыце дазвол на вызначэнне месцазнаходжання ў наладах тэлефона.',
+      'verifying_office_geofence': 'Праверка па геазоне офіса...',
     },
   };
 }
