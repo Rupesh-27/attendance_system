@@ -133,6 +133,11 @@ class ProfileScreen extends StatelessWidget {
                   officeName,
                 ),
                 _profileItem(
+                  Icons.location_on_outlined,
+                  tr('work_address'),
+                  '131, Lakeview Street, Vinayakarpuram East, Tambaram, Chennai, India',
+                ),
+                _profileItem(
                   Icons.work_outline,
                   tr('geofence_radius'),
                   '${office?.radiusMeters.toStringAsFixed(0) ?? "10"} ${tr('meters')}',
@@ -227,28 +232,10 @@ class ProfileScreen extends StatelessWidget {
                 ],
               ),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFCBD5E1)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    tr('change'),
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: primaryColor,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  const Icon(Icons.arrow_forward_ios_rounded, size: 10, color: primaryColor),
-                ],
-              ),
+            const Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 16,
+              color: Color(0xFF94A3B8),
             ),
           ],
         ),

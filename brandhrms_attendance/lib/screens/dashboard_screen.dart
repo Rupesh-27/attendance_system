@@ -926,8 +926,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (!serviceEnabled) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Please enable GPS / Location services on your phone.'),
+            SnackBar(
+              content: Text(tr('enable_gps_prompt')),
               backgroundColor: Colors.red,
             ),
           );
@@ -1356,7 +1356,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                monitor.lastError ?? tr('gps_disabled_banner'),
+                monitor.lastError != null
+                    ? tr(monitor.lastError!)
+                    : tr('gps_disabled_banner'),
                 style: const TextStyle(fontSize: 12, color: Color(0xFF92400E)),
               ),
             ),

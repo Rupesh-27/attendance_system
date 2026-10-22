@@ -244,7 +244,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     if (sessions.isNotEmpty) {
       return {
         'status': 'PRESENT',
-        'label': 'P',
+        'label': tr('label_present'),
         'color': const Color(0xFF16A34A),
         'bgColor': const Color(0xFFF0FDF4),
         'borderColor': const Color(0xFF86EFAC),
@@ -257,7 +257,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     if (holidayName != null) {
       return {
         'status': 'HOLIDAY',
-        'label': 'H',
+        'label': tr('label_holiday'),
         'holidayName': holidayName,
         'color': const Color(0xFF4338CA),
         'bgColor': const Color(0xFFEEF2FF),
@@ -272,7 +272,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     if (isWeekend) {
       return {
         'status': 'WEEK_OFF',
-        'label': 'WO',
+        'label': tr('label_week_off'),
         'color': const Color(0xFF475569),
         'bgColor': const Color(0xFFF1F5F9),
         'borderColor': const Color(0xFFCFD8DC),
@@ -284,7 +284,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     if (targetDate.isBefore(today)) {
       return {
         'status': 'ABSENT',
-        'label': 'A',
+        'label': tr('label_absent'),
         'color': const Color(0xFFDC2626),
         'bgColor': const Color(0xFFFEF2F2),
         'borderColor': const Color(0xFFFECACA),
@@ -1243,12 +1243,19 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                     tooltip: tr('previous_month'),
                   ),
                   const SizedBox(width: 2),
-                  Text(
-                    _formatMonthYear(_currentMonth),
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1E293B),
+                  InkWell(
+                    onTap: _showMonthFilterPicker,
+                    borderRadius: BorderRadius.circular(6),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                      child: Text(
+                        _formatMonthYear(_currentMonth),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1E293B),
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 2),
@@ -1579,25 +1586,6 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                     )
                   else
                     _buildBadge(status),
-                  const SizedBox(width: 8),
-                  InkWell(
-                    onTap: _showMonthFilterPicker,
-                    borderRadius: BorderRadius.circular(10),
-                    child: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFFCBD5E1)),
-                      ),
-                      child: const Icon(
-                        Icons.filter_alt_outlined,
-                        size: 19,
-                        color: Color(0xFF334155),
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ],
