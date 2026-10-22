@@ -1269,14 +1269,14 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
           const SizedBox(height: 12),
 
           Row(
-            children: const [
-              _WeekdayHeader('SUN'),
-              _WeekdayHeader('MON'),
-              _WeekdayHeader('TUE'),
-              _WeekdayHeader('WED'),
-              _WeekdayHeader('THU'),
-              _WeekdayHeader('FRI'),
-              _WeekdayHeader('SAT'),
+            children: [
+              _WeekdayHeader(tr('SUN'), isWeekend: true),
+              _WeekdayHeader(tr('MON'), isWeekend: false),
+              _WeekdayHeader(tr('TUE'), isWeekend: false),
+              _WeekdayHeader(tr('WED'), isWeekend: false),
+              _WeekdayHeader(tr('THU'), isWeekend: false),
+              _WeekdayHeader(tr('FRI'), isWeekend: false),
+              _WeekdayHeader(tr('SAT'), isWeekend: true),
             ],
           ),
 
@@ -2770,16 +2770,15 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
 
 class _WeekdayHeader extends StatelessWidget {
   final String label;
-  const _WeekdayHeader(this.label);
+  final bool isWeekend;
+  const _WeekdayHeader(this.label, {this.isWeekend = false});
 
   @override
   Widget build(BuildContext context) {
-    final isWeekend = label == 'SUN' || label == 'SAT';
-    final translatedLabel = tr(label);
     return Expanded(
       child: Center(
         child: Text(
-          translatedLabel,
+          label,
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.bold,

@@ -3,6 +3,7 @@ import 'package:geolocator/geolocator.dart';
 
 import '../services/api_service.dart';
 import '../services/geocoding_service.dart';
+import '../services/language_service.dart';
 
 class LocationVerificationScreen extends StatefulWidget {
   final bool isCheckOut;
@@ -210,7 +211,7 @@ class _LocationVerificationScreenState
               backgroundColor: primaryColor,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: const Text('Back to Dashboard'),
+            child: Text(tr('back_to_dashboard')),
           ),
         ],
       ),

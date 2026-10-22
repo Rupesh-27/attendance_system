@@ -96,6 +96,93 @@ class LanguageService extends ChangeNotifier {
     return trimmed;
   }
 
+  static String localizeLeaveReason(String? reason) {
+    if (reason == null || reason.trim().isEmpty) return '';
+    final trimmed = reason.trim();
+    final direct = tr(trimmed);
+    if (direct != trimmed) return direct;
+
+    final lower = trimmed.toLowerCase();
+
+    // Doctor / Medical / Health
+    if (lower.contains('doctor') || lower.contains('dr appointment') || lower.contains('dr.') || lower.contains('arzt')) {
+      return tr('reason_doctor_appointment');
+    }
+    if (lower.contains('medical check') || lower.contains('checkup') || lower.contains('check-up')) {
+      return tr('reason_medical_checkup');
+    }
+    if (lower.contains('medical recovery') || lower.contains('recovery')) {
+      return tr('reason_medical_recovery');
+    }
+    if (lower.contains('medical emergency')) {
+      return tr('reason_medical_emergency');
+    }
+    if (lower.contains('fever') || lower.contains('fieber')) {
+      return tr('reason_fever');
+    }
+    if (lower.contains('headache') || lower.contains('kopfschmerz')) {
+      return tr('reason_headache');
+    }
+    if (lower.contains('sick') || lower.contains('illness') || lower.contains('not feeling well') || lower.contains('unwohl') || lower.contains('krank')) {
+      return tr('reason_sick');
+    }
+
+    // Personal / Urgent
+    if (lower.contains('personal work') || lower.contains('urgent work') || lower.contains('persönlich')) {
+      return tr('reason_personal_work');
+    }
+    if (lower.contains('personal leave') || lower.contains('personal reason')) {
+      return tr('reason_personal_leave');
+    }
+
+    // Family / Home / Wedding
+    if (lower.contains('family function') || lower.contains('family event') || lower.contains('familienfeier')) {
+      return tr('reason_family_function');
+    }
+    if (lower.contains('family emergency') || lower.contains('family issue')) {
+      return tr('reason_family_emergency');
+    }
+    if (lower.contains('home emergency') || lower.contains('house work')) {
+      return tr('reason_home_emergency');
+    }
+    if (lower.contains('wedding') || lower.contains('marriage') || lower.contains('hochzeit')) {
+      return tr('reason_wedding');
+    }
+
+    // Travel / Vacation
+    if (lower.contains('vacation') || lower.contains('holiday') || lower.contains('urlaub')) {
+      return tr('reason_vacation');
+    }
+    if (lower.contains('travel') || lower.contains('out of station') || lower.contains('trip') || lower.contains('reise')) {
+      return tr('reason_travel');
+    }
+
+    return trimmed;
+  }
+
+  static String localizeManagerRemarks(String? remarks) {
+    if (remarks == null || remarks.trim().isEmpty) return '';
+    final trimmed = remarks.trim();
+    final direct = tr(trimmed);
+    if (direct != trimmed) return direct;
+
+    final lower = trimmed.toLowerCase();
+    if (lower.contains('auto') && lower.contains('approve')) {
+      return tr('remark_auto_approved');
+    }
+    if (lower == 'approved' || lower.contains('approved by manager') || lower.contains('leave approved')) {
+      return tr('remark_approved');
+    }
+    if (lower == 'rejected' || lower.contains('rejected by manager') || lower.contains('leave rejected')) {
+      return tr('remark_rejected');
+    }
+    if (lower.contains('cancellation approved') || lower.contains('cancelled') || lower.contains('storniert')) {
+      return tr('remark_cancelled');
+    }
+
+    return trimmed;
+  }
+
   static final Map<AppLanguage, Map<String, String>> _translations = {
     AppLanguage.english: {
       // General & Bottom Nav
@@ -107,6 +194,7 @@ class LanguageService extends ChangeNotifier {
       'logout': 'Logout',
       'change': 'Change',
       'cancel': 'Cancel',
+      'back_to_dashboard': 'Back to Dashboard',
 
       // Profile Screen
       'employee_information': 'Employee Information',
@@ -305,6 +393,29 @@ class LanguageService extends ChangeNotifier {
       'error_sl_attachment_required': 'Please attach a medical certificate for Sick Leave of more than 2 days.',
       'error_file_too_large': 'Selected file exceeds the 10 MB limit.',
       'error_pick_file': 'Unable to pick file. Please try again.',
+
+      // Leave Reasons & Manager Remarks
+      'reason_doctor_appointment': 'Doctor appointment',
+      'reason_medical_checkup': 'Medical checkup',
+      'reason_medical_recovery': 'Medical recovery',
+      'reason_medical_emergency': 'Medical emergency',
+      'reason_fever': 'Fever',
+      'reason_headache': 'Severe headache',
+      'reason_sick': 'Sick / Not feeling well',
+      'reason_personal_work': 'Personal work',
+      'reason_personal_leave': 'Personal reasons',
+      'reason_family_function': 'Family function / event',
+      'reason_family_emergency': 'Family emergency',
+      'reason_home_emergency': 'Home emergency',
+      'reason_wedding': 'Wedding attendance',
+      'reason_vacation': 'Vacation / Planned holiday',
+      'reason_travel': 'Travel / Out of station',
+
+      'remark_approved': 'Approved by manager',
+      'remark_auto_approved': 'Auto-approved by system',
+      'remark_rejected': 'Rejected by manager',
+      'remark_cancelled': 'Cancellation approved',
+      'cancellation_pending_approval': 'Cancellation is pending manager approval',
       'month_1': 'Jan',
       'month_2': 'Feb',
       'month_3': 'Mar',
@@ -420,7 +531,7 @@ class LanguageService extends ChangeNotifier {
 
     AppLanguage.german: {
       // General & Bottom Nav
-      'dashboard': 'Dashboard',
+      'dashboard': 'Übersicht',
       'attendance': 'Anwesenheit',
       'leaves': 'Urlaub',
       'profile': 'Profil',
@@ -428,6 +539,7 @@ class LanguageService extends ChangeNotifier {
       'logout': 'Abmelden',
       'change': 'Ändern',
       'cancel': 'Abbrechen',
+      'back_to_dashboard': 'Zurück zur Übersicht',
 
       // Profile Screen
       'employee_information': 'Mitarbeiterinformationen',
@@ -459,14 +571,14 @@ class LanguageService extends ChangeNotifier {
       'good_morning': 'Guten Morgen',
       'good_afternoon': 'Guten Tag',
       'good_evening': 'Guten Abend',
-      'check_in': 'Einchecken',
-      'check_out': 'Auschecken',
-      'Check-in': 'Einchecken',
-      'Check-out': 'Auschecken',
-      'Check In': 'Einchecken',
-      'Check Out': 'Auschecken',
-      'checked_in': 'Eingecheckt',
-      'checked_out': 'Ausgecheckt',
+      'check_in': 'Einstempeln',
+      'check_out': 'Austempeln',
+      'Check-in': 'Einstempeln',
+      'Check-out': 'Austempeln',
+      'Check In': 'Einstempeln',
+      'Check Out': 'Austempeln',
+      'checked_in': 'Eingestempelt',
+      'checked_out': 'Ausgestempelt',
       'carried_over_shift': 'Übertragene Schicht',
       'todays_attendance': 'Heutige Anwesenheit',
       'working_hours': 'Arbeitszeit',
@@ -475,13 +587,13 @@ class LanguageService extends ChangeNotifier {
       'outside_office': 'Außerhalb des Büros',
       'quick_actions': 'Schnellaktionen',
       'view_history': 'Verlauf anzeigen',
-      'confirm_check_in': 'Einchecken bestätigen',
-      'confirm_check_out': 'Auschecken bestätigen',
+      'confirm_check_in': 'Einstempeln bestätigen',
+      'confirm_check_out': 'Austempeln bestätigen',
       'refresh': 'Aktualisieren',
       'daily_effort': 'Tägliche Arbeitszeit',
       'monthly_effort': 'Monatliche Arbeitszeit',
       'total_break_hours': 'Gesamte Pausenzeit',
-      'not_checked_in': 'Nicht eingecheckt',
+      'not_checked_in': 'Nicht eingestempelt',
       'verifying_location': 'Standort wird überprüft...',
       'geofence_status': 'Standortstatus',
       // Dashboard UI & Statuses
@@ -498,9 +610,9 @@ class LanguageService extends ChangeNotifier {
       'notifications': 'Benachrichtigungen',
       'clear_all': 'Alle löschen',
       'no_new_notifications': 'Keine neuen Benachrichtigungen',
-      'automatic_checkout': 'Automatisches Auschecken',
-      'automatic_checkout_notice': 'Hinweis: Automatisches Auschecken',
-      'automatic_checkout_dialog_msg': 'Ihr aktueller GPS-Standort liegt außerhalb des konfigurierten Büroradius. Daher hat das System Sie automatisch ausgecheckt. Bitte checken Sie erneut ein, sobald Sie sich innerhalb des Büroradius befinden.',
+      'automatic_checkout': 'Automatisches Austempeln',
+      'automatic_checkout_notice': 'Hinweis: Automatisches Austempeln',
+      'automatic_checkout_dialog_msg': 'Ihr aktueller GPS-Standort liegt außerhalb des konfigurierten Büroradius. Daher hat das System Sie automatisch ausgestempelt. Bitte stempeln Sie erneut ein, sobald Sie sich innerhalb des Büroradius befinden.',
       'understood': 'Verstanden',
       'unavailable': 'Nicht verfügbar',
       'Unavailable': 'Nicht verfügbar',
@@ -529,7 +641,7 @@ class LanguageService extends ChangeNotifier {
       'loc_subtext_validate_upon_checkin': 'Standort wird beim Einchecken validiert',
       'loc_subtext_offsite_verified': 'Einchecken aktiv • Außerhalb verifiziert',
       'loc_subtext_gps_on': 'Bitte stellen Sie sicher, dass GPS aktiviert ist',
-      'loc_subtext_check_in_again': 'Erneut einchecken, um Standort zu validieren',
+      'loc_subtext_check_in_again': 'Erneut einstempeln, um Standort zu validieren',
       'loc_subtext_offsite_enabled': 'Mobiles Einchecken aktiv • Koordinaten werden erfasst',
       'loc_subtext_checkin_verified': 'Einchecken vom Server bestätigt',
       'loc_subtext_coords_captured': 'Einchecken erfasst • Koordinaten protokolliert',
@@ -626,6 +738,29 @@ class LanguageService extends ChangeNotifier {
       'error_sl_attachment_required': 'Bitte fügen Sie ein ärztliches Attest für Krankenurlaub von mehr als 2 Tagen bei.',
       'error_file_too_large': 'Die ausgewählte Datei überschreitet das 10-MB-Limit.',
       'error_pick_file': 'Datei konnte nicht ausgewählt werden. Bitte erneut versuchen.',
+
+      // Leave Reasons & Manager Remarks
+      'reason_doctor_appointment': 'Arzttermin',
+      'reason_medical_checkup': 'Medizinische Untersuchung',
+      'reason_medical_recovery': 'Medizinische Genesung',
+      'reason_medical_emergency': 'Medizinischer Notfall',
+      'reason_fever': 'Fieber',
+      'reason_headache': 'Starke Kopfschmerzen',
+      'reason_sick': 'Krankheit / Unwohlsein',
+      'reason_personal_work': 'Dringende persönliche Angelegenheiten',
+      'reason_personal_leave': 'Persönliche Gründe',
+      'reason_family_function': 'Familienfeier / Familienereignis',
+      'reason_family_emergency': 'Familiärer Notfall',
+      'reason_home_emergency': 'Häuslicher Notfall',
+      'reason_wedding': 'Teilnahme an einer Hochzeit',
+      'reason_vacation': 'Geplanter Urlaub',
+      'reason_travel': 'Reise / Außer Haus',
+
+      'remark_approved': 'Vom Vorgesetzten genehmigt',
+      'remark_auto_approved': 'Automatisch vom System genehmigt',
+      'remark_rejected': 'Vom Vorgesetzten abgelehnt',
+      'remark_cancelled': 'Stornierung genehmigt',
+      'cancellation_pending_approval': 'Stornierung wartet auf Genehmigung durch Vorgesetzten',
       'month_1': 'Jan',
       'month_2': 'Feb',
       'month_3': 'Mär',
@@ -644,8 +779,8 @@ class LanguageService extends ChangeNotifier {
       'attendance_calendar': 'Anwesenheitskalender',
       'attendance_ledger': 'Anwesenheitsjournal',
       'ledger_date': 'Datum',
-      'first_check_in': 'Erster Check-in',
-      'last_check_out': 'Letzter Check-out',
+      'first_check_in': 'Erstes Einstempeln',
+      'last_check_out': 'Letztes Austempeln',
       'view_details': 'Details anzeigen',
       'no_records_for_day': 'Für diesen Tag wurden keine Anwesenheitseinträge gefunden.',
       'close': 'Schließen',
@@ -685,8 +820,8 @@ class LanguageService extends ChangeNotifier {
       'unit_min': 'Min.',
       'unit_sec': 's',
       'out_of_radius': 'Außerhalb des Radius',
-      'check_in_location': 'Standort beim Einchecken',
-      'check_out_location': 'Standort beim Auschecken',
+      'check_in_location': 'Standort beim Einstempeln',
+      'check_out_location': 'Standort beim Austempeln',
       'select_month': 'Monat auswählen',
       'view_full_records_desc': 'Vollständige Eincheck-/Auscheck-Einträge für diesen Monat anzeigen',
       'monthly_attendance_log': 'Monatliches Anwesenheitsprotokoll',
@@ -749,6 +884,7 @@ class LanguageService extends ChangeNotifier {
       'logout': 'Выйсці',
       'change': 'Змяніць',
       'cancel': 'Адмена',
+      'back_to_dashboard': 'Назад на галоўную',
 
       // Profile Screen
       'employee_information': 'Інфармацыя пра супрацоўніка',
@@ -947,6 +1083,29 @@ class LanguageService extends ChangeNotifier {
       'error_sl_attachment_required': 'Калі ласка, прымацуйце медыцынскую даведку для бальнічнага больш за 2 дні.',
       'error_file_too_large': 'Абраны файл перавышае ліміт 10 МБ.',
       'error_pick_file': 'Не ўдалося выбраць файл. Паспрабуйце зноў.',
+
+      // Leave Reasons & Manager Remarks
+      'reason_doctor_appointment': 'Візіт да лекара',
+      'reason_medical_checkup': 'Медыцынскі агляд',
+      'reason_medical_recovery': 'Медыцынскае аднаўленне',
+      'reason_medical_emergency': 'Неадкладная медыцынская дапамога',
+      'reason_fever': 'Гарачка / Тэмпература',
+      'reason_headache': 'Моцны галаўны боль',
+      'reason_sick': 'Хвароба / Дрэннае самаадчуванне',
+      'reason_personal_work': 'Асабістыя справы',
+      'reason_personal_leave': 'Асабістыя прычыны',
+      'reason_family_function': 'Сямейная падзея / свята',
+      'reason_family_emergency': 'Сямейная неадкладнасць',
+      'reason_home_emergency': 'Хатняя неадкладнасць',
+      'reason_wedding': 'Наведванне вяселля',
+      'reason_vacation': 'Планаваны водпуск',
+      'reason_travel': 'Паездка / Па-за горадам',
+
+      'remark_approved': 'Ухвалена кіраўніком',
+      'remark_auto_approved': 'Аўтаматычна ўхвалена сістэмай',
+      'remark_rejected': 'Адхілена кіраўніком',
+      'remark_cancelled': 'Адмена ўхвалена',
+      'cancellation_pending_approval': 'Адмена чакае ўхвалення кіраўніком',
       'month_1': 'студз',
       'month_2': 'лют',
       'month_3': 'сак',

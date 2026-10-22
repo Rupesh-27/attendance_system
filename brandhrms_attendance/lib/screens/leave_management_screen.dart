@@ -971,7 +971,7 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    app.reason,
+                    LanguageService.localizeLeaveReason(app.reason),
                     style: const TextStyle(
                       fontSize: 12.5,
                       color: Color(0xFF334155),
@@ -998,7 +998,7 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      'Manager Remarks: ${app.managerRemarks}',
+                      '${tr('manager_remarks')}: ${LanguageService.localizeManagerRemarks(app.managerRemarks)}',
                       style: const TextStyle(fontSize: 12, color: Color(0xFF475569)),
                     ),
                   ),
@@ -1015,14 +1015,14 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: const Color(0xFFC7D2FE)),
               ),
-              child: const Row(
+              child: Row(
                 children: [
-                  Icon(Icons.hourglass_top, size: 14, color: Color(0xFF6366F1)),
-                  SizedBox(width: 6),
+                  const Icon(Icons.hourglass_top, size: 14, color: Color(0xFF6366F1)),
+                  const SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      'Cancellation is pending manager approval',
-                      style: TextStyle(fontSize: 11, color: Color(0xFF4338CA), fontWeight: FontWeight.w500),
+                      tr('cancellation_pending_approval'),
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF4338CA), fontWeight: FontWeight.w500),
                     ),
                   ),
                 ],
@@ -1041,7 +1041,7 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
                   color: const Color(0xFFEF4444),
                 ),
                 label: Text(
-                  app.status == 'PENDING' ? 'Withdraw Application' : 'Request Cancellation',
+                  app.status == 'PENDING' ? tr('withdraw_application') : tr('request_cancellation'),
                   style: const TextStyle(color: Color(0xFFEF4444), fontSize: 13, fontWeight: FontWeight.w600),
                 ),
                 style: TextButton.styleFrom(
