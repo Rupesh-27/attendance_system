@@ -90,6 +90,39 @@ func TestAuth_Login_EmployeeInactive(t *testing.T) {
 	assert.ErrorIs(t, err, domain.ErrEmployeeInactive)
 }
 
+func TestAuth_SingleDevice_BlockSecondLogin(t *testing.T) {
+	empRepo, _, _, _, _ := setupTestEnvironment()
+	authSvc := service.NewAuthService(empRepo, "test-secret", 24*time.Hour)
+
+	// First login on Device A: must succeed
+	res1, err := authSvc.Login(context.Background(), "EMP001", "Password123!")
+	require.NoError(t, err)
+	assert.NotEmpty(t, res1.AccessToken)
+
+	// Second login attempt on Device B: must be blocked!
+	_, err2 := authSvc.Login(context.Background(), "EMP001", "Password123!")
+	assert.ErrorIs(t, err2, domain.ErrDeviceAlreadyLoggedIn)
+}
+
+func TestAuth_Logout_AllowsNextLogin(t *testing.T) {
+	empRepo, _, _, emp, _ := setupTestEnvironment()
+	authSvc := service.NewAuthService(empRepo, "test-secret", 24*time.Hour)
+
+	// First login on Device A: succeeds
+	res1, err := authSvc.Login(context.Background(), "EMP001", "Password123!")
+	require.NoError(t, err)
+	assert.NotEmpty(t, res1.AccessToken)
+
+	// Device A logs out:
+	err = authSvc.Logout(context.Background(), emp.ID)
+	require.NoError(t, err)
+
+	// Next login on Device B: now succeeds!
+	res2, err := authSvc.Login(context.Background(), "EMP001", "Password123!")
+	require.NoError(t, err)
+	assert.NotEmpty(t, res2.AccessToken)
+}
+
 func TestAttendance_CheckIn_Success_InsideRadius(t *testing.T) {
 	empRepo, officeRepo, attRepo, emp, office := setupTestEnvironment()
 

@@ -22,6 +22,7 @@ var (
 type CustomClaims struct {
 	EmployeeID   uuid.UUID   `json:"employeeId"`
 	EmployeeCode string      `json:"employeeCode"`
+	SessionID    uuid.UUID   `json:"sessionId,omitempty"`
 	Role         domain.Role `json:"role"`
 	jwt.RegisteredClaims
 }
@@ -31,9 +32,15 @@ func GenerateToken(emp *domain.Employee, secret string, ttl time.Duration) (stri
 	now := time.Now().UTC()
 	expiresAt := now.Add(ttl)
 
+	var sessID uuid.UUID
+	if emp.ActiveSessionID != nil {
+		sessID = *emp.ActiveSessionID
+	}
+
 	claims := CustomClaims{
 		EmployeeID:   emp.ID,
 		EmployeeCode: emp.EmployeeCode,
+		SessionID:    sessID,
 		Role:         emp.Role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   emp.ID.String(),

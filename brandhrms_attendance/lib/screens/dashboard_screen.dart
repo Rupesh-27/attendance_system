@@ -10,6 +10,7 @@ import 'attendance_history_screen.dart';
 import 'leave_management_screen.dart';
 import 'profile_screen.dart';
 import '../services/language_service.dart';
+import '../main.dart';
 
 class TechQuote {
   final String text;
@@ -270,6 +271,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.initState();
     LocationMonitorService.instance.addListener(_onLocationMonitorChanged);
     LanguageService.instance.addListener(_onLanguageChanged);
+    ApiService.onSessionTerminated = _onSessionTerminated;
     DashboardScreen.pickNewQuote();
     _currentTimeString = _getRealTimeClock();
     _startLiveTimer();
@@ -280,8 +282,58 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void dispose() {
     LocationMonitorService.instance.removeListener(_onLocationMonitorChanged);
     LanguageService.instance.removeListener(_onLanguageChanged);
+    if (ApiService.onSessionTerminated == _onSessionTerminated) {
+      ApiService.onSessionTerminated = null;
+    }
     _liveTimer?.cancel();
     super.dispose();
+  }
+
+  bool _isSessionTerminating = false;
+
+  void _onSessionTerminated() {
+    if (!mounted || _isSessionTerminating) return;
+    _isSessionTerminating = true;
+    _liveTimer?.cancel();
+    LocationMonitorService.instance.stopMonitoring();
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.lock_clock, color: Colors.red.shade700, size: 28),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                tr('session_expired_title'),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          tr('session_expired_msg'),
+          style: const TextStyle(fontSize: 14, color: Color(0xFF475569), height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                (route) => false,
+              );
+            },
+            child: Text(
+              tr('ok'),
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _onLanguageChanged() {

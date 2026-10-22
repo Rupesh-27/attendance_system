@@ -716,6 +716,10 @@ class LanguageService extends ChangeNotifier {
       'failed_load_month_attendance': 'Failed to load attendance records for selected month',
       'enter_credentials_prompt': 'Please enter your Employee ID or Email and Password',
       'login_failed': 'Login failed. Please check credentials.',
+      'device_already_logged_in_title': 'Active Session Detected',
+      'device_already_logged_in_msg': 'You are already logged in on another device. Please log out from that device first.',
+      'session_expired_title': 'Session Ended',
+      'session_expired_msg': 'Your session has ended because you logged in from another device or your session expired. Please log in again.',
 
       // Holidays
       "New Year's Day": "New Year's Day",
@@ -1155,6 +1159,10 @@ class LanguageService extends ChangeNotifier {
       'failed_load_month_attendance': 'Anwesenheitsdaten für den ausgewählten Monat konnten nicht geladen werden',
       'enter_credentials_prompt': 'Bitte geben Sie Ihre Mitarbeiter-ID oder E-Mail und Ihr Passwort ein',
       'login_failed': 'Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Zugangsdaten.',
+      'device_already_logged_in_title': 'Aktive Sitzung erkannt',
+      'device_already_logged_in_msg': 'Sie sind bereits auf einem anderen Gerät angemeldet. Bitte melden Sie sich zuerst von diesem Gerät ab.',
+      'session_expired_title': 'Sitzung beendet',
+      'session_expired_msg': 'Ihre Sitzung wurde beendet, da Sie sich von einem anderen Gerät angemeldet haben oder Ihre Sitzung abgelaufen ist. Bitte melden Sie sich erneut an.',
 
       // Holidays
       "New Year's Day": 'Neujahr',
@@ -1594,6 +1602,10 @@ class LanguageService extends ChangeNotifier {
       'failed_load_month_attendance': 'Не ўдалося загрузіць дадзеныя наведвальнасці за абраны месяц',
       'enter_credentials_prompt': 'Калі ласка, увядзіце ID супрацоўніка або Email і пароль',
       'login_failed': 'Памылка ўваходу. Калі ласка, праверце ўведзеныя дадзеныя.',
+      'device_already_logged_in_title': 'Выяўлены актыўны сеанс',
+      'device_already_logged_in_msg': 'Вы ўжо ўвайшлі ў сістэму на іншай прыладзе. Калі ласка, спачатку выйдзіце з гэтай прылады.',
+      'session_expired_title': 'Сеанс завершаны',
+      'session_expired_msg': 'Ваш сеанс быў завершаны, бо вы ўвайшлі з іншай прылады альбо скончыўся тэрмін дзеяння сеанса. Калі ласка, увайдзіце зноў.',
 
       // Holidays
       "New Year's Day": 'Новы год',

@@ -21,7 +21,7 @@ func NewEmployeeRepository(db *DB) repository.EmployeeRepository {
 
 func (r *employeeRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.Employee, error) {
 	query := `
-		SELECT id, employee_code, password_hash, full_name, role, office_id, is_active, created_at, updated_at, COALESCE(email, ''), COALESCE(location_attendance_enabled, TRUE)
+		SELECT id, employee_code, password_hash, full_name, role, office_id, is_active, created_at, updated_at, COALESCE(email, ''), COALESCE(location_attendance_enabled, TRUE), active_session_id
 		FROM employees
 		WHERE id = $1
 	`
@@ -38,6 +38,7 @@ func (r *employeeRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.Emplo
 		&emp.UpdatedAt,
 		&emp.Email,
 		&emp.LocationAttendanceEnabled,
+		&emp.ActiveSessionID,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -51,7 +52,7 @@ func (r *employeeRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.Emplo
 
 func (r *employeeRepo) GetByCode(ctx context.Context, codeOrEmail string) (*domain.Employee, error) {
 	query := `
-		SELECT id, employee_code, password_hash, full_name, role, office_id, is_active, created_at, updated_at, COALESCE(email, ''), COALESCE(location_attendance_enabled, TRUE)
+		SELECT id, employee_code, password_hash, full_name, role, office_id, is_active, created_at, updated_at, COALESCE(email, ''), COALESCE(location_attendance_enabled, TRUE), active_session_id
 		FROM employees
 		WHERE employee_code = $1 OR email = $1
 	`
@@ -68,6 +69,7 @@ func (r *employeeRepo) GetByCode(ctx context.Context, codeOrEmail string) (*doma
 		&emp.UpdatedAt,
 		&emp.Email,
 		&emp.LocationAttendanceEnabled,
+		&emp.ActiveSessionID,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -77,4 +79,14 @@ func (r *employeeRepo) GetByCode(ctx context.Context, codeOrEmail string) (*doma
 	}
 
 	return &emp, nil
+}
+
+func (r *employeeRepo) UpdateActiveSessionID(ctx context.Context, id uuid.UUID, sessionID *uuid.UUID) error {
+	query := `
+		UPDATE employees
+		SET active_session_id = $2, updated_at = NOW()
+		WHERE id = $1
+	`
+	_, err := r.db.Pool.Exec(ctx, query, id, sessionID)
+	return err
 }

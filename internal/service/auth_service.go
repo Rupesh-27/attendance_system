@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 
 	"location-attendance/internal/domain"
@@ -51,6 +52,17 @@ func (s *authService) Login(ctx context.Context, employeeCode, password string) 
 		return nil, err
 	}
 
+	// Single-device login check: If active session already exists on another device, block login
+	if emp.ActiveSessionID != nil {
+		return nil, domain.ErrDeviceAlreadyLoggedIn
+	}
+
+	newSessionID := uuid.New()
+	if err := s.employeeRepo.UpdateActiveSessionID(ctx, emp.ID, &newSessionID); err != nil {
+		return nil, err
+	}
+	emp.ActiveSessionID = &newSessionID
+
 	tokenStr, expiresAt, err := jwt.GenerateToken(emp, s.jwtSecret, s.jwtExpiration)
 	if err != nil {
 		return nil, err
@@ -61,4 +73,8 @@ func (s *authService) Login(ctx context.Context, employeeCode, password string) 
 		ExpiresAt:   expiresAt,
 		Employee:    emp,
 	}, nil
+}
+
+func (s *authService) Logout(ctx context.Context, employeeID uuid.UUID) error {
+	return s.employeeRepo.UpdateActiveSessionID(ctx, employeeID, nil)
 }

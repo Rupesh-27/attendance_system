@@ -146,6 +146,40 @@ class _LoginScreenState extends State<LoginScreen> {
         MaterialPageRoute(builder: (context) => const DashboardScreen()),
       );
     } else {
+      if (result['code'] == 'DEVICE_ALREADY_LOGGED_IN') {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Row(
+              children: [
+                Icon(Icons.phonelink_lock, color: Colors.orange.shade800, size: 28),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    tr('device_already_logged_in_title'),
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+            content: Text(
+              tr('device_already_logged_in_msg'),
+              style: const TextStyle(fontSize: 14, color: Color(0xFF475569), height: 1.4),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(
+                  tr('ok'),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+        );
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(result['message'] != null

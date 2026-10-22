@@ -35,6 +35,7 @@ type TodayAttendanceStatus struct {
 
 type AuthService interface {
 	Login(ctx context.Context, employeeCode, password string) (*AuthResult, error)
+	Logout(ctx context.Context, employeeID uuid.UUID) error
 }
 
 type EmployeeService interface {

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class EmployeeProfile {
@@ -374,6 +375,22 @@ class ApiService {
         if (authToken != null) 'Authorization': 'Bearer $authToken',
       };
 
+  static VoidCallback? onSessionTerminated;
+
+  static void handleAuthError(http.Response response) {
+    if (response.statusCode == 401) {
+      try {
+        final data = jsonDecode(response.body);
+        if (data is Map && (data['code'] == 'SESSION_TERMINATED' || data['code'] == 'AUTH_INVALID')) {
+          authToken = null;
+          currentEmployee = null;
+          assignedOffice = null;
+          onSessionTerminated?.call();
+        }
+      } catch (_) {}
+    }
+  }
+
   static Future<Map<String, dynamic>> login(String identifier, String password) async {
     try {
       final response = await http.post(
@@ -415,6 +432,7 @@ class ApiService {
         Uri.parse('$baseUrl/me'),
         headers: _authHeaders,
       );
+      handleAuthError(response);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -433,6 +451,7 @@ class ApiService {
         Uri.parse('$baseUrl/offices/assigned'),
         headers: _authHeaders,
       );
+      handleAuthError(response);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -463,6 +482,7 @@ class ApiService {
           if (address != null && address.trim().isNotEmpty) 'address': address.trim(),
         }),
       );
+      handleAuthError(response);
 
       final Map<String, dynamic> data = jsonDecode(response.body);
 
@@ -509,6 +529,7 @@ class ApiService {
           if (address != null && address.trim().isNotEmpty) 'address': address.trim(),
         }),
       );
+      handleAuthError(response);
 
       final Map<String, dynamic> data = jsonDecode(response.body);
 
@@ -560,6 +581,7 @@ class ApiService {
           if (address != null && address.trim().isNotEmpty) 'address': address.trim(),
         }),
       );
+      handleAuthError(response);
 
       final Map<String, dynamic> data = jsonDecode(response.body);
 
@@ -606,6 +628,7 @@ class ApiService {
           'breachedAt': (breachedAt ?? DateTime.now()).toUtc().toIso8601String(),
         }),
       );
+      handleAuthError(response);
       return response.statusCode == 200;
     } catch (_) {
       return false;
@@ -618,6 +641,7 @@ class ApiService {
         Uri.parse('$baseUrl/attendance/clear-breach'),
         headers: _authHeaders,
       );
+      handleAuthError(response);
       return response.statusCode == 200;
     } catch (_) {
       return false;
@@ -630,6 +654,7 @@ class ApiService {
         Uri.parse('$baseUrl/settings'),
         headers: _authHeaders,
       );
+      handleAuthError(response);
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true && data['data'] != null) {
@@ -655,6 +680,7 @@ class ApiService {
         Uri.parse(endpoint),
         headers: _authHeaders,
       );
+      handleAuthError(response);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -673,6 +699,7 @@ class ApiService {
         Uri.parse('$baseUrl/attendance/today-status'),
         headers: _authHeaders,
       );
+      handleAuthError(response);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -691,6 +718,7 @@ class ApiService {
         Uri.parse('$baseUrl/leave/types'),
         headers: _authHeaders,
       );
+      handleAuthError(response);
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true && data['data'] != null) {
@@ -712,6 +740,7 @@ class ApiService {
         Uri.parse(endpoint),
         headers: _authHeaders,
       );
+      handleAuthError(response);
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true && data['data'] != null) {
@@ -760,6 +789,7 @@ class ApiService {
         headers: _authHeaders,
         body: jsonEncode(payload),
       );
+      handleAuthError(response);
 
       final data = jsonDecode(response.body);
       if (response.statusCode == 201 || (response.statusCode == 200 && data['success'] == true)) {
@@ -786,6 +816,7 @@ class ApiService {
         Uri.parse(endpoint),
         headers: _authHeaders,
       );
+      handleAuthError(response);
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true && data['data'] != null) {
@@ -803,6 +834,7 @@ class ApiService {
         Uri.parse('$baseUrl/leave/$id/cancel'),
         headers: _authHeaders,
       );
+      handleAuthError(response);
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return data['success'] == true;
@@ -817,6 +849,7 @@ class ApiService {
         Uri.parse('$baseUrl/leave/approvals'),
         headers: _authHeaders,
       );
+      handleAuthError(response);
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success'] == true && data['data'] != null) {
@@ -835,6 +868,7 @@ class ApiService {
         headers: _authHeaders,
         body: jsonEncode({'remarks': remarks}),
       );
+      handleAuthError(response);
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return data['success'] == true;
@@ -850,6 +884,7 @@ class ApiService {
         headers: _authHeaders,
         body: jsonEncode({'remarks': remarks}),
       );
+      handleAuthError(response);
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         return data['success'] == true;
@@ -858,7 +893,15 @@ class ApiService {
     return false;
   }
 
-  static void logout() {
+  static Future<void> logout() async {
+    try {
+      if (authToken != null) {
+        await http.post(
+          Uri.parse('$baseUrl/auth/logout'),
+          headers: _authHeaders,
+        );
+      }
+    } catch (_) {}
     authToken = null;
     currentEmployee = null;
     assignedOffice = null;

@@ -13,6 +13,7 @@ import (
 type EmployeeRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*domain.Employee, error)
 	GetByCode(ctx context.Context, code string) (*domain.Employee, error)
+	UpdateActiveSessionID(ctx context.Context, id uuid.UUID, sessionID *uuid.UUID) error
 }
 
 // OfficeRepository defines persistence operations for Office entities

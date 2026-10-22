@@ -6,8 +6,10 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 
 	"location-attendance/internal/domain"
+	"location-attendance/internal/repository"
 	"location-attendance/pkg/jwt"
 )
 
@@ -15,10 +17,16 @@ const (
 	ContextKeyEmployeeID   = "employee_id"
 	ContextKeyEmployeeCode = "employee_code"
 	ContextKeyEmployeeRole = "employee_role"
+	ContextKeySessionID    = "session_id"
 )
 
 // JWTAuth middleware verifies the Bearer token in the Authorization header
-func JWTAuth(jwtSecret string) gin.HandlerFunc {
+func JWTAuth(jwtSecret string, empRepo ...repository.EmployeeRepository) gin.HandlerFunc {
+	var repo repository.EmployeeRepository
+	if len(empRepo) > 0 {
+		repo = empRepo[0]
+	}
+
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
@@ -71,9 +79,26 @@ func JWTAuth(jwtSecret string) gin.HandlerFunc {
 			return
 		}
 
+		if repo != nil && claims.SessionID != uuid.Nil {
+			emp, err := repo.GetByID(c.Request.Context(), claims.EmployeeID)
+			if err != nil || emp.ActiveSessionID == nil || *emp.ActiveSessionID != claims.SessionID {
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+					"success": false,
+					"code":    "SESSION_TERMINATED",
+					"message": "Session has expired or been terminated. Please log in again.",
+					"error": gin.H{
+						"code":    "SESSION_TERMINATED",
+						"message": "Session has expired or been terminated. Please log in again.",
+					},
+				})
+				return
+			}
+		}
+
 		c.Set(ContextKeyEmployeeID, claims.EmployeeID)
 		c.Set(ContextKeyEmployeeCode, claims.EmployeeCode)
 		c.Set(ContextKeyEmployeeRole, claims.Role)
+		c.Set(ContextKeySessionID, claims.SessionID)
 
 		c.Next()
 	}

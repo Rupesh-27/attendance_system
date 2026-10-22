@@ -5,11 +5,12 @@ import "errors"
 // Domain error definitions
 var (
 	// Authentication & Employee Errors
-	ErrInvalidCredentials = errors.New("invalid employee code or password")
-	ErrEmployeeNotFound   = errors.New("employee not found")
-	ErrEmployeeInactive   = errors.New("employee account is inactive")
-	ErrUnauthorized       = errors.New("unauthorized access")
-	ErrForbiddenRole      = errors.New("forbidden: employee role required")
+	ErrInvalidCredentials    = errors.New("invalid employee code or password")
+	ErrEmployeeNotFound      = errors.New("employee not found")
+	ErrEmployeeInactive      = errors.New("employee account is inactive")
+	ErrUnauthorized          = errors.New("unauthorized access")
+	ErrForbiddenRole         = errors.New("forbidden: employee role required")
+	ErrDeviceAlreadyLoggedIn = errors.New("you are already logged in on another device. Please log out from that device first")
 
 	// Office Errors
 	ErrOfficeNotFound = errors.New("assigned office not found")

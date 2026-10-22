@@ -161,13 +161,15 @@ class ProfileScreen extends StatelessWidget {
               width: double.infinity,
               height: 52,
               child: OutlinedButton.icon(
-                onPressed: () {
-                  ApiService.logout();
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (context) => const LoginScreen()),
-                    (route) => false,
-                  );
+                onPressed: () async {
+                  await ApiService.logout();
+                  if (context.mounted) {
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(builder: (context) => const LoginScreen()),
+                      (route) => false,
+                    );
+                  }
                 },
                 icon: const Icon(Icons.logout),
                 label: Text(tr('logout'), style: const TextStyle(fontSize: 16)),

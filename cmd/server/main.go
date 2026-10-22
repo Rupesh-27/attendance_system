@@ -150,6 +150,7 @@ func main() {
 		AttendanceHandler: attHandler,
 		SettingsHandler:   settingsHandler,
 		LeaveHandler:      leaveHandler,
+		EmployeeRepo:      empRepo,
 		JWTSecret:         cfg.JWTSecret,
 	})
 

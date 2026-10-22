@@ -5,6 +5,7 @@ import (
 	"golang.org/x/time/rate"
 
 	"location-attendance/internal/middleware"
+	"location-attendance/internal/repository"
 )
 
 type RouterConfig struct {
@@ -13,6 +14,7 @@ type RouterConfig struct {
 	AttendanceHandler *AttendanceHandler
 	SettingsHandler   *SettingsHandler
 	LeaveHandler      *LeaveHandler
+	EmployeeRepo      repository.EmployeeRepository
 	JWTSecret         string
 }
 
@@ -37,8 +39,9 @@ func SetupRouter(cfg RouterConfig) *gin.Engine {
 		}
 
 		protected := apiV1.Group("")
-		protected.Use(middleware.JWTAuth(cfg.JWTSecret))
+		protected.Use(middleware.JWTAuth(cfg.JWTSecret, cfg.EmployeeRepo))
 		{
+			protected.POST("/auth/logout", cfg.AuthHandler.Logout)
 
 			protected.GET("/me", cfg.EmployeeHandler.GetMe)
 

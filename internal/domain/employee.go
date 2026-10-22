@@ -20,11 +20,12 @@ type Employee struct {
 	FullName     string    `json:"fullName"`
 	Email        string    `json:"email,omitempty"`
 	Role         Role      `json:"role"`
-	OfficeID                  uuid.UUID `json:"officeId"`
-	LocationAttendanceEnabled bool      `json:"locationAttendanceEnabled"`
-	IsActive                  bool      `json:"isActive"`
-	CreatedAt    time.Time `json:"createdAt"`
-	UpdatedAt    time.Time `json:"updatedAt"`
+	OfficeID                  uuid.UUID  `json:"officeId"`
+	LocationAttendanceEnabled bool       `json:"locationAttendanceEnabled"`
+	ActiveSessionID           *uuid.UUID `json:"activeSessionId,omitempty"`
+	IsActive                  bool       `json:"isActive"`
+	CreatedAt                 time.Time  `json:"createdAt"`
+	UpdatedAt                 time.Time  `json:"updatedAt"`
 }
 
 // CanAuthenticate checks if the employee is eligible to log in and use APIs

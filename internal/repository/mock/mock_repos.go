@@ -62,6 +62,20 @@ func (m *MockEmployeeRepo) GetByCode(ctx context.Context, codeOrEmail string) (*
 	return nil, domain.ErrEmployeeNotFound
 }
 
+func (m *MockEmployeeRepo) UpdateActiveSessionID(ctx context.Context, id uuid.UUID, sessionID *uuid.UUID) error {
+	m.Lock()
+	defer m.Unlock()
+	emp, ok := m.employeesByID[id]
+	if !ok {
+		return domain.ErrEmployeeNotFound
+	}
+	emp.ActiveSessionID = sessionID
+	if byCode, exists := m.employeesByCode[emp.EmployeeCode]; exists {
+		byCode.ActiveSessionID = sessionID
+	}
+	return nil
+}
+
 var _ repository.EmployeeRepository = (*MockEmployeeRepo)(nil)
 
 // MockOfficeRepo is an in-memory thread-safe implementation of repository.OfficeRepository

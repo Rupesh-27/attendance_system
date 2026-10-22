@@ -4,7 +4,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 
+	"location-attendance/internal/middleware"
 	"location-attendance/internal/service"
 )
 
@@ -30,4 +32,26 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 
 	SendSuccess(c, http.StatusOK, result)
+}
+
+func (h *AuthHandler) Logout(c *gin.Context) {
+	empIDVal, exists := c.Get(middleware.ContextKeyEmployeeID)
+	if !exists {
+		SendError(c, http.StatusUnauthorized, "UNAUTHORIZED", "Unauthorized access", nil)
+		return
+	}
+	empID, ok := empIDVal.(uuid.UUID)
+	if !ok {
+		SendError(c, http.StatusUnauthorized, "UNAUTHORIZED", "Unauthorized access", nil)
+		return
+	}
+
+	if err := h.authService.Logout(c.Request.Context(), empID); err != nil {
+		MapDomainError(c, err)
+		return
+	}
+
+	SendSuccess(c, http.StatusOK, gin.H{
+		"message": "Logged out successfully",
+	})
 }

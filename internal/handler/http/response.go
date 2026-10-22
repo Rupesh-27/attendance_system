@@ -86,6 +86,9 @@ func MapDomainError(c *gin.Context, err error) {
 		errors.Is(err, domain.ErrUnauthorized):
 		SendError(c, http.StatusUnauthorized, "AUTH_INVALID", err.Error(), nil)
 
+	case errors.Is(err, domain.ErrDeviceAlreadyLoggedIn):
+		SendError(c, http.StatusConflict, "DEVICE_ALREADY_LOGGED_IN", err.Error(), nil)
+
 	case errors.Is(err, domain.ErrForbiddenRole):
 		SendError(c, http.StatusForbidden, "FORBIDDEN", err.Error(), nil)
 
