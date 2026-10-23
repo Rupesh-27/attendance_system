@@ -31,9 +31,10 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/images/brandhr_logo.png
     - assets/images/brandcrock_logo.png
 
 flutter_launcher_icons:
   android: true
   ios: false
-  image_path: "assets/images/brandcrock_logo.png"
+  image_path: "assets/images/brandhr_logo.png"
