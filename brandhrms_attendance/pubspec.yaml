@@ -37,4 +37,4 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: false
-  image_path: "assets/images/brandhr_logo.png"
+  image_path: "assets/images/app_icon.png"
