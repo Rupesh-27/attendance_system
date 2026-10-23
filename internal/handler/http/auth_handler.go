@@ -25,7 +25,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	result, err := h.authService.Login(c.Request.Context(), req.EmployeeCode, req.Password)
+	result, err := h.authService.Login(c.Request.Context(), req.EmployeeCode, req.Password, req.Force)
 	if err != nil {
 		MapDomainError(c, err)
 		return

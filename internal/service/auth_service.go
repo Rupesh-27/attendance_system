@@ -31,7 +31,7 @@ func NewAuthService(
 	}
 }
 
-func (s *authService) Login(ctx context.Context, employeeCode, password string) (*AuthResult, error) {
+func (s *authService) Login(ctx context.Context, employeeCode, password string, force ...bool) (*AuthResult, error) {
 	if employeeCode == "" || password == "" {
 		return nil, domain.ErrInvalidCredentials
 	}
@@ -52,8 +52,9 @@ func (s *authService) Login(ctx context.Context, employeeCode, password string) 
 		return nil, err
 	}
 
-	// Single-device login check: If active session already exists on another device, block login
-	if emp.ActiveSessionID != nil {
+	forceLogin := len(force) > 0 && force[0]
+	// Single-device login check: If active session already exists on another device, block login unless force takeover is requested
+	if emp.ActiveSessionID != nil && !forceLogin {
 		return nil, domain.ErrDeviceAlreadyLoggedIn
 	}
 

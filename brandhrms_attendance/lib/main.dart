@@ -50,8 +50,73 @@ class BrandHrmsApp extends StatelessWidget {
               child: child!,
             );
           },
-          home: const LoginScreen(),
+          home: const AuthGateScreen(),
         );
+      },
+    );
+  }
+}
+
+class AuthGateScreen extends StatefulWidget {
+  const AuthGateScreen({super.key});
+
+  @override
+  State<AuthGateScreen> createState() => _AuthGateScreenState();
+}
+
+class _AuthGateScreenState extends State<AuthGateScreen> {
+  late Future<bool> _autoLoginFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _autoLoginFuture = ApiService.tryAutoLogin();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<bool>(
+      future: _autoLoginFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Scaffold(
+            backgroundColor: const Color(0xFF0F9D8A),
+            body: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.asset(
+                    'assets/images/brandhr_logo.png',
+                    width: 90,
+                    height: 90,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) => const Icon(
+                      Icons.fingerprint,
+                      size: 80,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        if (snapshot.data == true) {
+          DashboardScreen.pickNewQuote();
+          return const DashboardScreen();
+        }
+
+        return const LoginScreen();
       },
     );
   }
@@ -107,7 +172,7 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  Future<void> login() async {
+  Future<void> login({bool force = false}) async {
     final identifier = employeeIdController.text.trim();
     final password = passwordController.text.trim();
 
@@ -120,7 +185,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => isLoading = true);
 
-    final result = await ApiService.login(identifier, password);
+    final result = await ApiService.login(identifier, password, force: force);
 
     if (!mounted) return;
     setState(() => isLoading = false);
@@ -164,15 +229,30 @@ class _LoginScreenState extends State<LoginScreen> {
               ],
             ),
             content: Text(
-              tr('device_already_logged_in_msg'),
+              '${tr('device_already_logged_in_msg')}\n\n${tr('terminate_other_device_prompt')}',
               style: const TextStyle(fontSize: 14, color: Color(0xFF475569), height: 1.4),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
                 child: Text(
-                  tr('ok'),
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  tr('cancel'),
+                  style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                ),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0F9D8A),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  login(force: true);
+                },
+                child: Text(
+                  tr('terminate_other_device'),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                 ),
               ),
             ],

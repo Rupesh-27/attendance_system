@@ -5,6 +5,7 @@ import "time"
 type LoginRequest struct {
 	EmployeeCode string `json:"employeeCode" binding:"required"`
 	Password     string `json:"password" binding:"required"`
+	Force        bool   `json:"force,omitempty"`
 }
 
 type GPSRequest struct {

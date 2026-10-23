@@ -102,6 +102,11 @@ func TestAuth_SingleDevice_BlockSecondLogin(t *testing.T) {
 	// Second login attempt on Device B: must be blocked!
 	_, err2 := authSvc.Login(context.Background(), "EMP001", "Password123!")
 	assert.ErrorIs(t, err2, domain.ErrDeviceAlreadyLoggedIn)
+
+	// Third login attempt with force=true: succeeds and takes over session!
+	res3, err3 := authSvc.Login(context.Background(), "EMP001", "Password123!", true)
+	require.NoError(t, err3)
+	assert.NotEmpty(t, res3.AccessToken)
 }
 
 func TestAuth_Logout_AllowsNextLogin(t *testing.T) {

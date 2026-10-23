@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class EmployeeProfile {
   final String id;
@@ -375,6 +376,7 @@ class ApiService {
         if (authToken != null) 'Authorization': 'Bearer $authToken',
       };
 
+  static const String _prefTokenKey = 'auth_token';
   static VoidCallback? onSessionTerminated;
 
   static void handleAuthError(http.Response response) {
@@ -385,13 +387,14 @@ class ApiService {
           authToken = null;
           currentEmployee = null;
           assignedOffice = null;
+          SharedPreferences.getInstance().then((p) => p.remove(_prefTokenKey)).catchError((_) => false);
           onSessionTerminated?.call();
         }
       } catch (_) {}
     }
   }
 
-  static Future<Map<String, dynamic>> login(String identifier, String password) async {
+  static Future<Map<String, dynamic>> login(String identifier, String password, {bool force = false}) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/auth/login'),
@@ -399,6 +402,7 @@ class ApiService {
         body: jsonEncode({
           'employeeCode': identifier.trim(),
           'password': password.trim(),
+          if (force) 'force': true,
         }),
       );
 
@@ -409,6 +413,10 @@ class ApiService {
         if (data['data']['employee'] != null) {
           currentEmployee = EmployeeProfile.fromJson(data['data']['employee']);
         }
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString(_prefTokenKey, authToken!);
+        } catch (_) {}
         return {'success': true, 'data': data['data']};
       } else {
         return {
@@ -423,6 +431,28 @@ class ApiService {
         'code': 'NETWORK_ERROR',
         'message': 'Cannot reach the backend server. Please verify network connection.',
       };
+    }
+  }
+
+  static Future<bool> tryAutoLogin() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedToken = prefs.getString(_prefTokenKey);
+      if (savedToken == null || savedToken.isEmpty) {
+        return false;
+      }
+      authToken = savedToken;
+      final profile = await getProfile();
+      if (profile != null) {
+        await getAssignedOffice();
+        await getSettings();
+        return true;
+      }
+      authToken = null;
+      await prefs.remove(_prefTokenKey);
+      return false;
+    } catch (_) {
+      return false;
     }
   }
 
@@ -905,5 +935,9 @@ class ApiService {
     authToken = null;
     currentEmployee = null;
     assignedOffice = null;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_prefTokenKey);
+    } catch (_) {}
   }
 }

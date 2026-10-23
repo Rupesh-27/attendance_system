@@ -794,6 +794,8 @@ class LanguageService extends ChangeNotifier {
       'auto_checkout_in': 'Auto-checkout in',
       'accuracy': 'Accuracy',
       'validating_server': 'Validating with backend server...',
+      'terminate_other_device': 'Log In & Disconnect Other Device',
+      'terminate_other_device_prompt': 'Do you want to disconnect your other device and log in here?',
 
       // Holidays
       "New Year's Day": "New Year's Day",
@@ -1248,6 +1250,8 @@ class LanguageService extends ChangeNotifier {
       'auto_checkout_in': 'Automatische Abmeldung in',
       'accuracy': 'Genauigkeit',
       'validating_server': 'Wird mit dem Backend-Server abgeglichen...',
+      'terminate_other_device': 'Anmelden & anderes Gerät trennen',
+      'terminate_other_device_prompt': 'Möchten Sie Ihr anderes Gerät trennen und sich hier anmelden?',
 
       // Holidays
       "New Year's Day": 'Neujahr',
@@ -1702,6 +1706,8 @@ class LanguageService extends ChangeNotifier {
       'auto_checkout_in': 'Аўтаматычны выхад праз',
       'accuracy': 'Дакладнасць',
       'validating_server': 'Праверка на серверы...',
+      'terminate_other_device': 'Увайсці і адключыць іншую прыладу',
+      'terminate_other_device_prompt': 'Ці хочаце вы адключыць іншую прыладу і ўвайсці тут?',
 
       // Holidays
       "New Year's Day": 'Новы год',
