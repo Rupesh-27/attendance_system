@@ -140,7 +140,7 @@ class ProfileScreen extends StatelessWidget {
                 _profileItem(
                   Icons.work_outline,
                   tr('geofence_radius'),
-                  '${office?.radiusMeters.toStringAsFixed(0) ?? "10"} ${tr('meters')}',
+                  '${LanguageService.formatDecimal(office?.radiusMeters ?? 10, fractionDigits: 0)} ${tr('meters')}',
                 ),
               ],
             ),

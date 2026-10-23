@@ -212,6 +212,69 @@ class LanguageService extends ChangeNotifier {
     return dict[normalized] ?? _translations[AppLanguage.english]?[normalized] ?? key;
   }
 
+  /// Formats time according to the current locale.
+  /// German (`de`) and Belarusian (`be`) use standard 24-hour time (e.g., 09:30, 18:15).
+  /// English (`en`) uses 12-hour AM/PM time (e.g., 9:30 AM, 6:15 PM).
+  static String formatTime(DateTime dt) {
+    final local = dt.toLocal();
+    final hour = local.hour;
+    final minute = local.minute.toString().padLeft(2, '0');
+    final code = instance.currentCode;
+
+    if (code == 'de' || code == 'be') {
+      final hourStr = hour.toString().padLeft(2, '0');
+      return '$hourStr:$minute';
+    }
+
+    final period = hour >= 12 ? 'PM' : 'AM';
+    final formattedHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour);
+    return '$formattedHour:$minute $period';
+  }
+
+  /// Formats decimal numbers according to regional conventions.
+  /// German (`de`) and Belarusian (`be`) use a comma as the decimal separator (e.g., 8,5 or 12).
+  /// English (`en`) uses a dot (e.g., 8.5 or 12).
+  static String formatDecimal(num value, {int fractionDigits = 1}) {
+    final isWhole = value.truncateToDouble() == value.toDouble();
+    final str = isWhole ? value.toInt().toString() : value.toStringAsFixed(fractionDigits);
+    final code = instance.currentCode;
+    if (code == 'de' || code == 'be') {
+      return str.replaceAll('.', ',');
+    }
+    return str;
+  }
+
+  /// Formats a full date according to regional conventions.
+  /// German: 24. Oktober 2026
+  /// Belarusian: 24 кастрычніка 2026
+  /// English: October 24, 2026
+  static String formatDate(DateTime dt) {
+    final code = instance.currentCode;
+    final monthName = tr('month_genitive_${dt.month}');
+    if (code == 'de') {
+      return '${dt.day}. $monthName ${dt.year}';
+    } else if (code == 'be') {
+      return '${dt.day} $monthName ${dt.year}';
+    }
+    return '${tr('month_${dt.month}')} ${dt.day}, ${dt.year}';
+  }
+
+  /// Formats date with weekday according to regional conventions.
+  /// German: Mittwoch, 24. Oktober 2026
+  /// Belarusian: Серада, 24 кастрычніка 2026
+  /// English: Wednesday, October 24, 2026
+  static String formatDateWithWeekday(DateTime dt) {
+    final weekday = tr('weekday_full_${dt.weekday}');
+    final code = instance.currentCode;
+    final monthName = tr('month_genitive_${dt.month}');
+    if (code == 'de') {
+      return '$weekday, ${dt.day}. $monthName ${dt.year}';
+    } else if (code == 'be') {
+      return '$weekday, ${dt.day} $monthName ${dt.year}';
+    }
+    return '$weekday, ${tr('month_${dt.month}')} ${dt.day}, ${dt.year}';
+  }
+
   static String localizeLeaveType(String? nameOrCode) {
     if (nameOrCode == null || nameOrCode.isEmpty) return '';
     final trimmed = nameOrCode.trim();
@@ -727,6 +790,10 @@ class LanguageService extends ChangeNotifier {
       'battery_optimization_desc': 'To prevent Android from putting shift tracking to sleep while your device is locked, please allow unrestricted background activity for BrandHRMS.',
       'grant_permission': 'Grant Permission',
       'open_settings': 'Open Settings',
+      'outside_boundary': 'Outside boundary',
+      'auto_checkout_in': 'Auto-checkout in',
+      'accuracy': 'Accuracy',
+      'validating_server': 'Validating with backend server...',
 
       // Holidays
       "New Year's Day": "New Year's Day",
@@ -1177,6 +1244,10 @@ class LanguageService extends ChangeNotifier {
       'battery_optimization_desc': 'Um zu verhindern, dass Android die Zeiterfassung bei gesperrtem Bildschirm in den Ruhezustand versetzt, erlauben Sie bitte unbeschränkte Hintergrundaktivität für BrandHRMS.',
       'grant_permission': 'Berechtigung erteilen',
       'open_settings': 'Einstellungen öffnen',
+      'outside_boundary': 'Außerhalb des Bereichs',
+      'auto_checkout_in': 'Automatische Abmeldung in',
+      'accuracy': 'Genauigkeit',
+      'validating_server': 'Wird mit dem Backend-Server abgeglichen...',
 
       // Holidays
       "New Year's Day": 'Neujahr',
@@ -1627,6 +1698,10 @@ class LanguageService extends ChangeNotifier {
       'battery_optimization_desc': 'Каб Android не спыняў маніторынг змены пры заблакаваным экране, дазвольце неабмежаваную фонавую актыўнасць для BrandHRMS.',
       'grant_permission': 'Даць дазвол',
       'open_settings': 'Адкрыць налады',
+      'outside_boundary': 'Па-за межамі офіса',
+      'auto_checkout_in': 'Аўтаматычны выхад праз',
+      'accuracy': 'Дакладнасць',
+      'validating_server': 'Праверка на серверы...',
 
       // Holidays
       "New Year's Day": 'Новы год',

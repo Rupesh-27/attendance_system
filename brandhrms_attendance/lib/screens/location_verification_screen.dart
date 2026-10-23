@@ -91,8 +91,8 @@ class _LocationVerificationScreenState
         locationStatus = tr('verifying_office_geofence');
         locationDetails =
             'Coordinates: ${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}\n'
-            'Accuracy: ±${position.accuracy.toStringAsFixed(1)}m\n'
-            'Validating with backend server...';
+            '${tr('accuracy')}: ±${LanguageService.formatDecimal(position.accuracy, fractionDigits: 1)}m\n'
+            '${tr('validating_server')}';
       });
 
       final address = await GeocodingService.getAddressFromCoordinates(
@@ -121,22 +121,22 @@ class _LocationVerificationScreenState
         final serverTime = result['serverTime']?.toString() ?? '';
         String formattedTime = serverTime;
         try {
-          final dt = DateTime.parse(serverTime).toLocal();
-          final hour = dt.hour == 0 ? 12 : (dt.hour > 12 ? dt.hour - 12 : dt.hour);
-          final period = dt.hour >= 12 ? 'PM' : 'AM';
-          formattedTime = '$hour:${dt.minute.toString().padLeft(2, '0')}:${dt.second.toString().padLeft(2, '0')} $period';
+          final dt = DateTime.parse(serverTime);
+          formattedTime = LanguageService.formatTime(dt);
         } catch (_) {}
 
-        final distance = result['distanceMeters'] ?? 0.0;
-        final allowedRadius = result['allowedRadiusMeters'] ?? 10.0;
+        final distance = (result['distanceMeters'] as num?)?.toDouble() ?? 0.0;
+        final allowedRadius = (result['allowedRadiusMeters'] as num?)?.toDouble() ?? 10.0;
+        final formattedDist = LanguageService.formatDecimal(distance, fractionDigits: 1);
+        final formattedRad = LanguageService.formatDecimal(allowedRadius, fractionDigits: 0);
 
         setState(() {
           isSuccess = true;
           locationStatus = tr('ready');
           locationDetails =
               '${tr('status')}: ${tr(result['status']?.toString() ?? 'SUCCESS')}\n'
-              '${tr('distance_to_office')}: ${distance.toString()} ${tr('meters')}\n'
-              '${tr('allowed')}: ${allowedRadius.toString()} ${tr('meters')}\n'
+              '${tr('distance_to_office')}: $formattedDist ${tr('meters')}\n'
+              '${tr('allowed')}: $formattedRad ${tr('meters')}\n'
               '${tr('server_time')}: $formattedTime';
           isChecking = false;
         });
@@ -144,8 +144,8 @@ class _LocationVerificationScreenState
         _showSuccessDialog(
           status: result['status']?.toString() ?? 'SUCCESS',
           serverTime: formattedTime,
-          distance: distance.toString(),
-          radius: allowedRadius.toString(),
+          distance: formattedDist,
+          radius: formattedRad,
         );
       } else {
         setState(() {

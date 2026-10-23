@@ -351,22 +351,11 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
   }
 
   String _formatDateFull(DateTime dt) {
-    final weekdayName = tr('weekday_full_${dt.weekday}');
-    final monthName = tr('month_genitive_${dt.month}');
-    final code = LanguageService.instance.currentCode;
-    if (code == 'de') {
-      return '$weekdayName, ${dt.day}. $monthName ${dt.year}';
-    }
-    return '$weekdayName, ${dt.day} $monthName ${dt.year}';
+    return LanguageService.formatDateWithWeekday(dt);
   }
 
   String _formatTime(DateTime dt) {
-    final local = dt.toLocal();
-    final hour = local.hour;
-    final minute = local.minute.toString().padLeft(2, '0');
-    final period = hour >= 12 ? 'PM' : 'AM';
-    final formattedHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour);
-    return '$formattedHour:$minute $period';
+    return LanguageService.formatTime(dt);
   }
 
   String _formatDuration(int seconds) {

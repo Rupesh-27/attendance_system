@@ -323,13 +323,8 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
         ? (bal.remainingDays / bal.allocatedDays).clamp(0.0, 1.0)
         : 0.0;
 
-    final remainingText = bal.remainingDays.truncateToDouble() == bal.remainingDays
-        ? bal.remainingDays.toInt().toString()
-        : bal.remainingDays.toStringAsFixed(1);
-
-    final usedText = bal.usedDays.truncateToDouble() == bal.usedDays
-        ? bal.usedDays.toInt().toString()
-        : bal.usedDays.toStringAsFixed(1);
+    final remainingText = LanguageService.formatDecimal(bal.remainingDays, fractionDigits: 1);
+    final usedText = LanguageService.formatDecimal(bal.usedDays, fractionDigits: 1);
 
     String ruleText = tr('rule_standard');
     if (bal.leaveTypeCode == 'CL' || bal.leaveTypeName.toLowerCase().contains('casual')) {
@@ -1592,9 +1587,7 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
                     remainingDays: t.annualAllowance.toDouble(),
                   ),
                 );
-                final rem = bal.remainingDays.truncateToDouble() == bal.remainingDays
-                    ? bal.remainingDays.toInt().toString()
-                    : bal.remainingDays.toStringAsFixed(1);
+                final rem = LanguageService.formatDecimal(bal.remainingDays, fractionDigits: 1);
                 return DropdownMenuItem<String>(
                   value: t.id,
                   child: Text(
@@ -1933,7 +1926,7 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
                     child: Text('${tr('total_duration')}:', style: const TextStyle(fontSize: 13, color: Color(0xFF475569))),
                   ),
                   Text(
-                    '${_calculatedDays.toStringAsFixed(_calculatedDays.truncateToDouble() == _calculatedDays ? 0 : 1)} ${_calculatedDays > 1 ? tr("Days") : tr("day")}',
+                    '${LanguageService.formatDecimal(_calculatedDays, fractionDigits: 1)} ${_calculatedDays > 1 ? tr("Days") : tr("day")}',
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,

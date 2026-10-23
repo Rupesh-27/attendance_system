@@ -878,12 +878,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
   }
 
   String _formatTime(DateTime dt) {
-    final local = dt.toLocal();
-    final hour = local.hour;
-    final minute = local.minute.toString().padLeft(2, '0');
-    final period = hour >= 12 ? 'PM' : 'AM';
-    final formattedHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour);
-    return '$formattedHour:$minute $period';
+    return LanguageService.formatTime(dt);
   }
 
   String _getDayName(DateTime dt) {
@@ -891,17 +886,16 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
   }
 
   String _formatMonthDayYear(DateTime dt) {
-    final code = LanguageService.instance.currentCode;
-    final monthName = tr('month_genitive_${dt.month}');
-    if (code == 'de') {
-      return '${dt.day}. $monthName ${dt.year}';
-    } else if (code == 'be') {
-      return '${dt.day} $monthName ${dt.year}';
-    }
-    return '${tr('month_${dt.month}')} ${dt.day}, ${dt.year}';
+    return LanguageService.formatDate(dt);
   }
 
   String _getLocalizedLocationSubtext(String officeName) {
+    if (_locationStatusSubtext.contains('Outside boundary')) {
+      final monitor = LocationMonitorService.instance;
+      final dist = monitor.lastDistanceMeters ?? 0.0;
+      final rad = monitor.allowedRadiusMeters ?? 10.0;
+      return '${tr('outside_boundary')} (${LanguageService.formatDecimal(dist, fractionDigits: 1)}m / ${LanguageService.formatDecimal(rad, fractionDigits: 0)}m) • ${tr('auto_checkout_in')} ${monitor.formattedCountdown}';
+    }
     if (_locationStatusSubtext.contains('Location will be validated') ||
         _locationStatusSubtext.contains('validate_upon_checkin')) {
       return tr('loc_subtext_validate_upon_checkin');
@@ -1391,7 +1385,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${tr('current_distance')}: ${dist.toStringAsFixed(1)} ${tr('meters')} (${tr('allowed')}: ${radius.toStringAsFixed(0)} ${tr('meters')}). ${tr('breach_warning_return_prompt')}',
+                    '${tr('current_distance')}: ${LanguageService.formatDecimal(dist, fractionDigits: 1)} ${tr('meters')} (${tr('allowed')}: ${LanguageService.formatDecimal(radius, fractionDigits: 0)} ${tr('meters')}). ${tr('breach_warning_return_prompt')}',
                     style: const TextStyle(
                       fontSize: 12,
                       color: Color(0xFF7F1D1D),
