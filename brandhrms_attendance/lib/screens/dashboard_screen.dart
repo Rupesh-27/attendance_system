@@ -230,7 +230,7 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
+class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingObserver {
   static const Color primaryColor = Color(0xFF0F9D8A);
 
   final List<InAppNotificationItem> _notifications = [];
@@ -269,6 +269,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     LocationMonitorService.instance.addListener(_onLocationMonitorChanged);
     LanguageService.instance.addListener(_onLanguageChanged);
     ApiService.onSessionTerminated = _onSessionTerminated;
@@ -280,6 +281,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     LocationMonitorService.instance.removeListener(_onLocationMonitorChanged);
     LanguageService.instance.removeListener(_onLanguageChanged);
     if (ApiService.onSessionTerminated == _onSessionTerminated) {
@@ -287,6 +289,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
     _liveTimer?.cancel();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      LocationMonitorService.instance.refreshPermissionStatus();
+      if (mounted) setState(() {});
+    }
   }
 
   bool _isSessionTerminating = false;
@@ -1048,6 +1058,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 _locationStatusBorder = const Color(0xFF86EFAC);
                 _locationStatusIcon = Icons.location_on;
               });
+              _checkAndPromptBackgroundPermission();
             } else {
               LocationMonitorService.instance.stopMonitoring();
               setState(() {
@@ -1414,11 +1425,122 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 style: const TextStyle(fontSize: 12, color: Color(0xFF92400E)),
               ),
             ),
+            const SizedBox(width: 8),
+            TextButton(
+              style: TextButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              ),
+              onPressed: () async {
+                await LocationMonitorService.openLocationSettings();
+                await LocationMonitorService.instance.refreshPermissionStatus();
+                if (mounted) setState(() {});
+              },
+              child: Text(
+                tr('open_settings'),
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFFD97706)),
+              ),
+            ),
+          ],
+        ),
+      );
+    } else if (_isCheckedIn && !monitor.hasBackgroundPermission) {
+      return Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFFBEB),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFFCD34D), width: 1.5),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.warning_amber_rounded, color: Color(0xFFD97706), size: 22),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                tr('background_restricted_warning'),
+                style: const TextStyle(fontSize: 12, color: Color(0xFF92400E)),
+              ),
+            ),
+            const SizedBox(width: 8),
+            TextButton(
+              style: TextButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              ),
+              onPressed: () async {
+                await LocationMonitorService.openAppSettings();
+                await LocationMonitorService.instance.refreshPermissionStatus();
+                if (mounted) setState(() {});
+              },
+              child: Text(
+                tr('open_settings'),
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFFD97706)),
+              ),
+            ),
           ],
         ),
       );
     }
     return const SizedBox.shrink();
+  }
+
+  Future<void> _checkAndPromptBackgroundPermission() async {
+    try {
+      final perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.whileInUse) {
+        if (!mounted) return;
+        final shouldRequest = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Row(
+              children: [
+                const Icon(Icons.location_on, color: primaryColor, size: 28),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    tr('background_location_title'),
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+            content: Text(
+              tr('background_location_desc'),
+              style: const TextStyle(fontSize: 14, color: Color(0xFF475569), height: 1.4),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text(tr('cancel')),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryColor,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text(tr('grant_permission')),
+              ),
+            ],
+          ),
+        );
+
+        if (shouldRequest == true) {
+          final granted = await LocationMonitorService.requestBackgroundPermission();
+          if (!granted && mounted) {
+            await LocationMonitorService.openAppSettings();
+          }
+          if (mounted) {
+            await LocationMonitorService.instance.refreshPermissionStatus();
+            setState(() {});
+          }
+        }
+      }
+    } catch (_) {}
   }
 
   Widget _attendanceCard(BuildContext context) {

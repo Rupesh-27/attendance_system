@@ -26,6 +26,7 @@ class LocationMonitorService extends ChangeNotifier {
   double? _lastDistanceMeters;
   double? _allowedRadiusMeters;
   String? _lastError;
+  bool _hasBackgroundPermission = true;
 
   VoidCallback? onForceCheckout;
 
@@ -36,6 +37,7 @@ class LocationMonitorService extends ChangeNotifier {
   double? get lastDistanceMeters => _lastDistanceMeters;
   double? get allowedRadiusMeters => _allowedRadiusMeters;
   String? get lastError => _lastError;
+  bool get hasBackgroundPermission => _hasBackgroundPermission;
 
   String get formattedCountdown {
     final m = _countdownSeconds ~/ 60;
@@ -130,9 +132,13 @@ class LocationMonitorService extends ChangeNotifier {
         permission == LocationPermission.deniedForever) {
       _state = BreachState.gpsDisabled;
       _lastError = 'Location permission is not granted';
+      _hasBackgroundPermission = false;
       notifyListeners();
       return;
     }
+
+    _hasBackgroundPermission = (permission == LocationPermission.always);
+    notifyListeners();
 
     _startPositionStream();
   }
@@ -144,8 +150,8 @@ class LocationMonitorService extends ChangeNotifier {
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       locationSettings = AndroidSettings(
         accuracy: LocationAccuracy.high,
-        distanceFilter: 0,
-        intervalDuration: const Duration(seconds: 15),
+        distanceFilter: 10,
+        intervalDuration: const Duration(seconds: 20),
         foregroundNotificationConfig: const ForegroundNotificationConfig(
           notificationTitle: 'BrandHRMS',
           notificationText: 'Checked in • Shift in progress',
@@ -155,7 +161,7 @@ class LocationMonitorService extends ChangeNotifier {
     } else {
       locationSettings = const LocationSettings(
         accuracy: LocationAccuracy.high,
-        distanceFilter: 0,
+        distanceFilter: 10,
       );
     }
 
@@ -196,6 +202,59 @@ class LocationMonitorService extends ChangeNotifier {
     _lastDistanceMeters = null;
     _lastError = null;
     notifyListeners();
+  }
+
+  Future<void> refreshPermissionStatus() async {
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        _state = BreachState.gpsDisabled;
+        _lastError = 'Location service is disabled';
+        notifyListeners();
+        return;
+      }
+      final permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
+        _state = BreachState.gpsDisabled;
+        _lastError = 'Location permission is not granted';
+        _hasBackgroundPermission = false;
+        notifyListeners();
+        return;
+      }
+      _hasBackgroundPermission = (permission == LocationPermission.always);
+      if (_state == BreachState.gpsDisabled) {
+        _state = BreachState.normal;
+        _lastError = null;
+      }
+      notifyListeners();
+    } catch (_) {}
+  }
+
+  static Future<bool> requestBackgroundPermission() async {
+    try {
+      final perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) {
+        final req = await Geolocator.requestPermission();
+        if (req != LocationPermission.always && req != LocationPermission.whileInUse) {
+          return false;
+        }
+      }
+      if (perm == LocationPermission.whileInUse) {
+        final req = await Geolocator.requestPermission();
+        return req == LocationPermission.always;
+      }
+      return perm == LocationPermission.always;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static Future<bool> openAppSettings() async {
+    return await Geolocator.openAppSettings();
+  }
+
+  static Future<bool> openLocationSettings() async {
+    return await Geolocator.openLocationSettings();
   }
 
   void _processPosition(Position position) {

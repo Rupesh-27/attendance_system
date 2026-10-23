@@ -720,6 +720,13 @@ class LanguageService extends ChangeNotifier {
       'device_already_logged_in_msg': 'You are already logged in on another device. Please log out from that device first.',
       'session_expired_title': 'Session Ended',
       'session_expired_msg': 'Your session has ended because you logged in from another device or your session expired. Please log in again.',
+      'background_location_title': 'Background Location Access',
+      'background_location_desc': 'To record your work shift accurately when your screen is locked or while switching apps, BrandHRMS requires background location permission. Please choose "Allow all the time" in the next prompt.',
+      'background_restricted_warning': 'Background location is restricted. Shift tracking may pause when screen is locked.',
+      'battery_optimization_title': 'Unrestricted Battery Recommended',
+      'battery_optimization_desc': 'To prevent Android from putting shift tracking to sleep while your device is locked, please allow unrestricted background activity for BrandHRMS.',
+      'grant_permission': 'Grant Permission',
+      'open_settings': 'Open Settings',
 
       // Holidays
       "New Year's Day": "New Year's Day",
@@ -1163,6 +1170,13 @@ class LanguageService extends ChangeNotifier {
       'device_already_logged_in_msg': 'Sie sind bereits auf einem anderen Gerät angemeldet. Bitte melden Sie sich zuerst von diesem Gerät ab.',
       'session_expired_title': 'Sitzung beendet',
       'session_expired_msg': 'Ihre Sitzung wurde beendet, da Sie sich von einem anderen Gerät angemeldet haben oder Ihre Sitzung abgelaufen ist. Bitte melden Sie sich erneut an.',
+      'background_location_title': 'Hintergrund-Standortzugriff',
+      'background_location_desc': 'Um Ihre Arbeitszeit zuverlässig zu erfassen, wenn der Bildschirm gesperrt ist oder andere Apps verwendet werden, benötigt BrandHRMS die Berechtigung für den Hintergrundstandort. Bitte wählen Sie in der nächsten Abfrage "Immer zulassen".',
+      'background_restricted_warning': 'Hintergrund-Standort ist eingeschränkt. Die Zeiterfassung kann pausieren, wenn der Bildschirm gesperrt ist.',
+      'battery_optimization_title': 'Uneingeschränkte Akkunutzung empfohlen',
+      'battery_optimization_desc': 'Um zu verhindern, dass Android die Zeiterfassung bei gesperrtem Bildschirm in den Ruhezustand versetzt, erlauben Sie bitte unbeschränkte Hintergrundaktivität für BrandHRMS.',
+      'grant_permission': 'Berechtigung erteilen',
+      'open_settings': 'Einstellungen öffnen',
 
       // Holidays
       "New Year's Day": 'Neujahr',
@@ -1606,6 +1620,13 @@ class LanguageService extends ChangeNotifier {
       'device_already_logged_in_msg': 'Вы ўжо ўвайшлі ў сістэму на іншай прыладзе. Калі ласка, спачатку выйдзіце з гэтай прылады.',
       'session_expired_title': 'Сеанс завершаны',
       'session_expired_msg': 'Ваш сеанс быў завершаны, бо вы ўвайшлі з іншай прылады альбо скончыўся тэрмін дзеяння сеанса. Калі ласка, увайдзіце зноў.',
+      'background_location_title': 'Доступ да месцазнаходжання ў фонавым рэжыме',
+      'background_location_desc': 'Для дакладнага ўліку працоўнага часу, калі экран заблакаваны альбо пры пераключэнні праграм, BrandHRMS патрабуе дазволу на вызначэнне месцазнаходжання ў фонавым рэжыме. Калі ласка, абярыце "Дазваляць заўсёды".',
+      'background_restricted_warning': 'Фонавае месцазнаходжанне абмежавана. Маніторынг змены можа спыніцца пры заблакаваным экране.',
+      'battery_optimization_title': 'Рэкамендуецца неабмежаваная праца ад батарэі',
+      'battery_optimization_desc': 'Каб Android не спыняў маніторынг змены пры заблакаваным экране, дазвольце неабмежаваную фонавую актыўнасць для BrandHRMS.',
+      'grant_permission': 'Даць дазвол',
+      'open_settings': 'Адкрыць налады',
 
       // Holidays
       "New Year's Day": 'Новы год',
