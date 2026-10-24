@@ -109,10 +109,7 @@ func (s *attendanceService) CheckIn(
 		return nil, domain.ErrOutsideOfficeRadius
 	}
 
-	loc, err := time.LoadLocation("Asia/Kolkata")
-	if err != nil {
-		loc = time.UTC
-	}
+	loc := office.GetLocation()
 	attendanceDay := serverTime.In(loc).Format("2006-01-02")
 
 	session := &domain.AttendanceSession{
@@ -371,9 +368,17 @@ func (s *attendanceService) GetTodayStatus(
 	employeeID uuid.UUID,
 ) (*TodayAttendanceStatus, error) {
 	serverTime := s.clock()
-	loc, err := time.LoadLocation("Asia/Kolkata")
-	if err != nil {
-		loc = time.UTC
+	loc := time.UTC
+	emp, _ := s.employeeRepo.GetByID(ctx, employeeID)
+	if emp != nil {
+		if office, err := s.officeRepo.GetByID(ctx, emp.OfficeID); err == nil && office != nil {
+			loc = office.GetLocation()
+		}
+	}
+	if loc == time.UTC {
+		if defLoc, err := time.LoadLocation("Asia/Kolkata"); err == nil {
+			loc = defLoc
+		}
 	}
 	currentDate := serverTime.In(loc).Format("2006-01-02")
 

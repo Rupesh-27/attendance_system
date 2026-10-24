@@ -44,6 +44,7 @@ class AssignedOffice {
   final double latitude;
   final double longitude;
   final double radiusMeters;
+  final String timezone;
   final bool isActive;
 
   AssignedOffice({
@@ -52,6 +53,7 @@ class AssignedOffice {
     required this.latitude,
     required this.longitude,
     required this.radiusMeters,
+    this.timezone = 'Asia/Kolkata',
     required this.isActive,
   });
 
@@ -62,6 +64,7 @@ class AssignedOffice {
       latitude: (json['latitude'] as num?)?.toDouble() ?? 0.0,
       longitude: (json['longitude'] as num?)?.toDouble() ?? 0.0,
       radiusMeters: (json['radiusMeters'] as num?)?.toDouble() ?? 10.0,
+      timezone: json['timezone'] ?? 'Asia/Kolkata',
       isActive: json['isActive'] ?? true,
     );
   }

@@ -106,14 +106,11 @@ func (s *telegramService) SendForceCheckoutAlert(
 	session *domain.AttendanceSession,
 	distanceMeters float64,
 ) error {
-	loc, err := time.LoadLocation("Asia/Kolkata")
-	if err != nil {
-		loc = time.Local
-	}
+	loc := office.GetLocation()
 
 	checkoutTimeStr := "Just now"
 	if session.CheckOutTime != nil {
-		checkoutTimeStr = session.CheckOutTime.In(loc).Format("02 Jan 2006, 03:04:02 PM IST")
+		checkoutTimeStr = session.CheckOutTime.In(loc).Format("02 Jan 2006, 03:04:02 PM MST")
 	}
 
 	empName := "Unknown Employee"

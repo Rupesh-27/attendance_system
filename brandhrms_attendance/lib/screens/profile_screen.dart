@@ -142,6 +142,11 @@ class ProfileScreen extends StatelessWidget {
                   tr('geofence_radius'),
                   '${LanguageService.formatDecimal(office?.radiusMeters ?? 10, fractionDigits: 0)} ${tr('meters')}',
                 ),
+                _profileItem(
+                  Icons.schedule_outlined,
+                  tr('work_timezone'),
+                  office?.timezone ?? 'Asia/Kolkata',
+                ),
               ],
             ),
 

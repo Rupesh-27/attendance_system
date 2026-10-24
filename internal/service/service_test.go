@@ -704,5 +704,55 @@ func TestAttendance_WhenLocationAttendanceEnabled_StrictAccuracyEnforced(t *test
 	assert.ErrorIs(t, err, domain.ErrAccuracyTooLow)
 }
 
+func TestAttendance_CheckIn_OfficeTimezone_Germany(t *testing.T) {
+	empRepo, officeRepo, attRepo, _, _ := setupTestEnvironment()
+
+	// Office in Berlin with Europe/Berlin timezone
+	berlinOffice := &domain.Office{
+		ID:           uuid.New(),
+		Name:         "Berlin Innovation Center",
+		Latitude:     52.520008,
+		Longitude:    13.404954,
+		RadiusMeters: 10.0,
+		Timezone:     "Europe/Berlin",
+		IsActive:     true,
+	}
+	officeRepo.Seed(berlinOffice)
+
+	berlinEmp := &domain.Employee{
+		ID:                        uuid.New(),
+		EmployeeCode:              "EMP_BERLIN",
+		FullName:                  "Hans Weber",
+		OfficeID:                  berlinOffice.ID,
+		LocationAttendanceEnabled: true,
+		IsActive:                  true,
+	}
+	empRepo.Seed(berlinEmp)
+
+	// Time: Oct 23, 2026 at 21:00:00 UTC
+	// In Germany (CEST = UTC+2), this is 23:00 on Oct 23 (Friday night).
+	// In India (IST = UTC+5:30), this is 02:30 on Oct 24 (Saturday morning).
+	checkInUTC := time.Date(2026, 10, 23, 21, 0, 0, 0, time.UTC)
+	clock := func() time.Time { return checkInUTC }
+	attSvc := service.NewAttendanceService(empRepo, officeRepo, attRepo, clock)
+
+	gps := domain.GPSLocation{
+		Latitude:       berlinOffice.Latitude,
+		Longitude:      berlinOffice.Longitude,
+		AccuracyMeters: 5.0,
+		CapturedAt:     checkInUTC,
+	}
+
+	session, err := attSvc.CheckIn(context.Background(), berlinEmp.ID, gps)
+	require.NoError(t, err)
+	// Must anchor to Germany's local calendar day (2026-10-23), NOT India's (2026-10-24)
+	assert.Equal(t, "2026-10-23", session.AttendanceDay)
+
+	// Verify GetTodayStatus also reflects Germany's local date
+	todayStatus, err := attSvc.GetTodayStatus(context.Background(), berlinEmp.ID)
+	require.NoError(t, err)
+	assert.Equal(t, "2026-10-23", todayStatus.AttendanceDay)
+}
+
 
 
