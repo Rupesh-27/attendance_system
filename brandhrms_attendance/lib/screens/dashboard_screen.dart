@@ -1651,7 +1651,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                           size: 13, color: Colors.blueGrey.shade400),
                       const SizedBox(width: 4),
                       Text(
-                        'Asia/Calcutta',
+                        ApiService.assignedOffice?.timezone ?? 'Asia/Kolkata',
                         style: TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w500,
@@ -1660,46 +1660,85 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                       ),
                     ],
                   ),
-                  Container(
-                    margin: const EdgeInsets.only(top: 5),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 2.5),
-                    decoration: BoxDecoration(
-                      color: _isCheckedIn
-                          ? const Color(0xFFE8F5E9)
-                          : const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: _isCheckedIn
-                            ? const Color(0xFFA5D6A7)
-                            : const Color(0xFFCBD5E1),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          _isCheckedIn
-                              ? Icons.check_circle
-                              : Icons.radio_button_unchecked,
-                          size: 11,
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        margin: const EdgeInsets.only(top: 5),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 2.5),
+                        decoration: BoxDecoration(
                           color: _isCheckedIn
-                              ? const Color(0xFF2E7D32)
-                              : const Color(0xFF64748B),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          _isCheckedIn ? tr('checked_in') : tr('not_checked_in'),
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
+                              ? const Color(0xFFE8F5E9)
+                              : const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
                             color: _isCheckedIn
-                                ? const Color(0xFF2E7D32)
-                                : const Color(0xFF64748B),
+                                ? const Color(0xFFA5D6A7)
+                                : const Color(0xFFCBD5E1),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _isCheckedIn
+                                  ? Icons.check_circle
+                                  : Icons.radio_button_unchecked,
+                              size: 11,
+                              color: _isCheckedIn
+                                  ? const Color(0xFF2E7D32)
+                                  : const Color(0xFF64748B),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              _isCheckedIn ? tr('checked_in') : tr('not_checked_in'),
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: _isCheckedIn
+                                    ? const Color(0xFF2E7D32)
+                                    : const Color(0xFF64748B),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (_totalWorkSeconds > 28800) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          margin: const EdgeInsets.only(top: 5),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 7, vertical: 2.5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEF3C7),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: const Color(0xFFF59E0B),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.bolt_rounded,
+                                size: 12,
+                                color: Color(0xFFD97706),
+                              ),
+                              const SizedBox(width: 3),
+                              Text(
+                                '${tr('overtime_badge')}: +${(_totalWorkSeconds - 28800) ~/ 3600}${tr('unit_hr')} ${((_totalWorkSeconds - 28800) % 3600) ~/ 60}${tr('unit_min')}',
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFFB45309),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
-                    ),
+                    ],
                   ),
                 ],
               ),
@@ -2122,6 +2161,10 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                           session.checkInAddress,
                           session.officeSnapshotName,
                         );
+                        final isOvernightSession = session.checkOutTime != null &&
+                            (session.checkInTime.toLocal().year != session.checkOutTime!.toLocal().year ||
+                                session.checkInTime.toLocal().month != session.checkOutTime!.toLocal().month ||
+                                session.checkInTime.toLocal().day != session.checkOutTime!.toLocal().day);
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -2135,9 +2178,13 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                                   style: const TextStyle(
                                       fontWeight: FontWeight.w600, fontSize: 13),
                                 ),
-                                Text(
-                                  _formatTime(session.checkInTime),
-                                  style: const TextStyle(fontSize: 13),
+                                Flexible(
+                                  child: Text(
+                                    isOvernightSession || isSessionCarriedOver
+                                        ? LanguageService.formatDateTimeWithDash(session.checkInTime)
+                                        : _formatTime(session.checkInTime),
+                                    style: const TextStyle(fontSize: 13),
+                                  ),
                                 ),
                               ],
                             ),
@@ -2170,6 +2217,9 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                             session.checkOutAddress,
                             session.officeSnapshotName,
                           );
+                          final isOvernightSession = (session.checkInTime.toLocal().year != session.checkOutTime!.toLocal().year ||
+                              session.checkInTime.toLocal().month != session.checkOutTime!.toLocal().month ||
+                              session.checkInTime.toLocal().day != session.checkOutTime!.toLocal().day);
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -2183,10 +2233,33 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                                     style: const TextStyle(
                                         fontWeight: FontWeight.w600, fontSize: 13),
                                   ),
-                                  Text(
-                                    _formatTime(session.checkOutTime!),
-                                    style: const TextStyle(fontSize: 13),
+                                  Flexible(
+                                    child: Text(
+                                      isOvernightSession
+                                          ? LanguageService.formatDateTimeWithDash(session.checkOutTime!)
+                                          : _formatTime(session.checkOutTime!),
+                                      style: const TextStyle(fontSize: 13),
+                                    ),
                                   ),
+                                  if (isOvernightSession) ...[
+                                    const SizedBox(width: 6),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFFEF3C7),
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(color: const Color(0xFFF59E0B)),
+                                      ),
+                                      child: Text(
+                                        tr('next_day'),
+                                        style: const TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFFB45309),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ],
                               ),
                               if (outLoc.isNotEmpty) ...[

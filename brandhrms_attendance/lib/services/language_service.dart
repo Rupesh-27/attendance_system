@@ -275,6 +275,15 @@ class LanguageService extends ChangeNotifier {
     return '$weekday, ${tr('month_${dt.month}')} ${dt.day}, ${dt.year}';
   }
 
+  /// Formats date and time separated by a dash as required by Ticket Item 3.
+  /// Example:
+  /// English: October 15, 2026 – 10:00 PM
+  /// German: 15. Oktober 2026 – 22:00
+  /// Belarusian: 15 кастрычніка 2026 – 22:00
+  static String formatDateTimeWithDash(DateTime dt) {
+    return '${formatDate(dt)} – ${formatTime(dt)}';
+  }
+
   static String localizeLeaveType(String? nameOrCode) {
     if (nameOrCode == null || nameOrCode.isEmpty) return '';
     final trimmed = nameOrCode.trim();
@@ -446,8 +455,14 @@ class LanguageService extends ChangeNotifier {
       'checked_in': 'Checked In',
       'checked_out': 'Checked Out',
       'carried_over_shift': 'Carried Over Shift',
+      'overnight_shift': 'Overnight Shift',
+      'overnight_badge': 'Overnight (+1 Day)',
+      'next_day': '+1 Day',
       'todays_attendance': 'Today\'s Attendance',
       'working_hours': 'Working Hours',
+      'overtime': 'Overtime',
+      'overtime_badge': 'OT',
+      'regular_hours': 'Regular Hours',
       'current_location': 'Current Location',
       'inside_office': 'Inside Office',
       'outside_office': 'Outside Office',
@@ -903,8 +918,14 @@ class LanguageService extends ChangeNotifier {
       'checked_in': 'Eingestempelt',
       'checked_out': 'Ausgestempelt',
       'carried_over_shift': 'Übertragene Schicht',
+      'overnight_shift': 'Nachtschicht',
+      'overnight_badge': 'Übernacht (+1 Tag)',
+      'next_day': '+1 Tag',
       'todays_attendance': 'Heutige Anwesenheit',
       'working_hours': 'Arbeitszeit',
+      'overtime': 'Überstunden',
+      'overtime_badge': 'ÜS',
+      'regular_hours': 'Reguläre Arbeitszeit',
       'current_location': 'Aktueller Standort',
       'inside_office': 'Im Büro',
       'outside_office': 'Außerhalb des Büros',
@@ -1360,8 +1381,14 @@ class LanguageService extends ChangeNotifier {
       'checked_in': 'Адзначаны прыход',
       'checked_out': 'Адзначаны сыход',
       'carried_over_shift': 'Перанесенная змена',
+      'overnight_shift': 'Начная змена',
+      'overnight_badge': 'Начная змена (+1 дзень)',
+      'next_day': '+1 дзень',
       'todays_attendance': 'Сённяшняя наведвальнасць',
       'working_hours': 'Працоўны час',
+      'overtime': 'Панаурочныя',
+      'overtime_badge': 'ПУ',
+      'regular_hours': 'Звычайныя гадзіны',
       'current_location': 'Бягучае месцазнаходжанне',
       'inside_office': 'У офісе',
       'outside_office': 'Па-за офісам',

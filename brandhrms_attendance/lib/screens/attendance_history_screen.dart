@@ -1516,8 +1516,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
       if (isStartDay) {
         firstCheckIn = _formatTime(earliest.checkInTime);
       } else {
-        firstCheckIn =
-            '${cinLocal.day} ${tr('month_${cinLocal.month}')}, ${_formatTime(earliest.checkInTime)}';
+        firstCheckIn = LanguageService.formatDateTimeWithDash(earliest.checkInTime);
       }
 
       officeName = earliest.officeSnapshotName;
@@ -1539,8 +1538,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
         if (isEndDay) {
           lastCheckOut = _formatTime(latestCheckoutSession.checkOutTime!);
         } else {
-          lastCheckOut =
-              '${coutLocal.day} ${tr('month_${coutLocal.month}')}, ${_formatTime(latestCheckoutSession.checkOutTime!)}';
+          lastCheckOut = LanguageService.formatDateTimeWithDash(latestCheckoutSession.checkOutTime!);
         }
         lastCheckOutLoc = _formatSessionLocation(
           latestCheckoutSession.checkOutAddress,
@@ -1758,6 +1756,25 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                       color: primaryColor,
                     ),
                   ),
+                  if (totalDurationSec > 28800) ...[
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEF3C7),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFF59E0B)),
+                      ),
+                      child: Text(
+                        '⚡ ${tr('overtime_badge')}: +${(totalDurationSec - 28800) ~/ 3600}${tr('unit_hr')} ${((totalDurationSec - 28800) % 3600) ~/ 60}${tr('unit_min')}',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFB45309),
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -1844,34 +1861,72 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                     ),
                   ],
                   const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '${sessions.length} ${sessions.length > 1 ? tr('log_sessions') : tr('log_session')}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF334155),
-                          ),
+                  Builder(
+                    builder: (context) {
+                      int modalWorkSec = 0;
+                      for (final s in sessions) {
+                        if (s.durationSeconds != null && s.durationSeconds! > 0) {
+                          modalWorkSec += s.durationSeconds!;
+                        } else if (s.checkOutTime != null) {
+                          modalWorkSec += s.checkOutTime!.difference(s.checkInTime).inSeconds;
+                        }
+                      }
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                        Text(
-                          '${tr('total')}: $totalWorkFormatted',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: primaryColor,
-                          ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '${sessions.length} ${sessions.length > 1 ? tr('log_sessions') : tr('log_session')}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF334155),
+                              ),
+                            ),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  '${tr('total')}: $totalWorkFormatted',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: primaryColor,
+                                  ),
+                                ),
+                                if (modalWorkSec > 28800) ...[
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFEF3C7),
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(
+                                          color: const Color(0xFFF59E0B)),
+                                    ),
+                                    child: Text(
+                                      '⚡ ${tr('overtime_badge')}: +${(modalWorkSec - 28800) ~/ 3600}${tr('unit_hr')} ${((modalWorkSec - 28800) % 3600) ~/ 60}${tr('unit_min')}',
+                                      style: const TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFFB45309),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 14),
                   const Divider(height: 1),
@@ -1895,6 +1950,10 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                           session.checkOutAddress,
                           session.officeSnapshotName,
                         );
+                        final isOvernightSession = session.checkOutTime != null &&
+                            (session.checkInTime.toLocal().year != session.checkOutTime!.toLocal().year ||
+                                session.checkInTime.toLocal().month != session.checkOutTime!.toLocal().month ||
+                                session.checkInTime.toLocal().day != session.checkOutTime!.toLocal().day);
 
                         return Padding(
                           padding: const EdgeInsets.symmetric(vertical: 4),
@@ -1947,65 +2006,88 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                 ],
                               ),
                               const SizedBox(height: 8),
-                               Row(
-                                children: [
-                                  const Icon(Icons.login,
-                                      size: 18, color: Colors.green),
-                                  const SizedBox(width: 8),
-                                  Text('${tr('check_in')}: ',
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 13)),
-                                  Text(
-                                    session.checkInTime.toLocal().day != date.day
-                                        ? '${session.checkInTime.toLocal().day} ${tr('month_${session.checkInTime.toLocal().month}')}, ${_formatTime(session.checkInTime)}'
-                                        : _formatTime(session.checkInTime),
-                                    style: const TextStyle(fontSize: 13),
-                                  ),
-                                ],
-                              ),
-                              if (inLoc.isNotEmpty) ...[
-                                const SizedBox(height: 3),
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 26),
-                                  child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Icon(Icons.location_on_outlined,
-                                          size: 14, color: Colors.green),
-                                      const SizedBox(width: 4),
-                                      Expanded(
-                                        child: Text(
-                                          inLoc,
-                                          style: TextStyle(
-                                            fontSize: 11.5,
-                                            color: Colors.grey.shade700,
-                                            fontWeight: FontWeight.w500,
+                              Row(
+                                      children: [
+                                        const Icon(Icons.login,
+                                            size: 18, color: Colors.green),
+                                        const SizedBox(width: 8),
+                                        Text('${tr('check_in')}: ',
+                                            style: const TextStyle(
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 13)),
+                                        Flexible(
+                                          child: Text(
+                                            session.checkInTime.toLocal().day != date.day || isOvernightSession
+                                                ? LanguageService.formatDateTimeWithDash(session.checkInTime)
+                                                : _formatTime(session.checkInTime),
+                                            style: const TextStyle(fontSize: 13),
                                           ),
+                                        ),
+                                      ],
+                                    ),
+                                    if (inLoc.isNotEmpty) ...[
+                                      const SizedBox(height: 3),
+                                      Padding(
+                                        padding: const EdgeInsets.only(left: 26),
+                                        child: Row(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            const Icon(Icons.location_on_outlined,
+                                                size: 14, color: Colors.green),
+                                            const SizedBox(width: 4),
+                                            Expanded(
+                                              child: Text(
+                                                inLoc,
+                                                style: TextStyle(
+                                                  fontSize: 11.5,
+                                                  color: Colors.grey.shade700,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ],
-                                  ),
-                                ),
-                              ],
-                              if (session.checkOutTime != null) ...[
-                                const SizedBox(height: 6),
-                                Row(
-                                  children: [
-                                    const Icon(Icons.logout,
-                                        size: 18, color: Colors.orange),
-                                    const SizedBox(width: 8),
-                                    Text('${tr('check_out')}: ',
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 13)),
-                                    Text(
-                                      session.checkOutTime!.toLocal().day != date.day
-                                          ? '${session.checkOutTime!.toLocal().day} ${tr('month_${session.checkOutTime!.toLocal().month}')}, ${_formatTime(session.checkOutTime!)}'
-                                          : _formatTime(session.checkOutTime!),
-                                      style: const TextStyle(fontSize: 13),
-                                    ),
-                                    if (session.checkoutReason == 'FORCE_CHECKOUT_OUT_OF_RADIUS') ...[
+                                    if (session.checkOutTime != null) ...[
+                                      const SizedBox(height: 6),
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.logout,
+                                              size: 18, color: Colors.orange),
+                                          const SizedBox(width: 8),
+                                          Text('${tr('check_out')}: ',
+                                              style: const TextStyle(
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 13)),
+                                          Flexible(
+                                            child: Text(
+                                              session.checkOutTime!.toLocal().day != date.day || isOvernightSession
+                                                  ? LanguageService.formatDateTimeWithDash(session.checkOutTime!)
+                                                  : _formatTime(session.checkOutTime!),
+                                              style: const TextStyle(fontSize: 13),
+                                            ),
+                                          ),
+                                          if (isOvernightSession) ...[
+                                            const SizedBox(width: 6),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFFEF3C7),
+                                                borderRadius: BorderRadius.circular(6),
+                                                border: Border.all(color: const Color(0xFFF59E0B)),
+                                              ),
+                                              child: Text(
+                                                tr('next_day'),
+                                                style: const TextStyle(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Color(0xFFB45309),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                          if (session.checkoutReason == 'FORCE_CHECKOUT_OUT_OF_RADIUS') ...[
                                       const SizedBox(width: 8),
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -2819,12 +2901,12 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
           const SizedBox(height: 6),
           Text(
             timeValue,
-            maxLines: 1,
+            maxLines: timeValue.contains('–') ? 2 : 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 16,
+            style: TextStyle(
+              fontSize: timeValue.contains('–') ? 13 : 16,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF1E293B),
+              color: const Color(0xFF1E293B),
             ),
           ),
           if (location != null && location.isNotEmpty) ...[
