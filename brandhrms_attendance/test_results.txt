@@ -1,0 +1,72 @@
+﻿00:00 +0: loading D:/Projects/TEST(LBS)/brandhrms_attendance/test/attendance_specification_test.dart
+00:00 +0: 1 Monthly Efforts ΓÇô Duration Formatting UT-001: Duration is 0 minutes displays 0d 0h 0m
+00:00 +1: 1 Monthly Efforts ΓÇô Duration Formatting UT-002: Duration is 45 minutes displays 0d 0h 45m
+00:00 +2: 1 Monthly Efforts ΓÇô Duration Formatting UT-003: Duration is 125 minutes displays 0d 2h 5m
+00:00 +3: 1 Monthly Efforts ΓÇô Duration Formatting UT-004: Duration is 1,500 minutes displays 1d 1h 0m
+00:00 +4: 1 Monthly Efforts ΓÇô Duration Formatting UT-005: Duration is 2 days, 5 hours, 30 minutes displays 2d 5h 30m
+00:00 +5: 1 Monthly Efforts ΓÇô Duration Formatting UT-006: Duration is negative handles invalid value without crashing
+00:00 +6: 1 Monthly Efforts ΓÇô Duration Formatting UT-007: Duration is null or unavailable displays agreed fallback (--)
+00:00 +7: 1 Monthly Efforts ΓÇô Duration Formatting UT-008: Duration exceeds 30 days displays complete duration without resetting day count
+00:00 +8: 2 Check-In / Check-Out ΓÇô Location Information UT-009: Location-based attendance enabled displays configured office name
+00:00 +9: 2 Check-In / Check-Out ΓÇô Location Information UT-010: Location-based attendance disabled displays City, District, State, Country
+00:00 +10: 2 Check-In / Check-Out ΓÇô Location Information UT-011: Enabled with multiple office configurations displays office associated with record
+00:00 +11: 2 Check-In / Check-Out ΓÇô Location Information UT-012: Office name is null displays fallback without crashing
+00:00 +12: 2 Check-In / Check-Out ΓÇô Location Information UT-013: City is unavailable displays available fields without extra separators
+00:00 +13: 2 Check-In / Check-Out ΓÇô Location Information UT-014: District or State is unavailable displays remaining fields correctly
+00:00 +14: 2 Check-In / Check-Out ΓÇô Location Information UT-015: All location fields unavailable displays appropriate fallback
+00:00 +15: 2 Check-In / Check-Out ΓÇô Location Information UT-016: Location-based attendance configuration changes uses correct rule per record
+00:00 +16: 2 Check-In / Check-Out ΓÇô Location Information UT-017: Check-In and Check-Out have different locations each displays its own location
+00:00 +17: 2 Check-In / Check-Out ΓÇô Location Information UT-018: Location contains special characters or Unicode displays location correctly
+00:00 +18: 3 Today's Login ΓÇô Session Duration UT-019: Duration is 0 seconds displays 0h 0m 0s
+00:00 +19: 3 Today's Login ΓÇô Session Duration UT-020: Duration is 59 seconds displays 0h 0m 59s
+00:00 +20: 3 Today's Login ΓÇô Session Duration UT-021: Duration is 60 seconds displays 0h 1m 0s
+00:00 +21: 3 Today's Login ΓÇô Session Duration UT-022: Duration is 3,661 seconds displays 1h 1m 1s
+00:00 +22: 3 Today's Login ΓÇô Session Duration UT-023: Duration is 8h 25m 45s displays 8h 25m 45s
+00:00 +23: 3 Today's Login ΓÇô Session Duration UT-024: Session exceeds 24 hours displays cumulative hours correctly
+00:00 +24: 3 Today's Login ΓÇô Session Duration UT-025: Session duration updates while active displays updated duration correctly
+00:00 +25: 3 Today's Login ΓÇô Session Duration UT-026: Session is completed displays final session duration
+00:00 +26: 3 Today's Login ΓÇô Session Duration UT-027: Invalid or null duration handles gracefully without crashing
+00:00 +27: 4 Attendance ΓÇô Calendar UT-028: Calendar renders GEN label is not displayed
+00:00 +28: 4 Attendance ΓÇô Calendar UT-029: Attendance status is Present displays P
+00:00 +29: 4 Attendance ΓÇô Calendar UT-030: Attendance status is Absent displays A
+00:00 +30: 4 Attendance ΓÇô Calendar UT-031: Attendance status is Present uses configured green indicator
+00:00 +31: 4 Attendance ΓÇô Calendar UT-032: Attendance status is Absent does not use Present green indicator
+00:00 +32: 4 Attendance ΓÇô Calendar UT-033: Status is Holiday, Leave, or Weekend preserves correct status behavior
+00:00 +33: 4 Attendance ΓÇô Calendar UT-034: Attendance status is unknown uses safe fallback without showing P or A
+00:00 +34: 4 Attendance ΓÇô Calendar UT-035: Calendar data updates status indicators reflect updated data
+00:00 +35: 4 Attendance ΓÇô Calendar UT-036: Calendar in small viewport indicators remain readable without clipping
+00:00 +36: 5 Attendance ΓÇô Location Icon and Positioning UT-037: Check-In details render location icon appears below Check-In info
+00:00 +37: 5 Attendance ΓÇô Location Icon and Positioning UT-038: Check-Out details render location icon appears below Check-Out info
+00:00 +38: 5 Attendance ΓÇô Location Icon and Positioning UT-039: Check-In location icon displayed text-based location label is not shown
+00:00 +39: 5 Attendance ΓÇô Location Icon and Positioning UT-040: Check-Out location icon displayed text-based location label is not shown
+00:00 +40: 5 Attendance ΓÇô Location Icon and Positioning UT-041: Location-based attendance enabled location details use office name
+00:00 +41: 5 Attendance ΓÇô Location Icon and Positioning UT-042: Location-based attendance disabled location details use City, District, State, Country
+00:00 +42: 5 Attendance ΓÇô Location Icon and Positioning UT-043: Check-Out has not occurred no misleading Check-Out location displayed
+00:00 +43: 5 Attendance ΓÇô Location Icon and Positioning UT-044: Check-In location unavailable icon follows agreed fallback
+00:00 +44: 5 Attendance ΓÇô Location Icon and Positioning UT-045: Location icon is interactive and activates details
+00:00 +45: 5 Attendance ΓÇô Location Icon and Positioning UT-046: Check-In and Check-Out both available each icon associated with correct record
+00:00 +46: 5 Attendance ΓÇô Location Icon and Positioning UT-047: Accessibility service reads location icon description
+00:00 +47: 6 Attendance ΓÇô View and Filter Icons UT-048: Attendance record actions view icon appears without View text
+00:00 +48: 6 Attendance ΓÇô View and Filter Icons UT-049: View icon is tapped opens correct attendance details
+00:00 +49: 6 Attendance ΓÇô View and Filter Icons UT-050: Filter control renders standard funnel icon
+00:00 +50: 6 Attendance ΓÇô View and Filter Icons UT-051: Filter icon is tapped opens existing filter interface
+00:00 +51: 6 Attendance ΓÇô View and Filter Icons UT-052: Filter applied attendance data reflects selected filters
+00:00 +52: 6 Attendance ΓÇô View and Filter Icons UT-053: Filter cleared default attendance data restored
+00:00 +53: 6 Attendance ΓÇô View and Filter Icons UT-054: View and Filter icons render consistent dimensions
+00:00 +54: 6 Attendance ΓÇô View and Filter Icons UT-055: Accessibility service reads meaningful labels for icons
+00:00 +55: 6 Attendance ΓÇô View and Filter Icons UT-056: Icon action disabled displays disabled state and prevents tap
+00:00 +56: 7 Android UI Optimization UT-057: Component sizes use density-independent dimensions (dp)
+00:00 +57: 7 Android UI Optimization UT-058: Font dimensions use scalable sp units
+00:00 +58: 7 Android UI Optimization UT-059: Device font scaling increases text scales without clipping
+00:00 +59: 7 Android UI Optimization UT-060: Small screen width (320dp) simulated without horizontal overflow
+00:00 +60: 7 Android UI Optimization UT-061: Large screen width simulated maintains intended alignment
+00:00 +61: 7 Android UI Optimization UT-062: Long office name displayed wraps or truncates according to design
+00:00 +62: 7 Android UI Optimization UT-063: Long location details displayed without overlap with adjacent controls
+00:00 +63: 7 Android UI Optimization UT-064: Icon buttons meet recommended 48dp minimum touch target
+00:01 +64: 7 Android UI Optimization UT-065: Light and dark themes applied text and icons remain readable
+00:01 +65: 7 Android UI Optimization UT-066: Screen orientation changes layout maintains expected structure
+00:01 +66: 7 Android UI Optimization UT-067: Different screen densities component proportions remain consistent
+00:01 +67: 7 Android UI Optimization UT-068: Attendance data loading state renders without layout errors
+00:01 +68: 7 Android UI Optimization UT-069: Attendance API returns empty data empty state renders correctly
+00:01 +69: 7 Android UI Optimization UT-070: API returns malformed optional fields handled without crashing
+00:01 +70: All tests passed!

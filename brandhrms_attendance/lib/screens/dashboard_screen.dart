@@ -931,7 +931,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
         _locationStatusSubtext.contains('checkout_verified')) {
       return tr('loc_subtext_checkout_verified');
     }
-    return tr(_locationStatusSubtext);
+    return LanguageService.localizeError(_locationStatusSubtext);
   }
 
   String _formatEffortHM(int totalSec) {
@@ -1110,7 +1110,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
               result['message'] ?? '$actionAttempted verification failed.';
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(errorMsg),
+              content: Text(LanguageService.localizeError(errorMsg)),
               backgroundColor: Colors.red,
             ),
           );

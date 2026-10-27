@@ -148,13 +148,16 @@ class _LocationVerificationScreenState
           radius: formattedRad,
         );
       } else {
+        final localizedError = result['message'] != null
+            ? LanguageService.localizeError(result['message'])
+            : tr('verification_failed');
         setState(() {
           locationStatus = tr('unavailable');
-          locationDetails = result['message'] != null ? tr(result['message']) : tr('verification_failed');
+          locationDetails = localizedError;
           isChecking = false;
         });
 
-        _showErrorDialog(result['message'] != null ? tr(result['message']) : tr('verification_failed'));
+        _showErrorDialog(localizedError);
       }
     } catch (e) {
       setState(() {

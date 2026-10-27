@@ -401,6 +401,53 @@ class LanguageService extends ChangeNotifier {
     return trimmed;
   }
 
+  static String localizeError(String? errorMsg) {
+    if (errorMsg == null || errorMsg.trim().isEmpty) return '';
+    final trimmed = errorMsg.trim();
+    final direct = tr(trimmed);
+    if (direct != trimmed) return direct;
+
+    final lower = trimmed.toLowerCase();
+
+    // GPS Accuracy Threshold
+    if (lower.contains('accuracy') && (lower.contains('exceeds') || lower.contains('20') || lower.contains('threshold') || lower.contains('low'))) {
+      return tr('err_accuracy_threshold');
+    }
+    // Outside office radius
+    if (lower.contains('outside') && (lower.contains('radius') || lower.contains('office') || lower.contains('boundary'))) {
+      return tr('err_outside_radius');
+    }
+    // Active session exists
+    if (lower.contains('active attendance session is already open') || lower.contains('active session exists') || lower.contains('already checked in')) {
+      return tr('err_active_session_exists');
+    }
+    // No active session
+    if (lower.contains('no active attendance session') || lower.contains('not checked in') || lower.contains('no active session found')) {
+      return tr('err_no_active_session');
+    }
+    // Stale GPS capture
+    if (lower.contains('30 seconds') || lower.contains('older than 30') || lower.contains('stale')) {
+      return tr('err_stale_gps');
+    }
+    // Single device login
+    if (lower.contains('already logged in on another device') || lower.contains('device_already_logged_in')) {
+      return tr('err_device_already_logged_in');
+    }
+    // Network / Server failure
+    if (lower.contains('connect to attendance server') || (lower.contains('failed to connect') && lower.contains('server'))) {
+      return tr('err_connect_failed');
+    }
+    // Generic check-in / check-out failures
+    if (lower.contains('check-in') && (lower.contains('fail') || lower.contains('verify'))) {
+      return tr('err_checkin_failed');
+    }
+    if (lower.contains('check-out') && (lower.contains('fail') || lower.contains('verify'))) {
+      return tr('err_checkout_failed');
+    }
+
+    return trimmed;
+  }
+
   static final Map<AppLanguage, Map<String, String>> _translations = {
     AppLanguage.english: {
       // General & Bottom Nav
@@ -863,6 +910,15 @@ class LanguageService extends ChangeNotifier {
       'location_permission_blocked': 'Location permission blocked',
       'enable_location_settings': 'Please enable location permission in phone settings.',
       'verifying_office_geofence': 'Verifying with office geofence...',
+      'err_accuracy_threshold': 'GPS accuracy exceeds maximum allowed threshold of 20 meters',
+      'err_outside_radius': 'Current location is outside the assigned office radius',
+      'err_active_session_exists': 'An active attendance session is already open',
+      'err_no_active_session': 'No active attendance session found to check out',
+      'err_stale_gps': 'GPS capture timestamp is older than 30 seconds',
+      'err_device_already_logged_in': 'You are already logged in on another device. Please log out from that device first',
+      'err_connect_failed': 'Failed to connect to attendance server. Please retry.',
+      'err_checkin_failed': 'Check-in validation failed.',
+      'err_checkout_failed': 'Check-out validation failed.',
     },
 
     AppLanguage.german: {
@@ -1326,6 +1382,15 @@ class LanguageService extends ChangeNotifier {
       'location_permission_blocked': 'Standortberechtigung blockiert',
       'enable_location_settings': 'Bitte aktivieren Sie die Standortberechtigung in den Telefoneinstellungen.',
       'verifying_office_geofence': 'Überprüfung mit dem Büro-Geofence...',
+      'err_accuracy_threshold': 'GPS-Genauigkeit überschreitet den maximal zulässigen Schwellenwert von 20 Metern',
+      'err_outside_radius': 'Aktueller Standort liegt außerhalb des Bürobereichs',
+      'err_active_session_exists': 'Eine aktive Anwesenheitssitzung ist bereits geöffnet',
+      'err_no_active_session': 'Keine aktive Anwesenheitssitzung zum Ausstempeln gefunden',
+      'err_stale_gps': 'GPS-Zeitstempel ist älter als 30 Sekunden',
+      'err_device_already_logged_in': 'Sie sind bereits auf einem anderen Gerät angemeldet. Bitte melden Sie sich zuerst von diesem Gerät ab.',
+      'err_connect_failed': 'Verbindung zum Anwesenheitsserver fehlgeschlagen. Bitte erneut versuchen.',
+      'err_checkin_failed': 'Überprüfung der Einstempelung fehlgeschlagen.',
+      'err_checkout_failed': 'Überprüfung der Ausstempelung fehlgeschlagen.',
     },
 
     AppLanguage.belarusian: {
@@ -1789,6 +1854,15 @@ class LanguageService extends ChangeNotifier {
       'location_permission_blocked': 'Дазвол на геалакацыю заблакіраваны',
       'enable_location_settings': 'Калі ласка, уключыце дазвол на вызначэнне месцазнаходжання ў наладах тэлефона.',
       'verifying_office_geofence': 'Праверка па геазоне офіса...',
+      'err_accuracy_threshold': 'Дакладнасць GPS перавышае максімальна дапушчальны парог у 20 метраў',
+      'err_outside_radius': 'Бягучае месцазнаходжанне знаходзіцца па-за межамі офіса',
+      'err_active_session_exists': 'Актыўная сесія наведвальнасці ўжо адкрыта',
+      'err_no_active_session': 'Не знойдзена актыўнай сесіі для адзнакі выхаду',
+      'err_stale_gps': 'Часавая пазнака GPS састарэла (больш за 30 секунд)',
+      'err_device_already_logged_in': 'Вы ўжо ўвайшлі на іншай прыладзе. Калі ласка, спачатку выйдзіце з той прылады.',
+      'err_connect_failed': 'Не ўдалося падключыцца да сервера наведвальнасці. Паспрабуйце зноў.',
+      'err_checkin_failed': 'Праверка рэгістрацыі ўваходу не ўдалася.',
+      'err_checkout_failed': 'Праверка рэгістрацыі выхаду не ўдалася.',
     },
   };
 }
