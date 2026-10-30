@@ -798,21 +798,16 @@ class ApiService {
         request.headers['Authorization'] = 'Bearer $authToken';
       }
 
-      if (file.bytes != null) {
-        request.files.add(http.MultipartFile.fromBytes(
-          'file',
-          file.bytes!,
-          filename: file.name,
-        ));
-      } else if (file.path != null) {
-        request.files.add(await http.MultipartFile.fromPath(
-          'file',
-          file.path!,
-          filename: file.name,
-        ));
-      } else {
-        return {'success': false, 'message': 'Unable to read file content'};
+      final bytes = await file.readAsBytes();
+      if (bytes.isEmpty) {
+        return {'success': false, 'message': 'Selected file is empty'};
       }
+
+      request.files.add(http.MultipartFile.fromBytes(
+        'file',
+        bytes,
+        filename: file.name,
+      ));
 
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
