@@ -994,52 +994,55 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
           ],
           if (app.attachmentUrl != null && app.attachmentUrl!.isNotEmpty) ...[
             const SizedBox(height: 8),
-            InkWell(
-              onTap: () => _showAttachmentDialog(app.attachmentUrl!),
-              borderRadius: BorderRadius.circular(8),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      app.attachmentUrl!.toLowerCase().endsWith('.pdf')
-                          ? Icons.picture_as_pdf_rounded
-                          : Icons.image_rounded,
-                      size: 16,
-                      color: app.attachmentUrl!.toLowerCase().endsWith('.pdf')
-                          ? const Color(0xFFDC2626)
-                          : const Color(0xFF0284C7),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        app.attachmentUrl!.split('/').last,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF334155),
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => _showAttachmentDialog(app.attachmentUrl!),
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        app.attachmentUrl!.toLowerCase().endsWith('.pdf')
+                            ? Icons.picture_as_pdf_rounded
+                            : Icons.image_rounded,
+                        size: 16,
+                        color: app.attachmentUrl!.toLowerCase().endsWith('.pdf')
+                            ? const Color(0xFFDC2626)
+                            : const Color(0xFF0284C7),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          app.attachmentUrl!.split('/').last,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF334155),
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      tr('view_attachment'),
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF0D9488),
+                      const SizedBox(width: 6),
+                      Text(
+                        tr('view_attachment'),
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF0D9488),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 2),
-                    const Icon(Icons.arrow_forward_ios_rounded, size: 10, color: Color(0xFF0D9488)),
-                  ],
+                      const SizedBox(width: 2),
+                      const Icon(Icons.arrow_forward_ios_rounded, size: 10, color: Color(0xFF0D9488)),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -1149,54 +1152,81 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
             ),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.file_present_rounded, size: 18, color: Color(0xFF64748B)),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      fileName,
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF1E293B)),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.file_present_rounded, size: 18, color: Color(0xFF64748B)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        fileName,
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF1E293B)),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            if (isImage) ...[
-              const SizedBox(height: 12),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  fullUrl,
-                  height: 180,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    height: 80,
+              if (isImage) ...[
+                const SizedBox(height: 12),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    height: 180,
+                    width: double.infinity,
                     color: const Color(0xFFF1F5F9),
-                    alignment: Alignment.center,
-                    child: Text(
-                      fileName,
-                      style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                    child: Image.network(
+                      fullUrl,
+                      height: 180,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return const Center(
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        );
+                      },
+                      errorBuilder: (_, __, ___) => Container(
+                        height: 180,
+                        width: double.infinity,
+                        color: const Color(0xFFF1F5F9),
+                        alignment: Alignment.center,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.broken_image_outlined, size: 36, color: Color(0xFF94A3B8)),
+                            const SizedBox(height: 6),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              child: Text(
+                                fileName,
+                                style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ],
-          ],
+          ),
         ),
         actions: [
           TextButton(
