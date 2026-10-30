@@ -15,11 +15,24 @@ type AuthResult struct {
 	Employee    *domain.Employee `json:"employee"`
 }
 
+type DailyAttendanceSummary struct {
+	AttendanceDay      string `json:"attendanceDay"`
+	TotalWorkSeconds   int64  `json:"totalWorkSeconds"`
+	TotalWorkFormatted string `json:"totalWorkFormatted"`
+	RequiredSeconds    int64  `json:"requiredSeconds"`
+	ShortfallSeconds   int64  `json:"shortfallSeconds"`
+	ShortfallFormatted string `json:"shortfallFormatted,omitempty"`
+	OvertimeSeconds    int64  `json:"overtimeSeconds"`
+	Status             string `json:"status"` // "PRESENT", "SHORTFALL", "PRESENT_WEEK_OFF", "ABSENT"
+	SessionsCount      int    `json:"sessionsCount"`
+}
+
 type AttendanceHistoryResult struct {
-	Total    int64                       `json:"total"`
-	Page     int                         `json:"page"`
-	PageSize int                         `json:"pageSize"`
-	Sessions []*domain.AttendanceSession `json:"sessions"`
+	Total          int64                     `json:"total"`
+	Page           int                       `json:"page"`
+	PageSize       int                       `json:"pageSize"`
+	Sessions       []*domain.AttendanceSession `json:"sessions"`
+	DailySummaries []*DailyAttendanceSummary `json:"dailySummaries,omitempty"`
 }
 
 type TodayAttendanceStatus struct {

@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"time"
 
@@ -464,11 +465,57 @@ func (s *attendanceService) GetMyHistory(
 		return nil, err
 	}
 
+	// Compute authoritative daily summaries with Shortfall calculation
+	dayMap := make(map[string]*DailyAttendanceSummary)
+	dayOrder := make([]string, 0)
+	const standardWorkSeconds = 28800 // 8 hours
+
+	for _, sess := range sessions {
+		day := sess.AttendanceDay
+		summary, exists := dayMap[day]
+		if !exists {
+			summary = &DailyAttendanceSummary{
+				AttendanceDay:   day,
+				RequiredSeconds: standardWorkSeconds,
+				Status:          "PRESENT",
+			}
+			dayMap[day] = summary
+			dayOrder = append(dayOrder, day)
+		}
+		summary.SessionsCount++
+		if sess.DurationSeconds != nil && *sess.DurationSeconds > 0 {
+			summary.TotalWorkSeconds += *sess.DurationSeconds
+		}
+	}
+
+	dailySummaries := make([]*DailyAttendanceSummary, 0, len(dayOrder))
+	for _, day := range dayOrder {
+		sum := dayMap[day]
+		h := sum.TotalWorkSeconds / 3600
+		m := (sum.TotalWorkSeconds % 3600) / 60
+		sum.TotalWorkFormatted = fmt.Sprintf("%dh %02dm", h, m)
+
+		if sum.TotalWorkSeconds < standardWorkSeconds {
+			sum.Status = "SHORTFALL"
+			sum.ShortfallSeconds = standardWorkSeconds - sum.TotalWorkSeconds
+			sh := sum.ShortfallSeconds / 3600
+			sm := (sum.ShortfallSeconds % 3600) / 60
+			sum.ShortfallFormatted = fmt.Sprintf("%dh %02dm", sh, sm)
+		} else {
+			sum.Status = "PRESENT"
+			if sum.TotalWorkSeconds > standardWorkSeconds {
+				sum.OvertimeSeconds = sum.TotalWorkSeconds - standardWorkSeconds
+			}
+		}
+		dailySummaries = append(dailySummaries, sum)
+	}
+
 	return &AttendanceHistoryResult{
-		Total:    total,
-		Page:     page,
-		PageSize: pageSize,
-		Sessions: sessions,
+		Total:          total,
+		Page:           page,
+		PageSize:       pageSize,
+		Sessions:       sessions,
+		DailySummaries: dailySummaries,
 	}, nil
 }
 

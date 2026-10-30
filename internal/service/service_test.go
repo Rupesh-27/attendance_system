@@ -449,6 +449,13 @@ func TestAttendance_History_BelongsOnlyToAuthenticatedEmployee(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, int64(1), histToday.Total)
 	require.Len(t, histToday.Sessions, 1)
+
+	// Verify authoritative daily summary shortfall calculation
+	require.Len(t, hist1.DailySummaries, 1)
+	assert.Equal(t, "2026-09-23", hist1.DailySummaries[0].AttendanceDay)
+	assert.Equal(t, "SHORTFALL", hist1.DailySummaries[0].Status)
+	assert.Equal(t, int64(28800), hist1.DailySummaries[0].RequiredSeconds)
+	assert.True(t, hist1.DailySummaries[0].ShortfallSeconds > 0)
 }
 
 func TestAttendanceService_GetTodayStatus_MidnightRollover(t *testing.T) {

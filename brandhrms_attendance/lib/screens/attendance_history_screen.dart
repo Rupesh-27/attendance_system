@@ -282,6 +282,40 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
           'isWeekend': true,
         };
       }
+      int totalWorkSec = 0;
+      bool hasActiveSession = false;
+      for (final s in sessions) {
+        if (s.durationSeconds != null && s.durationSeconds! > 0) {
+          totalWorkSec += s.durationSeconds!;
+        } else if (s.checkOutTime != null) {
+          totalWorkSec += s.checkOutTime!.difference(s.checkInTime).inSeconds;
+        } else {
+          hasActiveSession = true;
+          totalWorkSec += DateTime.now().difference(s.checkInTime.toLocal()).inSeconds;
+        }
+      }
+
+      final isPastDate = targetDate.isBefore(today);
+      final isDayCompleted = isPastDate || !hasActiveSession;
+
+      if (isDayCompleted && totalWorkSec < 28800) {
+        final shortfallSec = 28800 - totalWorkSec;
+        return {
+          'status': 'SHORTFALL',
+          'label': tr('label_shortfall'),
+          'subLabel': '${tr('short_by')} ${(shortfallSec ~/ 3600)}${tr('unit_hr')} ${((shortfallSec % 3600) ~/ 60)}${tr('unit_min')}',
+          'color': const Color(0xFFD97706),
+          'bgColor': const Color(0xFFFEF3C7),
+          'borderColor': const Color(0xFFFCD34D),
+          'icon': Icons.trending_down_rounded,
+          'sessions': sessions,
+          'holidayName': holidayName,
+          'isWeekend': false,
+          'shortfallSec': shortfallSec,
+          'totalWorkSec': totalWorkSec,
+        };
+      }
+
       return {
         'status': 'PRESENT',
         'label': tr('label_present'),
@@ -292,6 +326,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
         'sessions': sessions,
         'holidayName': holidayName,
         'isWeekend': false,
+        'totalWorkSec': totalWorkSec,
       };
     }
 
@@ -1632,42 +1667,38 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                   ],
                 ),
               ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (daySessions.isNotEmpty) ...[
-                    InkWell(
-                      onTap: () => _showSwipesBreakdownModal(
-                        date: _selectedDay,
-                        officeName: officeName,
-                        sessions: daySessions,
-                        totalWorkFormatted: totalDurationSec > 0
-                            ? _formatDuration(totalDurationSec)
-                            : '0 ${tr('unit_min')}',
-                      ),
+              if (daySessions.isNotEmpty) ...[
+                const SizedBox(width: 8),
+                InkWell(
+                  onTap: () => _showSwipesBreakdownModal(
+                    date: _selectedDay,
+                    officeName: officeName,
+                    sessions: daySessions,
+                    totalWorkFormatted: totalDurationSec > 0
+                        ? _formatDuration(totalDurationSec)
+                        : '0 ${tr('unit_min')}',
+                  ),
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE0F2FE),
                       borderRadius: BorderRadius.circular(10),
-                      child: Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE0F2FE),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: const Color(0xFF7DD3FC)),
-                        ),
-                        child: const Icon(
-                          Icons.visibility_outlined,
-                          size: 19,
-                          color: Color(0xFF0284C7),
-                        ),
-                      ),
+                      border: Border.all(color: const Color(0xFF7DD3FC)),
                     ),
-                    const SizedBox(width: 8),
-                  ],
-                  _buildBadge(status),
-                ],
-              ),
+                    child: const Icon(
+                      Icons.visibility_outlined,
+                      size: 19,
+                      color: Color(0xFF0284C7),
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
+          const SizedBox(height: 10),
+          _buildBadge(status),
 
           if (status == 'PRESENT_WEEK_OFF') ...[
             const SizedBox(height: 10),
@@ -1690,6 +1721,35 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: Color(0xFF15803D),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
+          if (status == 'SHORTFALL') ...[
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFFBEB),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFFCD34D)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline, size: 16, color: Color(0xFFD97706)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '${tr('shortfall_notice')} • ${tr('short_by')} ${_formatWorkHours((28800 - totalDurationSec) ~/ 3600, ((28800 - totalDurationSec) % 3600) ~/ 60)}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFFB45309),
                       ),
                     ),
                   ),
@@ -1735,29 +1795,36 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: const Color(0xFFE2E8F0)),
               ),
-              child: Row(
+              child: Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                alignment: WrapAlignment.spaceBetween,
+                runSpacing: 6,
                 children: [
-                  const Icon(Icons.timer_outlined,
-                      size: 20, color: Color(0xFF475569)),
-                  const SizedBox(width: 10),
-                  Text(
-                    '${tr('total_work_time')}: ',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF334155),
-                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.timer_outlined,
+                          size: 20, color: Color(0xFF475569)),
+                      const SizedBox(width: 10),
+                      Text(
+                        '${tr('total_work_time')}: ',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF334155),
+                        ),
+                      ),
+                      Text(
+                        _formatWorkHours(hours, mins),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: primaryColor,
+                        ),
+                      ),
+                    ],
                   ),
-                  Text(
-                    _formatWorkHours(hours, mins),
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: primaryColor,
-                    ),
-                  ),
-                  if (totalDurationSec > 28800) ...[
-                    const Spacer(),
+                  if (totalDurationSec > 28800)
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
@@ -1774,7 +1841,6 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                         ),
                       ),
                     ),
-                  ],
                 ],
               ),
             ),
@@ -1878,8 +1944,10 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                           color: const Color(0xFFF1F5F9),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        child: Wrap(
+                          alignment: WrapAlignment.spaceBetween,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          runSpacing: 4,
                           children: [
                             Text(
                               '${sessions.length} ${sessions.length > 1 ? tr('log_sessions') : tr('log_session')}',
@@ -1889,8 +1957,10 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                 color: Color(0xFF334155),
                               ),
                             ),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
+                            Wrap(
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: 6,
+                              runSpacing: 4,
                               children: [
                                 Text(
                                   '${tr('total')}: $totalWorkFormatted',
@@ -1900,8 +1970,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                     color: primaryColor,
                                   ),
                                 ),
-                                if (modalWorkSec > 28800) ...[
-                                  const SizedBox(width: 6),
+                                if (modalWorkSec > 28800)
                                   Container(
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 6, vertical: 2),
@@ -1920,7 +1989,6 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                       ),
                                     ),
                                   ),
-                                ],
                               ],
                             ),
                           ],
@@ -2424,6 +2492,29 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     final totalHours = totalWorkSec ~/ 3600;
     final totalMins = (totalWorkSec % 3600) ~/ 60;
 
+    int shortfallDaysCount = 0;
+    int fullPresentDaysCount = 0;
+    for (final entry in groupedByDay.entries) {
+      int daySec = 0;
+      for (final s in entry.value) {
+        if (s.durationSeconds != null && s.durationSeconds! > 0) {
+          daySec += s.durationSeconds!;
+        } else if (s.checkOutTime != null) {
+          daySec += s.checkOutTime!.difference(s.checkInTime).inSeconds;
+        }
+      }
+      final parts = entry.key.split('-');
+      if (parts.length == 3) {
+        final d = DateTime(int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
+        final isWknd = d.weekday == DateTime.saturday || d.weekday == DateTime.sunday;
+        if (!isWknd && daySec < 28800) {
+          shortfallDaysCount++;
+        } else {
+          fullPresentDaysCount++;
+        }
+      }
+    }
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -2514,7 +2605,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                '${groupedByDay.keys.length}',
+                                '$fullPresentDaysCount',
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
@@ -2529,7 +2620,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                           child: Column(
                             children: [
                               Text(
-                                tr('total_sessions'),
+                                tr('shortfall_days'),
                                 textAlign: TextAlign.center,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -2537,11 +2628,11 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                '${records.length}',
+                                '$shortfallDaysCount',
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF0284C7),
+                                  color: Color(0xFFD97706),
                                 ),
                               ),
                             ],
@@ -2647,6 +2738,8 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                         Expanded(
                                           child: Text(
                                             _formatDateFull(parsedDate),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
                                             style: const TextStyle(
                                               fontSize: 13,
                                               fontWeight: FontWeight.bold,
@@ -2654,6 +2747,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                             ),
                                           ),
                                         ),
+                                        const SizedBox(width: 8),
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                           decoration: BoxDecoration(
@@ -2956,6 +3050,11 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
         color = const Color(0xFF15803D);
         bg = const Color(0xFFDCFCE7);
         break;
+      case 'SHORTFALL':
+        text = tr('shortfall');
+        color = const Color(0xFFD97706);
+        bg = const Color(0xFFFEF3C7);
+        break;
       case 'HOLIDAY':
         text = tr('holiday');
         color = const Color(0xFF4338CA);
@@ -2987,6 +3086,8 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
       ),
       child: Text(
         text,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.bold,

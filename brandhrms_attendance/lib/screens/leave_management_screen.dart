@@ -368,34 +368,41 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: scheme['bg'] as Color,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            bal.leaveTypeCode.isNotEmpty ? bal.leaveTypeCode : 'LEAVE',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: scheme['color'] as Color,
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: scheme['bg'] as Color,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              bal.leaveTypeCode.isNotEmpty ? bal.leaveTypeCode : 'LEAVE',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: scheme['color'] as Color,
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          LanguageService.localizeLeaveType(bal.leaveTypeName),
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF1E293B),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              LanguageService.localizeLeaveType(bal.leaveTypeName),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF1E293B),
+                              ),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 8),
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [

@@ -236,6 +236,17 @@ void main() {
       expect(AttendanceFormatter.getCalendarStatusBadge(status), 'A');
       status = 'PRESENT';
       expect(AttendanceFormatter.getCalendarStatusBadge(status), 'P');
+      status = 'SHORTFALL';
+      expect(AttendanceFormatter.getCalendarStatusBadge(status), 'SF');
+    });
+
+    test('UT-SHORTFALL-01: Attendance status Shortfall displays SF calendar badge', () {
+      expect(AttendanceFormatter.getCalendarStatusBadge('SHORTFALL'), 'SF');
+    });
+
+    test('UT-SHORTFALL-02: Attendance status Shortfall uses configured amber color', () {
+      final color = AttendanceFormatter.getCalendarStatusColor('SHORTFALL');
+      expect(color, const Color(0xFFD97706));
     });
 
     testWidgets('UT-036: Calendar in small viewport indicators remain readable without clipping', (WidgetTester tester) async {

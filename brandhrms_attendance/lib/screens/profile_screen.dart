@@ -226,12 +226,16 @@ class ProfileScreen extends StatelessWidget {
                         style: const TextStyle(fontSize: 16),
                       ),
                       const SizedBox(width: 6),
-                      Text(
-                        '${currentLang.name} (${currentLang.nativeName})',
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF1E293B),
+                      Expanded(
+                        child: Text(
+                          '${currentLang.name} (${currentLang.nativeName})',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF1E293B),
+                          ),
                         ),
                       ),
                     ],

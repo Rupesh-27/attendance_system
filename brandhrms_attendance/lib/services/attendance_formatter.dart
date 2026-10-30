@@ -64,6 +64,7 @@ class AttendanceFormatter {
     final s = status.toUpperCase().trim();
     if (s == 'GEN' || s == 'GENERAL') return ''; // UT-028: GEN label is not displayed
     if (s == 'PRESENT') return 'P';              // UT-029: Present is P
+    if (s == 'SHORTFALL') return 'SF';
     if (s == 'ABSENT') return 'A';               // UT-030: Absent is A
     if (s == 'HOLIDAY') return 'H';              // UT-033
     if (s == 'LEAVE') return 'L';                // UT-033
@@ -78,6 +79,9 @@ class AttendanceFormatter {
     final s = status.toUpperCase().trim();
     if (s == 'PRESENT') {
       return const Color(0xFF16A34A); // UT-031: Configured green
+    }
+    if (s == 'SHORTFALL') {
+      return const Color(0xFFD97706); // Amber / Orange for Shortfall
     }
     if (s == 'ABSENT') {
       return const Color(0xFFEF4444); // UT-032: Red/coral, never green

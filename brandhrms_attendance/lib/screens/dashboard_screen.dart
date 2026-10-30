@@ -1660,8 +1660,9 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                       ),
                     ],
                   ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
                     children: [
                       Container(
                         margin: const EdgeInsets.only(top: 5),
@@ -1704,8 +1705,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                           ],
                         ),
                       ),
-                      if (_totalWorkSeconds > 28800) ...[
-                        const SizedBox(width: 6),
+                      if (_totalWorkSeconds > 28800)
                         Container(
                           margin: const EdgeInsets.only(top: 5),
                           padding: const EdgeInsets.symmetric(
@@ -1737,7 +1737,6 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                             ],
                           ),
                         ),
-                      ],
                     ],
                   ),
                 ],
