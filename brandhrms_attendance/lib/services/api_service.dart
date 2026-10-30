@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -295,6 +296,7 @@ class LeaveApplication {
   final bool isHalfDay;
   final String? halfDaySession;
   final String reason;
+  final String? attachmentUrl;
   final String status;
   final String? applyingTo;
   final String? cc;
@@ -318,6 +320,7 @@ class LeaveApplication {
     required this.isHalfDay,
     this.halfDaySession,
     required this.reason,
+    this.attachmentUrl,
     required this.status,
     this.applyingTo,
     this.cc,
@@ -343,6 +346,7 @@ class LeaveApplication {
       isHalfDay: json['isHalfDay'] ?? false,
       halfDaySession: json['halfDaySession'],
       reason: json['reason'] ?? '',
+      attachmentUrl: json['attachmentUrl'],
       status: json['status'] ?? 'PENDING',
       applyingTo: json['applyingTo'],
       cc: json['cc'],
@@ -783,6 +787,54 @@ class ApiService {
       }
     } catch (_) {}
     return [];
+  }
+
+  static Future<Map<String, dynamic>> uploadAttachment(PlatformFile file) async {
+    try {
+      final uri = Uri.parse('$baseUrl/upload');
+      final request = http.MultipartRequest('POST', uri);
+
+      if (authToken != null) {
+        request.headers['Authorization'] = 'Bearer $authToken';
+      }
+
+      if (file.bytes != null) {
+        request.files.add(http.MultipartFile.fromBytes(
+          'file',
+          file.bytes!,
+          filename: file.name,
+        ));
+      } else if (file.path != null) {
+        request.files.add(await http.MultipartFile.fromPath(
+          'file',
+          file.path!,
+          filename: file.name,
+        ));
+      } else {
+        return {'success': false, 'message': 'Unable to read file content'};
+      }
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      handleAuthError(response);
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 && data['success'] == true) {
+        final fileData = data['data'] as Map<String, dynamic>?;
+        return {
+          'success': true,
+          'url': fileData?['url'] ?? '',
+          'filename': fileData?['filename'] ?? file.name,
+        };
+      } else {
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Failed to upload attachment',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Upload error: $e'};
+    }
   }
 
   static Future<Map<String, dynamic>> applyLeave({

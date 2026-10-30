@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:brandhrms_attendance/services/api_service.dart';
 import 'package:brandhrms_attendance/services/attendance_formatter.dart';
 import 'package:brandhrms_attendance/services/geocoding_service.dart';
 
@@ -788,6 +789,49 @@ void main() {
       );
       expect(loc, isNotEmpty);
       expect(loc, 'Office');
+    });
+
+    test('UT-ATTACH-01: LeaveApplication deserializes attachmentUrl correctly', () {
+      final json = {
+        'id': 'app-101',
+        'employeeId': 'emp-001',
+        'employeeName': 'John Doe',
+        'leaveTypeId': 'type-cl',
+        'leaveTypeName': 'Casual Leave',
+        'leaveTypeCode': 'CL',
+        'startDate': '2026-11-01',
+        'endDate': '2026-11-01',
+        'totalDays': 1.0,
+        'isHalfDay': false,
+        'reason': 'Medical checkup',
+        'attachmentUrl': '/uploads/test_certificate_101.pdf',
+        'status': 'PENDING',
+        'createdAt': '2026-10-31T01:00:00Z',
+      };
+      final app = LeaveApplication.fromJson(json);
+      expect(app.attachmentUrl, '/uploads/test_certificate_101.pdf');
+      expect(app.reason, 'Medical checkup');
+      expect(app.status, 'PENDING');
+    });
+
+    test('UT-ATTACH-02: LeaveApplication handles null attachmentUrl cleanly', () {
+      final json = {
+        'id': 'app-102',
+        'employeeId': 'emp-001',
+        'leaveTypeId': 'type-cl',
+        'leaveTypeName': 'Casual Leave',
+        'leaveTypeCode': 'CL',
+        'startDate': '2026-11-01',
+        'endDate': '2026-11-01',
+        'totalDays': 1.0,
+        'isHalfDay': false,
+        'reason': 'Personal work',
+        'attachmentUrl': null,
+        'status': 'PENDING',
+        'createdAt': '2026-10-31T01:00:00Z',
+      };
+      final app = LeaveApplication.fromJson(json);
+      expect(app.attachmentUrl, isNull);
     });
   });
 }

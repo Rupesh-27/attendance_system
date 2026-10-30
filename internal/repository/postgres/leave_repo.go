@@ -125,8 +125,8 @@ func (r *leaveRepository) CreateApplication(ctx context.Context, app *domain.Lea
 	query := `
 		INSERT INTO leave_applications (
 			id, employee_id, leave_type_id, start_date, end_date, total_days,
-			is_half_day, half_day_session, reason, applying_to, cc, status, created_at, updated_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+			is_half_day, half_day_session, reason, applying_to, cc, attachment_url, status, created_at, updated_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
 	`
 	var sessionVal *string
 	if app.HalfDaySession != nil {
@@ -141,7 +141,7 @@ func (r *leaveRepository) CreateApplication(ctx context.Context, app *domain.Lea
 
 	_, err := r.db.Pool.Exec(ctx, query,
 		app.ID, app.EmployeeID, app.LeaveTypeID, app.StartDate, app.EndDate, app.TotalDays,
-		app.IsHalfDay, sessionVal, app.Reason, applyingTo, app.CC, string(app.Status), app.CreatedAt, app.UpdatedAt,
+		app.IsHalfDay, sessionVal, app.Reason, applyingTo, app.CC, app.AttachmentURL, string(app.Status), app.CreatedAt, app.UpdatedAt,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create leave application: %w", err)
@@ -153,7 +153,7 @@ func (r *leaveRepository) GetApplicationByID(ctx context.Context, id uuid.UUID) 
 	query := `
 		SELECT a.id, a.employee_id, e.full_name, e.employee_code, a.leave_type_id, lt.name, lt.code,
 		       a.start_date, a.end_date, a.total_days, a.is_half_day, a.half_day_session,
-		       a.reason, a.applying_to, a.cc, a.status, a.reviewed_by, rev.full_name, a.reviewed_at, a.manager_remarks,
+		       a.reason, a.attachment_url, a.applying_to, a.cc, a.status, a.reviewed_by, rev.full_name, a.reviewed_at, a.manager_remarks,
 		       a.created_at, a.updated_at
 		FROM leave_applications a
 		JOIN employees e ON e.id = a.employee_id
@@ -168,7 +168,7 @@ func (r *leaveRepository) GetApplicationByID(ctx context.Context, id uuid.UUID) 
 	err := r.db.Pool.QueryRow(ctx, query, id).Scan(
 		&app.ID, &app.EmployeeID, &app.EmployeeName, &app.EmployeeCode, &app.LeaveTypeID, &app.LeaveTypeName, &app.LeaveTypeCode,
 		&app.StartDate, &app.EndDate, &app.TotalDays, &app.IsHalfDay, &halfDaySession,
-		&app.Reason, &app.ApplyingTo, &app.CC, &statusStr, &app.ReviewedBy, &reviewedByName, &app.ReviewedAt, &managerRemarks,
+		&app.Reason, &app.AttachmentURL, &app.ApplyingTo, &app.CC, &statusStr, &app.ReviewedBy, &reviewedByName, &app.ReviewedAt, &managerRemarks,
 		&app.CreatedAt, &app.UpdatedAt,
 	)
 	if err != nil {
@@ -195,7 +195,7 @@ func (r *leaveRepository) GetApplicationsByEmployee(ctx context.Context, employe
 	query := `
 		SELECT a.id, a.employee_id, e.full_name, e.employee_code, a.leave_type_id, lt.name, lt.code,
 		       a.start_date, a.end_date, a.total_days, a.is_half_day, a.half_day_session,
-		       a.reason, a.applying_to, a.cc, a.status, a.reviewed_by, rev.full_name, a.reviewed_at, a.manager_remarks,
+		       a.reason, a.attachment_url, a.applying_to, a.cc, a.status, a.reviewed_by, rev.full_name, a.reviewed_at, a.manager_remarks,
 		       a.created_at, a.updated_at
 		FROM leave_applications a
 		JOIN employees e ON e.id = a.employee_id
@@ -225,7 +225,7 @@ func (r *leaveRepository) GetApplicationsByEmployee(ctx context.Context, employe
 		if err := rows.Scan(
 			&app.ID, &app.EmployeeID, &app.EmployeeName, &app.EmployeeCode, &app.LeaveTypeID, &app.LeaveTypeName, &app.LeaveTypeCode,
 			&app.StartDate, &app.EndDate, &app.TotalDays, &app.IsHalfDay, &halfDaySession,
-			&app.Reason, &app.ApplyingTo, &app.CC, &statusStr, &app.ReviewedBy, &reviewedByName, &app.ReviewedAt, &managerRemarks,
+			&app.Reason, &app.AttachmentURL, &app.ApplyingTo, &app.CC, &statusStr, &app.ReviewedBy, &reviewedByName, &app.ReviewedAt, &managerRemarks,
 			&app.CreatedAt, &app.UpdatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan application: %w", err)
@@ -249,7 +249,7 @@ func (r *leaveRepository) GetPendingApplications(ctx context.Context) ([]*domain
 	query := `
 		SELECT a.id, a.employee_id, e.full_name, e.employee_code, a.leave_type_id, lt.name, lt.code,
 		       a.start_date, a.end_date, a.total_days, a.is_half_day, a.half_day_session,
-		       a.reason, a.applying_to, a.cc, a.status, a.reviewed_by, rev.full_name, a.reviewed_at, a.manager_remarks,
+		       a.reason, a.attachment_url, a.applying_to, a.cc, a.status, a.reviewed_by, rev.full_name, a.reviewed_at, a.manager_remarks,
 		       a.created_at, a.updated_at
 		FROM leave_applications a
 		JOIN employees e ON e.id = a.employee_id
@@ -273,7 +273,7 @@ func (r *leaveRepository) GetPendingApplications(ctx context.Context) ([]*domain
 		if err := rows.Scan(
 			&app.ID, &app.EmployeeID, &app.EmployeeName, &app.EmployeeCode, &app.LeaveTypeID, &app.LeaveTypeName, &app.LeaveTypeCode,
 			&app.StartDate, &app.EndDate, &app.TotalDays, &app.IsHalfDay, &halfDaySession,
-			&app.Reason, &app.ApplyingTo, &app.CC, &statusStr, &app.ReviewedBy, &reviewedByName, &app.ReviewedAt, &managerRemarks,
+			&app.Reason, &app.AttachmentURL, &app.ApplyingTo, &app.CC, &statusStr, &app.ReviewedBy, &reviewedByName, &app.ReviewedAt, &managerRemarks,
 			&app.CreatedAt, &app.UpdatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan pending application: %w", err)
@@ -374,7 +374,7 @@ func (r *leaveRepository) GetApprovedLeaveForDate(ctx context.Context, employeeI
 	query := `
 		SELECT a.id, a.employee_id, e.full_name, e.employee_code, a.leave_type_id, lt.name, lt.code,
 		       a.start_date, a.end_date, a.total_days, a.is_half_day, a.half_day_session,
-		       a.reason, a.applying_to, a.cc, a.status, a.reviewed_by, rev.full_name, a.reviewed_at, a.manager_remarks,
+		       a.reason, a.attachment_url, a.applying_to, a.cc, a.status, a.reviewed_by, rev.full_name, a.reviewed_at, a.manager_remarks,
 		       a.created_at, a.updated_at
 		FROM leave_applications a
 		JOIN employees e ON e.id = a.employee_id
@@ -392,7 +392,7 @@ func (r *leaveRepository) GetApprovedLeaveForDate(ctx context.Context, employeeI
 	err := r.db.Pool.QueryRow(ctx, query, employeeID, date).Scan(
 		&app.ID, &app.EmployeeID, &app.EmployeeName, &app.EmployeeCode, &app.LeaveTypeID, &app.LeaveTypeName, &app.LeaveTypeCode,
 		&app.StartDate, &app.EndDate, &app.TotalDays, &app.IsHalfDay, &halfDaySession,
-		&app.Reason, &app.ApplyingTo, &app.CC, &statusStr, &app.ReviewedBy, &reviewedByName, &app.ReviewedAt, &managerRemarks,
+		&app.Reason, &app.AttachmentURL, &app.ApplyingTo, &app.CC, &statusStr, &app.ReviewedBy, &reviewedByName, &app.ReviewedAt, &managerRemarks,
 		&app.CreatedAt, &app.UpdatedAt,
 	)
 	if err != nil {

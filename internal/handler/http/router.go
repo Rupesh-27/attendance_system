@@ -14,8 +14,10 @@ type RouterConfig struct {
 	AttendanceHandler *AttendanceHandler
 	SettingsHandler   *SettingsHandler
 	LeaveHandler      *LeaveHandler
+	UploadHandler     *UploadHandler
 	EmployeeRepo      repository.EmployeeRepository
 	JWTSecret         string
+	StorageLocalDir   string
 }
 
 func SetupRouter(cfg RouterConfig) *gin.Engine {
@@ -24,6 +26,11 @@ func SetupRouter(cfg RouterConfig) *gin.Engine {
 
 	router.Use(middleware.RequestLogger())
 	router.Use(middleware.Recovery())
+
+	// Static serving for locally stored uploads (e.g. leave attachments)
+	if cfg.StorageLocalDir != "" {
+		router.Static("/uploads", cfg.StorageLocalDir)
+	}
 
 	router.GET("/health", HealthCheck)
 
@@ -80,6 +87,10 @@ func SetupRouter(cfg RouterConfig) *gin.Engine {
 					leaveGroup.POST("/:id/approve", cfg.LeaveHandler.ApproveApplication)
 					leaveGroup.POST("/:id/reject", cfg.LeaveHandler.RejectApplication)
 				}
+			}
+
+			if cfg.UploadHandler != nil {
+				protected.POST("/upload", cfg.UploadHandler.Upload)
 			}
 		}
 	}

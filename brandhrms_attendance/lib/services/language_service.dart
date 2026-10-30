@@ -671,6 +671,10 @@ class LanguageService extends ChangeNotifier {
       'error_sl_attachment_required': 'Please attach a medical certificate for Sick Leave of more than 2 days.',
       'error_file_too_large': 'Selected file exceeds the 10 MB limit.',
       'error_pick_file': 'Unable to pick file. Please try again.',
+      'attachment': 'Attachment',
+      'view_attachment': 'View Attachment',
+      'uploading_file': 'Uploading file...',
+      'error_upload_failed': 'File upload failed. Please try again.',
 
       // Leave Reasons & Manager Remarks
       'reason_doctor_appointment': 'Doctor appointment',
@@ -1148,6 +1152,10 @@ class LanguageService extends ChangeNotifier {
       'error_sl_attachment_required': 'Bitte fügen Sie ein ärztliches Attest für Krankenurlaub von mehr als 2 Tagen bei.',
       'error_file_too_large': 'Die ausgewählte Datei überschreitet das 10-MB-Limit.',
       'error_pick_file': 'Datei konnte nicht ausgewählt werden. Bitte erneut versuchen.',
+      'attachment': 'Anhang',
+      'view_attachment': 'Anhang ansehen',
+      'uploading_file': 'Datei wird hochgeladen...',
+      'error_upload_failed': 'Fehler beim Hochladen der Datei. Bitte erneut versuchen.',
 
       // Leave Reasons & Manager Remarks
       'reason_doctor_appointment': 'Arzttermin',
@@ -1625,6 +1633,10 @@ class LanguageService extends ChangeNotifier {
       'error_sl_attachment_required': 'Калі ласка, прымацуйце медыцынскую даведку для бальнічнага больш за 2 дні.',
       'error_file_too_large': 'Абраны файл перавышае ліміт 10 МБ.',
       'error_pick_file': 'Не ўдалося выбраць файл. Паспрабуйце зноў.',
+      'attachment': 'Далучэнне',
+      'view_attachment': 'Праглядзець файл',
+      'uploading_file': 'Загрузка файла...',
+      'error_upload_failed': 'Не ўдалося загрузіць файл. Паспрабуйце зноў.',
 
       // Leave Reasons & Manager Remarks
       'reason_doctor_appointment': 'Візіт да лекара',

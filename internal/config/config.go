@@ -17,6 +17,10 @@ type Config struct {
 	RateLimitBurst   int
 	TelegramBotToken string
 	TelegramChatID   string
+	StorageDriver    string
+	StorageLocalDir  string
+	StorageBaseURL   string
+	MaxUploadSizeMB  int
 }
 
 func LoadConfig() *Config {
@@ -33,6 +37,14 @@ func LoadConfig() *Config {
 		jwtExpHours = 24
 	}
 
+	storageDriver := getEnv("STORAGE_DRIVER", "local")
+	storageLocalDir := getEnv("STORAGE_LOCAL_DIR", "./uploads")
+	storageBaseURL := getEnv("STORAGE_BASE_URL", "/uploads")
+	maxUploadSizeMB, _ := strconv.Atoi(getEnv("MAX_UPLOAD_SIZE_MB", "10"))
+	if maxUploadSizeMB <= 0 {
+		maxUploadSizeMB = 10
+	}
+
 	return &Config{
 		Port:             port,
 		DatabaseURL:      dbURL,
@@ -42,6 +54,10 @@ func LoadConfig() *Config {
 		RateLimitBurst:   5,
 		TelegramBotToken: telegramBotToken,
 		TelegramChatID:   telegramChatID,
+		StorageDriver:    storageDriver,
+		StorageLocalDir:  storageLocalDir,
+		StorageBaseURL:   storageBaseURL,
+		MaxUploadSizeMB:  maxUploadSizeMB,
 	}
 }
 

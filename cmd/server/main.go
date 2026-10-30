@@ -20,6 +20,7 @@ import (
 	"location-attendance/internal/repository/mock"
 	"location-attendance/internal/repository/postgres"
 	"location-attendance/internal/service"
+	"location-attendance/internal/storage"
 )
 
 func main() {
@@ -138,11 +139,21 @@ func main() {
 	attSvc := service.NewAttendanceService(empRepo, offRepo, attRepo, nil, telegramSvc, settingsRepo, leaveRepo)
 	leaveSvc := service.NewLeaveService(leaveRepo, empRepo, nil)
 
+	storageProvider, err := storage.NewStorageProvider(storage.Config{
+		Driver:   cfg.StorageDriver,
+		LocalDir: cfg.StorageLocalDir,
+		BaseURL:  cfg.StorageBaseURL,
+	})
+	if err != nil {
+		log.Fatalf("Failed to initialize storage provider: %v", err)
+	}
+
 	authHandler := handler.NewAuthHandler(authSvc)
 	empHandler := handler.NewEmployeeHandler(empSvc)
 	attHandler := handler.NewAttendanceHandler(attSvc)
 	settingsHandler := handler.NewSettingsHandler(settingsSvc)
 	leaveHandler := handler.NewLeaveHandler(leaveSvc)
+	uploadHandler := handler.NewUploadHandler(storageProvider, cfg.MaxUploadSizeMB)
 
 	router := handler.SetupRouter(handler.RouterConfig{
 		AuthHandler:       authHandler,
@@ -150,8 +161,10 @@ func main() {
 		AttendanceHandler: attHandler,
 		SettingsHandler:   settingsHandler,
 		LeaveHandler:      leaveHandler,
+		UploadHandler:     uploadHandler,
 		EmployeeRepo:      empRepo,
 		JWTSecret:         cfg.JWTSecret,
+		StorageLocalDir:   cfg.StorageLocalDir,
 	})
 
 	srv := &http.Server{
