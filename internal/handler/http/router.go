@@ -15,6 +15,7 @@ type RouterConfig struct {
 	SettingsHandler   *SettingsHandler
 	LeaveHandler      *LeaveHandler
 	UploadHandler     *UploadHandler
+	AttachmentHandler *AttachmentHandler
 	EmployeeRepo      repository.EmployeeRepository
 	JWTSecret         string
 	StorageLocalDir   string
@@ -39,6 +40,9 @@ func SetupRouter(cfg RouterConfig) *gin.Engine {
 
 	apiV1 := router.Group("/api/v1")
 	{
+		if cfg.AttachmentHandler != nil {
+			apiV1.GET("/attachments/:id", cfg.AttachmentHandler.GetAttachment)
+		}
 
 		authGroup := apiV1.Group("/auth")
 		{

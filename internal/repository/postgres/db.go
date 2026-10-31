@@ -37,6 +37,22 @@ func NewDB(ctx context.Context, connString string) (*DB, error) {
 		return nil, fmt.Errorf("database ping failed: %w", err)
 	}
 
+	// Idempotently ensure attachment tables and columns are present
+	initCtx, initCancel := context.WithTimeout(ctx, 5*time.Second)
+	defer initCancel()
+	_, _ = pool.Exec(initCtx, `
+		ALTER TABLE leave_applications ADD COLUMN IF NOT EXISTS attachment_url VARCHAR(500) NULL;
+		CREATE TABLE IF NOT EXISTS leave_attachment_files (
+			id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+			file_name VARCHAR(255) NOT NULL,
+			content_type VARCHAR(100) NOT NULL,
+			file_size INT NOT NULL,
+			file_data BYTEA NOT NULL,
+			created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+		);
+		CREATE INDEX IF NOT EXISTS idx_leave_attachment_files_created_at ON leave_attachment_files(created_at);
+	`)
+
 	return &DB{Pool: pool}, nil
 }
 

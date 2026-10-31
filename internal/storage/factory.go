@@ -3,18 +3,40 @@ package storage
 import (
 	"fmt"
 	"strings"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // Config holds configuration parameters for file storage providers.
 type Config struct {
-	Driver   string // "local" or "s3"
-	LocalDir string // e.g. "./uploads"
-	BaseURL  string // e.g. "/uploads" or "https://bucket.s3.amazonaws.com"
+	Driver   string        // "db" (default when pool present), "local", or "s3"
+	LocalDir string        // e.g. "./uploads"
+	BaseURL  string        // e.g. "/api/v1/attachments" or "/uploads"
+	DBPool   *pgxpool.Pool // PostgreSQL connection pool for database storage
 }
 
 // NewStorageProvider creates and returns the appropriate StorageProvider based on configuration.
 func NewStorageProvider(cfg Config) (StorageProvider, error) {
-	switch strings.ToLower(cfg.Driver) {
+	driver := strings.ToLower(cfg.Driver)
+
+	// If driver is explicitly db/postgres or empty with pool provided, use PostgreSQL
+	if driver == "db" || driver == "postgres" || (driver == "" && cfg.DBPool != nil) {
+		if cfg.DBPool == nil {
+			// In-memory / mock repository fallback when database connection is not active
+			dir := cfg.LocalDir
+			if dir == "" {
+				dir = "./uploads"
+			}
+			baseURL := cfg.BaseURL
+			if baseURL == "" || baseURL == "/api/v1/attachments" {
+				baseURL = "/uploads"
+			}
+			return NewLocalStorage(dir, baseURL)
+		}
+		return NewPostgresStorage(cfg.DBPool, cfg.BaseURL), nil
+	}
+
+	switch driver {
 	case "local", "":
 		dir := cfg.LocalDir
 		if dir == "" {
@@ -27,4 +49,3 @@ func NewStorageProvider(cfg Config) (StorageProvider, error) {
 		return nil, fmt.Errorf("unsupported storage driver: %s", cfg.Driver)
 	}
 }
-

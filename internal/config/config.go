@@ -37,9 +37,13 @@ func LoadConfig() *Config {
 		jwtExpHours = 24
 	}
 
-	storageDriver := getEnv("STORAGE_DRIVER", "local")
+	storageDriver := getEnv("STORAGE_DRIVER", "db")
+	defaultBaseURL := "/api/v1/attachments"
+	if storageDriver == "local" {
+		defaultBaseURL = "/uploads"
+	}
 	storageLocalDir := getEnv("STORAGE_LOCAL_DIR", "./uploads")
-	storageBaseURL := getEnv("STORAGE_BASE_URL", "/uploads")
+	storageBaseURL := getEnv("STORAGE_BASE_URL", defaultBaseURL)
 	maxUploadSizeMB, _ := strconv.Atoi(getEnv("MAX_UPLOAD_SIZE_MB", "10"))
 	if maxUploadSizeMB <= 0 {
 		maxUploadSizeMB = 10

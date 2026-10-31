@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
 
 	"location-attendance/internal/config"
@@ -139,13 +140,24 @@ func main() {
 	attSvc := service.NewAttendanceService(empRepo, offRepo, attRepo, nil, telegramSvc, settingsRepo, leaveRepo)
 	leaveSvc := service.NewLeaveService(leaveRepo, empRepo, nil)
 
+	var pool *pgxpool.Pool
+	if db != nil {
+		pool = db.Pool
+	}
+
 	storageProvider, err := storage.NewStorageProvider(storage.Config{
 		Driver:   cfg.StorageDriver,
 		LocalDir: cfg.StorageLocalDir,
 		BaseURL:  cfg.StorageBaseURL,
+		DBPool:   pool,
 	})
 	if err != nil {
 		log.Fatalf("Failed to initialize storage provider: %v", err)
+	}
+
+	var attachmentHandler *handler.AttachmentHandler
+	if pgStorage, ok := storageProvider.(*storage.PostgresStorage); ok {
+		attachmentHandler = handler.NewAttachmentHandler(pgStorage)
 	}
 
 	authHandler := handler.NewAuthHandler(authSvc)
@@ -162,6 +174,7 @@ func main() {
 		SettingsHandler:   settingsHandler,
 		LeaveHandler:      leaveHandler,
 		UploadHandler:     uploadHandler,
+		AttachmentHandler: attachmentHandler,
 		EmployeeRepo:      empRepo,
 		JWTSecret:         cfg.JWTSecret,
 		StorageLocalDir:   cfg.StorageLocalDir,
