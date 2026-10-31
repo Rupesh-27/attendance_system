@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -1348,12 +1349,12 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
         }
       }
 
-      final savePath = await FilePicker.platform.saveFile(
+      final saveUri = await FilePicker.saveFile(
         dialogTitle: tr('download'),
         fileName: fileName,
         bytes: bytes,
       );
-      if (savePath != null && mounted) {
+      if (saveUri != null && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(tr('file_saved_successfully')),
@@ -2603,12 +2604,12 @@ class _FullScreenImageViewer extends StatelessWidget {
         }
       }
 
-      final savePath = await FilePicker.platform.saveFile(
+      final saveUri = await FilePicker.saveFile(
         dialogTitle: tr('download'),
         fileName: fileName,
         bytes: bytes,
       );
-      if (savePath != null && context.mounted) {
+      if (saveUri != null && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(tr('file_saved_successfully')),
