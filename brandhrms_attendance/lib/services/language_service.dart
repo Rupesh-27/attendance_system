@@ -417,6 +417,10 @@ class LanguageService extends ChangeNotifier {
     if (lower.contains('outside') && (lower.contains('radius') || lower.contains('office') || lower.contains('boundary'))) {
       return tr('err_outside_radius');
     }
+    // Employee on approved leave
+    if (lower.contains('approved leave') || lower.contains('leave for today') || lower.contains('employee_on_leave')) {
+      return tr('checkin_blocked_on_leave');
+    }
     // Active session exists
     if (lower.contains('active attendance session is already open') || lower.contains('active session exists') || lower.contains('already checked in')) {
       return tr('err_active_session_exists');
@@ -758,6 +762,9 @@ class LanguageService extends ChangeNotifier {
       'upcoming': 'Upcoming',
       'half_day': 'Half Day',
       'on_leave': 'On Leave',
+      'on_approved_leave': 'On Approved Leave',
+      'on_leave_today': 'On Leave Today',
+      'checkin_blocked_on_leave': 'You have an approved leave for today. Check-in is not permitted.',
       'general_shift': 'General Shift (10:00 AM - 7:00 PM)',
       'scheduled_week_off': 'Scheduled Week Off',
       'govt_holiday': 'Government Holiday',
@@ -1239,6 +1246,9 @@ class LanguageService extends ChangeNotifier {
       'upcoming': 'Bevorstehend',
       'half_day': 'Halber Tag',
       'on_leave': 'Im Urlaub',
+      'on_approved_leave': 'Im genehmigten Urlaub',
+      'on_leave_today': 'Heute im Urlaub',
+      'checkin_blocked_on_leave': 'Sie haben heute genehmigten Urlaub. Einchecken ist nicht gestattet.',
       'general_shift': 'Reguläre Schicht (10:00 - 19:00)',
       'scheduled_week_off': 'Geplanter freier Tag',
       'govt_holiday': 'Gesetzlicher Feiertag',
@@ -1720,6 +1730,9 @@ class LanguageService extends ChangeNotifier {
       'upcoming': 'Будучы',
       'half_day': 'Палова дня',
       'on_leave': 'У адпачынку',
+      'on_approved_leave': 'У зацверджаным водпуску',
+      'on_leave_today': 'Сёння ў водпуску',
+      'checkin_blocked_on_leave': 'У вас сёння зацверджаны водпуск. Адзнака прыходу забароненая.',
       'general_shift': 'Асноўная змена (10:00 - 19:00)',
       'scheduled_week_off': 'Планавы выхадны',
       'govt_holiday': 'Дзяржаўнае свята',

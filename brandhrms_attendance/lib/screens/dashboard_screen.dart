@@ -265,6 +265,8 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
   List<AttendanceRecord> _todaySessions = [];
   bool _isCarriedOver = false;
   String _attendanceDay = '';
+  bool _isOnLeave = false;
+  LeaveApplication? _approvedLeave;
 
   @override
   void initState() {
@@ -728,6 +730,8 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
           _totalBreakSeconds = totalBreak;
           _isCarriedOver = isCarriedOver;
           _attendanceDay = attendanceDay;
+          _isOnLeave = todayStatus?.isOnLeave ?? false;
+          _approvedLeave = todayStatus?.approvedLeave;
 
           if (activeSession != null) {
             _isCheckedIn = true;
@@ -832,6 +836,18 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
         _locationStatusBorder = const Color(0xFF86EFAC);
         _locationStatusIcon = Icons.location_on;
       });
+    } else if (_isOnLeave) {
+      final leaveType = _approvedLeave?.leaveTypeName ?? tr('leave');
+      setState(() {
+        _locationStatus = 'On Leave';
+        _locationStatusBadge = 'Approved';
+        _locationStatusSubtext = 'On approved $leaveType today • Check-in is disabled';
+        _locationStatusColor = const Color(0xFFD97706);
+        _locationStatusBg = const Color(0xFFFEF3C7);
+        _locationStatusBorder = const Color(0xFFFDE68A);
+        _locationStatusIcon = Icons.beach_access_rounded;
+      });
+      return;
     } else if (_todaySessions.isNotEmpty &&
         _todaySessions.any((s) => s.checkOutTime != null)) {
 
@@ -890,6 +906,11 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
   }
 
   String _getLocalizedLocationSubtext(String officeName) {
+    if (_locationStatusSubtext.contains('On approved') ||
+        _locationStatusSubtext.contains('Check-in is disabled')) {
+      final leaveType = _approvedLeave?.leaveTypeName ?? tr('leave');
+      return '${tr('on_approved_leave')}: $leaveType • ${tr('checkin_blocked_on_leave')}';
+    }
     if (_locationStatusSubtext.contains('Outside boundary')) {
       final monitor = LocationMonitorService.instance;
       final dist = monitor.lastDistanceMeters ?? 0.0;
@@ -973,6 +994,18 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
 
   Future<void> _handleAttendanceAction() async {
     if (_isSubmittingAttendance) return;
+
+    if (!_isCheckedIn && _isOnLeave) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(tr('checkin_blocked_on_leave')),
+            backgroundColor: const Color(0xFFD97706),
+          ),
+        );
+      }
+      return;
+    }
 
     setState(() => _isSubmittingAttendance = true);
 
@@ -1743,13 +1776,50 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
               ),
             ],
           ),
+          if (!_isCheckedIn && _isOnLeave) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF3C7),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFFDE68A)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.beach_access_rounded, size: 18, color: Color(0xFFD97706)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '${tr('on_approved_leave')}: ${_approvedLeave?.leaveTypeName ?? tr('leave')} • ${tr('checkin_blocked_on_leave')}',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF92400E),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
             height: 48,
             child: FilledButton.icon(
-              onPressed:
-                  _isSubmittingAttendance ? null : _handleAttendanceAction,
+              onPressed: _isSubmittingAttendance
+                  ? null
+                  : (!_isCheckedIn && _isOnLeave
+                      ? () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(tr('checkin_blocked_on_leave')),
+                              backgroundColor: const Color(0xFFD97706),
+                            ),
+                          );
+                        }
+                      : _handleAttendanceAction),
               icon: _isSubmittingAttendance
                   ? const SizedBox(
                       width: 18,
@@ -1760,13 +1830,17 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                       ),
                     )
                   : Icon(
-                      _isCheckedIn ? Icons.logout : Icons.login,
+                      _isCheckedIn
+                          ? Icons.logout
+                          : (!_isOnLeave ? Icons.login : Icons.beach_access_rounded),
                       size: 19,
                     ),
               label: Text(
                 _isSubmittingAttendance
                     ? tr('verifying_location')
-                    : (_isCheckedIn ? tr('check_out') : tr('check_in')),
+                    : (_isCheckedIn
+                        ? tr('check_out')
+                        : (!_isOnLeave ? tr('check_in') : tr('on_leave_today'))),
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
@@ -1775,7 +1849,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
               style: FilledButton.styleFrom(
                 backgroundColor: _isCheckedIn
                     ? const Color(0xFFE53935)
-                    : const Color(0xFF1E88E5),
+                    : (!_isOnLeave ? const Color(0xFF1E88E5) : const Color(0xFFD97706)),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),

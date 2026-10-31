@@ -31,6 +31,7 @@ var (
 	ErrActiveSessionExists = errors.New("an active attendance session is already open")
 	ErrNoActiveSession     = errors.New("no active attendance session found to check out")
 	ErrSessionAlreadyEnded = errors.New("attendance session has already been completed")
+	ErrEmployeeOnLeave     = errors.New("you have an approved leave for today. Check-in is not permitted")
 
 	// Leave Management Errors
 	ErrLeaveTypeNotFound          = errors.New("leave type not found")

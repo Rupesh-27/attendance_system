@@ -108,6 +108,9 @@ func MapDomainError(c *gin.Context, err error) {
 	case errors.Is(err, domain.ErrActiveSessionExists):
 		SendError(c, http.StatusConflict, "ALREADY_CHECKED_IN", err.Error(), nil)
 
+	case errors.Is(err, domain.ErrEmployeeOnLeave):
+		SendError(c, http.StatusUnprocessableEntity, "EMPLOYEE_ON_LEAVE", err.Error(), nil)
+
 	case errors.Is(err, domain.ErrNoActiveSession),
 		errors.Is(err, domain.ErrSessionAlreadyEnded):
 		SendError(c, http.StatusBadRequest, "NOT_CHECKED_IN", err.Error(), nil)

@@ -112,6 +112,28 @@ func (s *attendanceService) CheckIn(
 
 	loc := office.GetLocation()
 	attendanceDay := serverTime.In(loc).Format("2006-01-02")
+	officeTime := serverTime.In(loc)
+
+	// Block check-in if employee has an approved leave for today
+	if s.leaveRepo != nil {
+		app, err := s.leaveRepo.GetApprovedLeaveForDate(ctx, employeeID, officeTime)
+		if err == nil && app != nil {
+			if !app.IsHalfDay {
+				return nil, domain.ErrEmployeeOnLeave
+			}
+			if app.HalfDaySession != nil {
+				hour := officeTime.Hour()
+				if (*app.HalfDaySession == domain.HalfDayFirstHalf || *app.HalfDaySession == domain.HalfDaySession1) && hour < 13 {
+					return nil, domain.ErrEmployeeOnLeave
+				}
+				if (*app.HalfDaySession == domain.HalfDaySecondHalf || *app.HalfDaySession == domain.HalfDaySession2) && hour >= 13 {
+					return nil, domain.ErrEmployeeOnLeave
+				}
+			} else {
+				return nil, domain.ErrEmployeeOnLeave
+			}
+		}
+	}
 
 	session := &domain.AttendanceSession{
 		ID:                    uuid.New(),

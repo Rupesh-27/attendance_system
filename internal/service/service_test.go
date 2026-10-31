@@ -761,5 +761,61 @@ func TestAttendance_CheckIn_OfficeTimezone_Germany(t *testing.T) {
 	assert.Equal(t, "2026-10-23", todayStatus.AttendanceDay)
 }
 
+func TestAttendance_CheckIn_BlockedWhenOnApprovedLeave(t *testing.T) {
+	empRepo := mock.NewMockEmployeeRepo()
+	officeRepo := mock.NewMockOfficeRepo()
+	attRepo := mock.NewMockAttendanceRepo()
+	leaveRepo := mock.NewMockLeaveRepo()
+
+	office := &domain.Office{
+		ID:           uuid.New(),
+		Name:         "HQ",
+		Latitude:     13.0827,
+		Longitude:    80.2707,
+		RadiusMeters: 100.0,
+		IsActive:     true,
+	}
+	officeRepo.Seed(office)
+
+	emp := &domain.Employee{
+		ID:                        uuid.New(),
+		EmployeeCode:              "EMP999",
+		FullName:                  "Alice",
+		OfficeID:                  office.ID,
+		LocationAttendanceEnabled: true,
+		IsActive:                  true,
+	}
+	empRepo.Seed(emp)
+
+	today := time.Date(2026, 11, 1, 10, 0, 0, 0, time.UTC)
+	clock := func() time.Time { return today }
+
+	// Seed approved full-day leave for today
+	leaveApp := &domain.LeaveApplication{
+		ID:          uuid.New(),
+		EmployeeID:  emp.ID,
+		LeaveTypeID: uuid.New(),
+		StartDate:   today.Add(-2 * time.Hour),
+		EndDate:     today.Add(2 * time.Hour),
+		TotalDays:   1.0,
+		IsHalfDay:   false,
+		Status:      domain.LeaveStatusApproved,
+	}
+	leaveRepo.SeedApplication(leaveApp)
+
+	attSvc := service.NewAttendanceService(empRepo, officeRepo, attRepo, clock, leaveRepo)
+
+	gps := domain.GPSLocation{
+		Latitude:       office.Latitude,
+		Longitude:      office.Longitude,
+		AccuracyMeters: 5.0,
+		CapturedAt:     today,
+	}
+
+	_, err := attSvc.CheckIn(context.Background(), emp.ID, gps)
+	require.Error(t, err)
+	assert.ErrorIs(t, err, domain.ErrEmployeeOnLeave)
+}
+
 
 

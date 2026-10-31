@@ -72,6 +72,13 @@ func (m *MockLeaveRepo) SeedBalance(b *domain.EmployeeLeaveBalance) {
 	m.balances[m.balanceKey(b.EmployeeID, b.LeaveTypeID, b.Year)] = &cp
 }
 
+func (m *MockLeaveRepo) SeedApplication(app *domain.LeaveApplication) {
+	m.Lock()
+	defer m.Unlock()
+	cp := *app
+	m.applications[app.ID] = &cp
+}
+
 func (m *MockLeaveRepo) GetLeaveTypes(ctx context.Context) ([]*domain.LeaveType, error) {
 	m.RLock()
 	defer m.RUnlock()
