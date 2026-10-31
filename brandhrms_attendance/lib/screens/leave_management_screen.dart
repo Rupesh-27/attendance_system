@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 import '../services/api_service.dart';
 import '../services/language_service.dart';
@@ -1184,38 +1186,73 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
                 const SizedBox(height: 12),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: Container(
-                    height: 180,
-                    width: double.infinity,
-                    color: const Color(0xFFF1F5F9),
-                    child: Image.network(
-                      fullUrl,
-                      height: 180,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return const Center(
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        );
+                  child: Material(
+                    color: const Color(0xFF0F172A),
+                    child: InkWell(
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        _openFullScreenViewer(fullUrl, fileName);
                       },
-                      errorBuilder: (_, __, ___) => Container(
-                        height: 180,
+                      child: Container(
+                        height: 200,
                         width: double.infinity,
-                        color: const Color(0xFFF1F5F9),
                         alignment: Alignment.center,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                        child: Stack(
+                          alignment: Alignment.bottomRight,
                           children: [
-                            const Icon(Icons.broken_image_outlined, size: 36, color: Color(0xFF94A3B8)),
-                            const SizedBox(height: 6),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
-                              child: Text(
-                                fileName,
-                                style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                            Center(
+                              child: Image.network(
+                                fullUrl,
+                                height: 200,
+                                width: double.infinity,
+                                fit: BoxFit.contain,
+                                loadingBuilder: (context, child, loadingProgress) {
+                                  if (loadingProgress == null) return child;
+                                  return const Center(
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                  );
+                                },
+                                errorBuilder: (_, __, ___) => Container(
+                                  height: 200,
+                                  width: double.infinity,
+                                  color: const Color(0xFFF1F5F9),
+                                  alignment: Alignment.center,
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(Icons.broken_image_outlined, size: 36, color: Color(0xFF94A3B8)),
+                                      const SizedBox(height: 6),
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                                        child: Text(
+                                          fileName,
+                                          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Container(
+                              margin: const EdgeInsets.all(8),
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.7),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.zoom_in_rounded, size: 14, color: Colors.white),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    tr('tap_to_zoom'),
+                                    style: const TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.w500),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
@@ -1229,6 +1266,25 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
           ),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.file_download_outlined, color: primaryColor),
+            tooltip: tr('download'),
+            onPressed: () => _downloadFile(fullUrl, fileName),
+          ),
+          if (isImage)
+            FilledButton.icon(
+              onPressed: () {
+                Navigator.pop(ctx);
+                _openFullScreenViewer(fullUrl, fileName);
+              },
+              icon: const Icon(Icons.fullscreen_rounded, size: 16),
+              label: Text(tr('view_full_screen')),
+              style: FilledButton.styleFrom(
+                backgroundColor: primaryColor,
+                visualDensity: VisualDensity.compact,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+            ),
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(tr('close'), style: const TextStyle(color: Color(0xFF64748B))),
@@ -1236,6 +1292,85 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
         ],
       ),
     );
+  }
+
+  void _openFullScreenViewer(String fullUrl, String fileName) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => _FullScreenImageViewer(
+          imageUrl: fullUrl,
+          fileName: fileName,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _downloadFile(String fullUrl, String fileName) async {
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+              ),
+              const SizedBox(width: 10),
+              Text(tr('downloading')),
+            ],
+          ),
+          duration: const Duration(seconds: 1),
+        ),
+      );
+
+      final response = await http.get(Uri.parse(fullUrl));
+      if (response.statusCode != 200) {
+        throw Exception('Server returned ${response.statusCode}');
+      }
+      final bytes = response.bodyBytes;
+
+      if (Platform.isAndroid) {
+        final downloadDir = Directory('/storage/emulated/0/Download');
+        if (await downloadDir.exists()) {
+          final file = File('${downloadDir.path}/$fileName');
+          await file.writeAsBytes(bytes);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('${tr('file_saved_successfully')}: ${downloadDir.path}/$fileName'),
+                backgroundColor: const Color(0xFF15803D),
+              ),
+            );
+          }
+          return;
+        }
+      }
+
+      final savePath = await FilePicker.platform.saveFile(
+        dialogTitle: tr('download'),
+        fileName: fileName,
+        bytes: bytes,
+      );
+      if (savePath != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(tr('file_saved_successfully')),
+            backgroundColor: const Color(0xFF15803D),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${tr('download_failed')}: $e'),
+            backgroundColor: const Color(0xFFDC2626),
+          ),
+        );
+      }
+    }
   }
 
   // ==================== ACTIONS & MODALS ====================
@@ -2412,6 +2547,172 @@ class _ApplyLeaveBottomSheetState extends State<_ApplyLeaveBottomSheet> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _FullScreenImageViewer extends StatelessWidget {
+  final String imageUrl;
+  final String fileName;
+
+  const _FullScreenImageViewer({
+    required this.imageUrl,
+    required this.fileName,
+  });
+
+  Future<void> _download(BuildContext context) async {
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+              ),
+              const SizedBox(width: 10),
+              Text(tr('downloading')),
+            ],
+          ),
+          duration: const Duration(seconds: 1),
+        ),
+      );
+
+      final response = await http.get(Uri.parse(imageUrl));
+      if (response.statusCode != 200) {
+        throw Exception('Server returned ${response.statusCode}');
+      }
+      final bytes = response.bodyBytes;
+
+      if (Platform.isAndroid) {
+        final downloadDir = Directory('/storage/emulated/0/Download');
+        if (await downloadDir.exists()) {
+          final file = File('${downloadDir.path}/$fileName');
+          await file.writeAsBytes(bytes);
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('${tr('file_saved_successfully')}: ${downloadDir.path}/$fileName'),
+                backgroundColor: const Color(0xFF15803D),
+              ),
+            );
+          }
+          return;
+        }
+      }
+
+      final savePath = await FilePicker.platform.saveFile(
+        dialogTitle: tr('download'),
+        fileName: fileName,
+        bytes: bytes,
+      );
+      if (savePath != null && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(tr('file_saved_successfully')),
+            backgroundColor: const Color(0xFF15803D),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${tr('download_failed')}: $e'),
+            backgroundColor: const Color(0xFFDC2626),
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: Text(
+          fileName,
+          style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+          overflow: TextOverflow.ellipsis,
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.file_download_outlined, color: Colors.white),
+            tooltip: tr('download'),
+            onPressed: () => _download(context),
+          ),
+        ],
+      ),
+      body: Stack(
+        children: [
+          Center(
+            child: InteractiveViewer(
+              minScale: 0.5,
+              maxScale: 6.0,
+              clipBehavior: Clip.none,
+              child: Image.network(
+                imageUrl,
+                fit: BoxFit.contain,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Center(
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      value: loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                          : null,
+                      color: Colors.white,
+                    ),
+                  );
+                },
+                errorBuilder: (_, __, ___) => Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.broken_image_outlined, color: Colors.white54, size: 48),
+                      const SizedBox(height: 8),
+                      Text(
+                        fileName,
+                        style: const TextStyle(color: Colors.white70, fontSize: 13),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 24,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.zoom_in_rounded, size: 16, color: Colors.white70),
+                    const SizedBox(width: 6),
+                    Text(
+                      tr('zoom_hint'),
+                      style: const TextStyle(color: Colors.white, fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
