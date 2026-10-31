@@ -164,7 +164,7 @@ func main() {
 	empHandler := handler.NewEmployeeHandler(empSvc)
 	attHandler := handler.NewAttendanceHandler(attSvc)
 	settingsHandler := handler.NewSettingsHandler(settingsSvc)
-	leaveHandler := handler.NewLeaveHandler(leaveSvc)
+	leaveHandler := handler.NewLeaveHandler(leaveSvc, storageProvider, cfg.MaxUploadSizeMB)
 	uploadHandler := handler.NewUploadHandler(storageProvider, cfg.MaxUploadSizeMB)
 
 	router := handler.SetupRouter(handler.RouterConfig{
