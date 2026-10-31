@@ -295,3 +295,19 @@ func (m *MockLeaveRepo) HasCasualLeaveInMonth(ctx context.Context, employeeID uu
 	}
 	return false, nil
 }
+
+func (m *MockLeaveRepo) UpdateApplicationAttachment(ctx context.Context, id uuid.UUID, attachmentURL *string) error {
+	m.Lock()
+	defer m.Unlock()
+	app, exists := m.applications[id]
+	if !exists {
+		return domain.ErrLeaveApplicationNotFound
+	}
+	app.AttachmentURL = attachmentURL
+	app.UpdatedAt = time.Now().UTC()
+	return nil
+}
+
+func (m *MockLeaveRepo) LinkAttachment(ctx context.Context, attachmentID, applicationID, employeeID uuid.UUID) error {
+	return nil
+}

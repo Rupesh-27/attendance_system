@@ -434,3 +434,25 @@ func (r *leaveRepository) HasCasualLeaveInMonth(ctx context.Context, employeeID 
 	}
 	return exists, nil
 }
+
+func (r *leaveRepository) UpdateApplicationAttachment(ctx context.Context, id uuid.UUID, attachmentURL *string) error {
+	query := `UPDATE leave_applications SET attachment_url = $1, updated_at = NOW() WHERE id = $2`
+	_, err := r.db.Pool.Exec(ctx, query, attachmentURL, id)
+	if err != nil {
+		return fmt.Errorf("failed to update application attachment: %w", err)
+	}
+	return nil
+}
+
+func (r *leaveRepository) LinkAttachment(ctx context.Context, attachmentID, applicationID, employeeID uuid.UUID) error {
+	query := `
+		UPDATE leave_attachment_files 
+		SET leave_application_id = $1, employee_id = COALESCE(employee_id, $2) 
+		WHERE id = $3
+	`
+	_, err := r.db.Pool.Exec(ctx, query, applicationID, employeeID, attachmentID)
+	if err != nil {
+		return fmt.Errorf("failed to link attachment to leave application: %w", err)
+	}
+	return nil
+}

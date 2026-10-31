@@ -63,6 +63,8 @@ type LeaveRepository interface {
 	HasOverlappingLeave(ctx context.Context, employeeID uuid.UUID, startDate, endDate time.Time) (bool, error)
 	HasCasualLeaveInMonth(ctx context.Context, employeeID uuid.UUID, year int, month time.Month) (bool, error)
 	GetApprovedLeaveForDate(ctx context.Context, employeeID uuid.UUID, date time.Time) (*domain.LeaveApplication, error)
+	UpdateApplicationAttachment(ctx context.Context, id uuid.UUID, attachmentURL *string) error
+	LinkAttachment(ctx context.Context, attachmentID, applicationID, employeeID uuid.UUID) error
 }
 
 

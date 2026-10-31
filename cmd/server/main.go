@@ -135,11 +135,6 @@ func main() {
 	telegramSvc := service.NewTelegramService(settingsRepo, cfg.TelegramBotToken, cfg.TelegramChatID)
 	settingsSvc := service.NewSettingsService(settingsRepo)
 
-	authSvc := service.NewAuthService(empRepo, cfg.JWTSecret, cfg.JWTExpiration)
-	empSvc := service.NewEmployeeService(empRepo, offRepo)
-	attSvc := service.NewAttendanceService(empRepo, offRepo, attRepo, nil, telegramSvc, settingsRepo, leaveRepo)
-	leaveSvc := service.NewLeaveService(leaveRepo, empRepo, nil)
-
 	var pool *pgxpool.Pool
 	if db != nil {
 		pool = db.Pool
@@ -154,6 +149,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to initialize storage provider: %v", err)
 	}
+
+	authSvc := service.NewAuthService(empRepo, cfg.JWTSecret, cfg.JWTExpiration)
+	empSvc := service.NewEmployeeService(empRepo, offRepo)
+	attSvc := service.NewAttendanceService(empRepo, offRepo, attRepo, nil, telegramSvc, settingsRepo, leaveRepo)
+	leaveSvc := service.NewLeaveService(leaveRepo, empRepo, nil, storageProvider)
 
 	var attachmentHandler *handler.AttachmentHandler
 	if pgStorage, ok := storageProvider.(*storage.PostgresStorage); ok {

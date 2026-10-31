@@ -66,18 +66,35 @@ func (s *PostgresStorage) Save(ctx context.Context, originalFilename string, r i
 		contentType = http.DetectContentType(data)
 	}
 
+	var empID *uuid.UUID
+	if v, ok := ctx.Value(ctxKeyEmployeeID).(uuid.UUID); ok && v != uuid.Nil {
+		empID = &v
+	}
+
+	var appID *uuid.UUID
+	if v, ok := ctx.Value(ctxKeyApplicationID).(uuid.UUID); ok && v != uuid.Nil {
+		appID = &v
+	}
+
 	id := uuid.New()
 	query := `
-		INSERT INTO leave_attachment_files (id, file_name, content_type, file_size, file_data, created_at)
-		VALUES ($1, $2, $3, $4, $5, NOW())
+		INSERT INTO leave_attachment_files (id, employee_id, leave_application_id, file_name, content_type, file_size, file_data, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
 	`
 
-	_, err = s.pool.Exec(ctx, query, id, originalFilename, contentType, len(data), data)
+	_, err = s.pool.Exec(ctx, query, id, empID, appID, originalFilename, contentType, len(data), data)
 	if err != nil {
 		return "", fmt.Errorf("failed to store attachment in database: %w", err)
 	}
 
 	return fmt.Sprintf("%s/%s%s", s.baseURL, id.String(), ext), nil
+}
+
+// LinkApplication updates the leave_application_id on a stored attachment.
+func (s *PostgresStorage) LinkApplication(ctx context.Context, attachmentID, applicationID uuid.UUID) error {
+	query := `UPDATE leave_attachment_files SET leave_application_id = $1 WHERE id = $2`
+	_, err := s.pool.Exec(ctx, query, applicationID, attachmentID)
+	return err
 }
 
 // Get retrieves attachment metadata and raw file bytes from PostgreSQL by UUID.

@@ -3,32 +3,44 @@ package service
 import (
 	"context"
 	"errors"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
 
 	"location-attendance/internal/domain"
 	"location-attendance/internal/repository"
+	"location-attendance/internal/storage"
 )
 
 type leaveService struct {
 	leaveRepo    repository.LeaveRepository
 	employeeRepo repository.EmployeeRepository
 	clock        Clock
+	storage      storage.StorageProvider
 }
 
 func NewLeaveService(
 	leaveRepo repository.LeaveRepository,
 	employeeRepo repository.EmployeeRepository,
 	clock Clock,
+	extra ...interface{},
 ) LeaveService {
 	if clock == nil {
 		clock = func() time.Time { return time.Now().UTC() }
+	}
+	var st storage.StorageProvider
+	for _, e := range extra {
+		if s, ok := e.(storage.StorageProvider); ok {
+			st = s
+		}
 	}
 	return &leaveService{
 		leaveRepo:    leaveRepo,
 		employeeRepo: employeeRepo,
 		clock:        clock,
+		storage:      st,
 	}
 }
 
@@ -154,7 +166,77 @@ func (s *leaveService) ApplyLeave(ctx context.Context, employeeID uuid.UUID, req
 		return nil, err
 	}
 
+	if req.AttachmentURL != nil && *req.AttachmentURL != "" {
+		raw := filepath.Base(*req.AttachmentURL)
+		clean := strings.TrimSuffix(raw, filepath.Ext(raw))
+		if attID, err := uuid.Parse(clean); err == nil {
+			_ = s.leaveRepo.LinkAttachment(ctx, attID, app.ID, employeeID)
+		}
+	}
+
 	return app, nil
+}
+
+func (s *leaveService) UpdateAttachment(ctx context.Context, employeeID, applicationID uuid.UUID, newAttachmentURL string) error {
+	app, err := s.leaveRepo.GetApplicationByID(ctx, applicationID)
+	if err != nil {
+		return err
+	}
+
+	if app.EmployeeID != employeeID {
+		return domain.ErrUnauthorized
+	}
+
+	if app.Status != domain.LeaveStatusPending {
+		return domain.ErrLeaveNotPending
+	}
+
+	// Delete old file if present
+	if app.AttachmentURL != nil && *app.AttachmentURL != "" && s.storage != nil {
+		_ = s.storage.Delete(ctx, *app.AttachmentURL)
+	}
+
+	// Update leave application record
+	if err := s.leaveRepo.UpdateApplicationAttachment(ctx, applicationID, &newAttachmentURL); err != nil {
+		return err
+	}
+
+	// Link new attachment to application & employee
+	raw := filepath.Base(newAttachmentURL)
+	clean := strings.TrimSuffix(raw, filepath.Ext(raw))
+	if attID, err := uuid.Parse(clean); err == nil {
+		_ = s.leaveRepo.LinkAttachment(ctx, attID, applicationID, employeeID)
+	}
+
+	return nil
+}
+
+func (s *leaveService) DeleteAttachment(ctx context.Context, employeeID, applicationID uuid.UUID) error {
+	app, err := s.leaveRepo.GetApplicationByID(ctx, applicationID)
+	if err != nil {
+		return err
+	}
+
+	if app.EmployeeID != employeeID {
+		return domain.ErrUnauthorized
+	}
+
+	if app.Status != domain.LeaveStatusPending {
+		return domain.ErrLeaveNotPending
+	}
+
+	// Check policy: Sick leave for more than 2 days requires attachment
+	lt, err := s.leaveRepo.GetLeaveTypeByID(ctx, app.LeaveTypeID)
+	if err == nil && lt != nil && lt.Code == "SL" && app.TotalDays > 2 {
+		return domain.ErrSickLeaveAttachmentRequired
+	}
+
+	// Delete file from storage
+	if app.AttachmentURL != nil && *app.AttachmentURL != "" && s.storage != nil {
+		_ = s.storage.Delete(ctx, *app.AttachmentURL)
+	}
+
+	return s.leaveRepo.UpdateApplicationAttachment(ctx, applicationID, nil)
 }
 
 func (s *leaveService) GetMyApplications(ctx context.Context, employeeID uuid.UUID, status *domain.LeaveStatus) ([]*domain.LeaveApplication, error) {

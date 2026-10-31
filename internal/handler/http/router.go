@@ -90,6 +90,8 @@ func SetupRouter(cfg RouterConfig) *gin.Engine {
 					leaveGroup.GET("/approvals", cfg.LeaveHandler.GetPendingApprovals)
 					leaveGroup.POST("/:id/approve", cfg.LeaveHandler.ApproveApplication)
 					leaveGroup.POST("/:id/reject", cfg.LeaveHandler.RejectApplication)
+					leaveGroup.PUT("/:id/attachment", cfg.LeaveHandler.UpdateAttachment)
+					leaveGroup.DELETE("/:id/attachment", cfg.LeaveHandler.DeleteAttachment)
 				}
 			}
 

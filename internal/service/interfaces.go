@@ -88,6 +88,8 @@ type LeaveService interface {
 	GetPendingApprovals(ctx context.Context) ([]*domain.LeaveApplication, error)
 	ApproveApplication(ctx context.Context, applicationID, reviewerID uuid.UUID, remarks *string) (*domain.LeaveApplication, error)
 	RejectApplication(ctx context.Context, applicationID, reviewerID uuid.UUID, remarks *string) (*domain.LeaveApplication, error)
+	UpdateAttachment(ctx context.Context, employeeID, applicationID uuid.UUID, newAttachmentURL string) error
+	DeleteAttachment(ctx context.Context, employeeID, applicationID uuid.UUID) error
 }
 
 

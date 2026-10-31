@@ -7,7 +7,9 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 
+	"location-attendance/internal/middleware"
 	"location-attendance/internal/storage"
 )
 
@@ -70,7 +72,14 @@ func (h *UploadHandler) Upload(c *gin.Context) {
 		return
 	}
 
-	fileURL, err := h.storage.Save(c.Request.Context(), header.Filename, file)
+	uploadCtx := c.Request.Context()
+	if empIDVal, exists := c.Get(middleware.ContextKeyEmployeeID); exists {
+		if empID, ok := empIDVal.(uuid.UUID); ok {
+			uploadCtx = storage.WithEmployeeID(uploadCtx, empID)
+		}
+	}
+
+	fileURL, err := h.storage.Save(uploadCtx, header.Filename, file)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"success": false,

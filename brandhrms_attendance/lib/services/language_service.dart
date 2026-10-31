@@ -686,6 +686,13 @@ class LanguageService extends ChangeNotifier {
       'file_saved_successfully': 'File saved successfully',
       'uploading_file': 'Uploading file...',
       'error_upload_failed': 'File upload failed. Please try again.',
+      'change_file': 'Change File',
+      'remove_file': 'Remove File',
+      'replacing_file': 'Replacing file...',
+      'removing_file': 'Removing file...',
+      'attachment_updated': 'Attachment updated successfully',
+      'attachment_removed': 'Attachment removed successfully',
+      'confirm_remove_attachment': 'Are you sure you want to remove the supporting document from this application?',
 
       // Leave Reasons & Manager Remarks
       'reason_doctor_appointment': 'Doctor appointment',
@@ -1177,6 +1184,13 @@ class LanguageService extends ChangeNotifier {
       'file_saved_successfully': 'Datei erfolgreich gespeichert',
       'uploading_file': 'Datei wird hochgeladen...',
       'error_upload_failed': 'Fehler beim Hochladen der Datei. Bitte erneut versuchen.',
+      'change_file': 'Datei ändern',
+      'remove_file': 'Datei entfernen',
+      'replacing_file': 'Datei wird ersetzt...',
+      'removing_file': 'Datei wird entfernt...',
+      'attachment_updated': 'Anhang erfolgreich aktualisiert',
+      'attachment_removed': 'Anhang erfolgreich entfernt',
+      'confirm_remove_attachment': 'Möchten Sie das Nachweisdokument wirklich aus diesem Antrag entfernen?',
 
       // Leave Reasons & Manager Remarks
       'reason_doctor_appointment': 'Arzttermin',
@@ -1668,6 +1682,13 @@ class LanguageService extends ChangeNotifier {
       'file_saved_successfully': 'Файл паспяхова захаваны',
       'uploading_file': 'Загрузка файла...',
       'error_upload_failed': 'Не ўдалося загрузіць файл. Паспрабуйце зноў.',
+      'change_file': 'Змяніць файл',
+      'remove_file': 'Выдаліць файл',
+      'replacing_file': 'Замена файла...',
+      'removing_file': 'Выдаленне файла...',
+      'attachment_updated': 'Далучэнне паспяхова абноўлена',
+      'attachment_removed': 'Далучэнне паспяхова выдалена',
+      'confirm_remove_attachment': 'Вы сапраўды хочаце выдаліць пацвярджальны дакумент з гэтай заяўкі?',
 
       // Leave Reasons & Manager Remarks
       'reason_doctor_appointment': 'Візіт да лекара',
