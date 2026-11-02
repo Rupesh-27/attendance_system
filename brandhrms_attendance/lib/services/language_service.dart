@@ -732,7 +732,8 @@ class LanguageService extends ChangeNotifier {
 
       // Attendance History & Calendar
       'attendance_history': 'Attendance History',
-      'attendance_calendar': 'Attendance Calendar',
+      'calendar': 'Calendar',
+      'attendance_calendar': 'Calendar',
       'attendance_ledger': 'Attendance Ledger',
       'ledger_date': 'Date',
       'first_check_in': 'First In',
@@ -1234,7 +1235,8 @@ class LanguageService extends ChangeNotifier {
 
       // Attendance History & Calendar
       'attendance_history': 'Anwesenheitsverlauf',
-      'attendance_calendar': 'Anwesenheitskalender',
+      'calendar': 'Kalender',
+      'attendance_calendar': 'Kalender',
       'attendance_ledger': 'Anwesenheitsjournal',
       'ledger_date': 'Datum',
       'first_check_in': 'Erstes Einstempeln',
@@ -1736,7 +1738,8 @@ class LanguageService extends ChangeNotifier {
 
       // Attendance History & Calendar
       'attendance_history': 'Гісторыя наведвальнасці',
-      'attendance_calendar': 'Каляндар наведвальнасці',
+      'calendar': 'Каляндар',
+      'attendance_calendar': 'Каляндар',
       'attendance_ledger': 'Журнал наведвальнасці',
       'ledger_date': 'Дата',
       'first_check_in': 'Першы ўваход',

@@ -536,7 +536,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      tr('attendance_calendar'),
+                      tr('calendar'),
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -1321,7 +1321,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
             children: [
               Expanded(
                 child: Text(
-                  tr('attendance_calendar'),
+                  tr('calendar'),
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
