@@ -401,7 +401,7 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> login(String identifier, String password, {bool force = false}) async {
+  static Future<Map<String, dynamic>> login(String identifier, String password, {bool force = false, String? deviceId, String? deviceModel}) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/auth/login'),
@@ -409,6 +409,8 @@ class ApiService {
         body: jsonEncode({
           'employeeCode': identifier.trim(),
           'password': password.trim(),
+          if (deviceId != null && deviceId.isNotEmpty) 'deviceId': deviceId,
+          if (deviceModel != null && deviceModel.isNotEmpty) 'deviceModel': deviceModel,
           if (force) 'force': true,
         }),
       );

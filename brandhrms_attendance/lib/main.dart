@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/dashboard_screen.dart';
 import 'services/api_service.dart';
 import 'services/language_service.dart';
+import 'services/device_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -194,7 +195,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => isLoading = true);
 
-    final result = await ApiService.login(identifier, password, force: force);
+    final device = await DeviceService.getDeviceDetails();
+    final result = await ApiService.login(
+      identifier,
+      password,
+      force: force,
+      deviceId: device['device_id'],
+      deviceModel: device['device_model'],
+    );
 
     if (!mounted) return;
     setState(() => isLoading = false);
@@ -220,6 +228,45 @@ class _LoginScreenState extends State<LoginScreen> {
         MaterialPageRoute(builder: (context) => const DashboardScreen()),
       );
     } else {
+      if (result['code'] == 'DEVICE_LOCKED_TO_ANOTHER_PHONE') {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Row(
+              children: [
+                Icon(Icons.lock_person_outlined, color: Colors.red.shade700, size: 28),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    tr('device_locked_title'),
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+            content: Text(
+              tr('device_locked_msg'),
+              style: const TextStyle(fontSize: 14, color: Color(0xFF475569), height: 1.45),
+            ),
+            actions: [
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0F9D8A),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(
+                  tr('ok'),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                ),
+              ),
+            ],
+          ),
+        );
+        return;
+      }
       if (result['code'] == 'DEVICE_ALREADY_LOGGED_IN') {
         showDialog(
           context: context,

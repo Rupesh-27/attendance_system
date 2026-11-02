@@ -51,3 +51,21 @@ func (h *EmployeeHandler) GetAssignedOffice(c *gin.Context) {
 
 	SendSuccess(c, http.StatusOK, office)
 }
+
+func (h *EmployeeHandler) ResetDeviceBinding(c *gin.Context) {
+	idStr := c.Param("id")
+	targetID, err := uuid.Parse(idStr)
+	if err != nil {
+		SendError(c, http.StatusBadRequest, "INVALID_EMPLOYEE_ID", "Invalid employee UUID", nil)
+		return
+	}
+
+	if err := h.employeeService.ResetDeviceBinding(c.Request.Context(), targetID); err != nil {
+		MapDomainError(c, err)
+		return
+	}
+
+	SendSuccess(c, http.StatusOK, gin.H{
+		"message": "Device binding has been reset successfully. The employee can now bind a new device on next login.",
+	})
+}

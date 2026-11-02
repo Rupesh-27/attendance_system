@@ -14,6 +14,8 @@ type EmployeeRepository interface {
 	GetByID(ctx context.Context, id uuid.UUID) (*domain.Employee, error)
 	GetByCode(ctx context.Context, code string) (*domain.Employee, error)
 	UpdateActiveSessionID(ctx context.Context, id uuid.UUID, sessionID *uuid.UUID) error
+	UpdateDeviceBinding(ctx context.Context, id uuid.UUID, deviceID, deviceModel *string) error
+	ResetDeviceBinding(ctx context.Context, id uuid.UUID) error
 }
 
 // OfficeRepository defines persistence operations for Office entities

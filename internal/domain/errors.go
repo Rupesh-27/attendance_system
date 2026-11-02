@@ -11,6 +11,7 @@ var (
 	ErrUnauthorized          = errors.New("unauthorized access")
 	ErrForbiddenRole         = errors.New("forbidden: employee role required")
 	ErrDeviceAlreadyLoggedIn = errors.New("you are already logged in on another device. Please log out from that device first")
+	ErrDeviceLockedToAnotherPhone = errors.New("this account is registered to another device. Please contact HR to reset your device binding")
 
 	// Office Errors
 	ErrOfficeNotFound = errors.New("assigned office not found")

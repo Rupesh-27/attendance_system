@@ -31,12 +31,12 @@ func NewAuthService(
 	}
 }
 
-func (s *authService) Login(ctx context.Context, employeeCode, password string, force ...bool) (*AuthResult, error) {
-	if employeeCode == "" || password == "" {
+func (s *authService) Login(ctx context.Context, params LoginParams) (*AuthResult, error) {
+	if params.EmployeeCode == "" || params.Password == "" {
 		return nil, domain.ErrInvalidCredentials
 	}
 
-	emp, err := s.employeeRepo.GetByCode(ctx, employeeCode)
+	emp, err := s.employeeRepo.GetByCode(ctx, params.EmployeeCode)
 	if err != nil {
 		if errors.Is(err, domain.ErrEmployeeNotFound) {
 			return nil, domain.ErrInvalidCredentials
@@ -44,7 +44,7 @@ func (s *authService) Login(ctx context.Context, employeeCode, password string, 
 		return nil, err
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(emp.PasswordHash), []byte(password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(emp.PasswordHash), []byte(params.Password)); err != nil {
 		return nil, domain.ErrInvalidCredentials
 	}
 
@@ -52,10 +52,25 @@ func (s *authService) Login(ctx context.Context, employeeCode, password string, 
 		return nil, err
 	}
 
-	forceLogin := len(force) > 0 && force[0]
-	// Single-device login check: If active session already exists on another device, block login unless force takeover is requested
-	if emp.ActiveSessionID != nil && !forceLogin {
-		return nil, domain.ErrDeviceAlreadyLoggedIn
+	// Device Binding Policy (Policy 2):
+	if params.DeviceID != "" {
+		if emp.DeviceID == nil || *emp.DeviceID == "" {
+			// First-time login on a device or device was reset by Admin: BIND THIS DEVICE!
+			if err := s.employeeRepo.UpdateDeviceBinding(ctx, emp.ID, &params.DeviceID, &params.DeviceModel); err != nil {
+				return nil, err
+			}
+			emp.DeviceID = &params.DeviceID
+			emp.DeviceModel = &params.DeviceModel
+		} else if *emp.DeviceID != params.DeviceID {
+			// Device does not match registered device! Strictly block access
+			return nil, domain.ErrDeviceLockedToAnotherPhone
+		}
+		// If *emp.DeviceID == params.DeviceID: same device, automatically proceed!
+	} else {
+		// Fallback for requests without device ID (e.g. legacy/testing)
+		if emp.ActiveSessionID != nil && !params.Force {
+			return nil, domain.ErrDeviceAlreadyLoggedIn
+		}
 	}
 
 	newSessionID := uuid.New()

@@ -46,14 +46,23 @@ type TodayAttendanceStatus struct {
 }
 
 
+type LoginParams struct {
+	EmployeeCode string
+	Password     string
+	DeviceID     string
+	DeviceModel  string
+	Force        bool
+}
+
 type AuthService interface {
-	Login(ctx context.Context, employeeCode, password string, force ...bool) (*AuthResult, error)
+	Login(ctx context.Context, params LoginParams) (*AuthResult, error)
 	Logout(ctx context.Context, employeeID uuid.UUID) error
 }
 
 type EmployeeService interface {
 	GetProfile(ctx context.Context, employeeID uuid.UUID) (*domain.Employee, error)
 	GetAssignedOffice(ctx context.Context, employeeID uuid.UUID) (*domain.Office, error)
+	ResetDeviceBinding(ctx context.Context, employeeID uuid.UUID) error
 }
 
 type AttendanceService interface {

@@ -57,7 +57,7 @@ func TestAuth_Login_Success(t *testing.T) {
 	empRepo, _, _, _, _ := setupTestEnvironment()
 	authSvc := service.NewAuthService(empRepo, "test-secret", 24*time.Hour)
 
-	res, err := authSvc.Login(context.Background(), "EMP001", "Password123!")
+	res, err := authSvc.Login(context.Background(), service.LoginParams{EmployeeCode: "EMP001", Password: "Password123!"})
 	require.NoError(t, err)
 	assert.NotEmpty(t, res.AccessToken)
 	assert.Equal(t, "EMP001", res.Employee.EmployeeCode)
@@ -67,7 +67,7 @@ func TestAuth_Login_InvalidPassword(t *testing.T) {
 	empRepo, _, _, _, _ := setupTestEnvironment()
 	authSvc := service.NewAuthService(empRepo, "test-secret", 24*time.Hour)
 
-	_, err := authSvc.Login(context.Background(), "EMP001", "WrongPassword")
+	_, err := authSvc.Login(context.Background(), service.LoginParams{EmployeeCode: "EMP001", Password: "WrongPassword"})
 	assert.ErrorIs(t, err, domain.ErrInvalidCredentials)
 }
 
@@ -75,7 +75,7 @@ func TestAuth_Login_EmployeeNotFound(t *testing.T) {
 	empRepo, _, _, _, _ := setupTestEnvironment()
 	authSvc := service.NewAuthService(empRepo, "test-secret", 24*time.Hour)
 
-	_, err := authSvc.Login(context.Background(), "UNKNOWN", "Password123!")
+	_, err := authSvc.Login(context.Background(), service.LoginParams{EmployeeCode: "UNKNOWN", Password: "Password123!"})
 	assert.ErrorIs(t, err, domain.ErrInvalidCredentials)
 }
 
@@ -86,7 +86,7 @@ func TestAuth_Login_EmployeeInactive(t *testing.T) {
 
 	authSvc := service.NewAuthService(empRepo, "test-secret", 24*time.Hour)
 
-	_, err := authSvc.Login(context.Background(), "EMP001", "Password123!")
+	_, err := authSvc.Login(context.Background(), service.LoginParams{EmployeeCode: "EMP001", Password: "Password123!"})
 	assert.ErrorIs(t, err, domain.ErrEmployeeInactive)
 }
 
@@ -95,16 +95,16 @@ func TestAuth_SingleDevice_BlockSecondLogin(t *testing.T) {
 	authSvc := service.NewAuthService(empRepo, "test-secret", 24*time.Hour)
 
 	// First login on Device A: must succeed
-	res1, err := authSvc.Login(context.Background(), "EMP001", "Password123!")
+	res1, err := authSvc.Login(context.Background(), service.LoginParams{EmployeeCode: "EMP001", Password: "Password123!"})
 	require.NoError(t, err)
 	assert.NotEmpty(t, res1.AccessToken)
 
 	// Second login attempt on Device B: must be blocked!
-	_, err2 := authSvc.Login(context.Background(), "EMP001", "Password123!")
+	_, err2 := authSvc.Login(context.Background(), service.LoginParams{EmployeeCode: "EMP001", Password: "Password123!"})
 	assert.ErrorIs(t, err2, domain.ErrDeviceAlreadyLoggedIn)
 
 	// Third login attempt with force=true: succeeds and takes over session!
-	res3, err3 := authSvc.Login(context.Background(), "EMP001", "Password123!", true)
+	res3, err3 := authSvc.Login(context.Background(), service.LoginParams{EmployeeCode: "EMP001", Password: "Password123!", Force: true})
 	require.NoError(t, err3)
 	assert.NotEmpty(t, res3.AccessToken)
 }
@@ -114,7 +114,7 @@ func TestAuth_Logout_AllowsNextLogin(t *testing.T) {
 	authSvc := service.NewAuthService(empRepo, "test-secret", 24*time.Hour)
 
 	// First login on Device A: succeeds
-	res1, err := authSvc.Login(context.Background(), "EMP001", "Password123!")
+	res1, err := authSvc.Login(context.Background(), service.LoginParams{EmployeeCode: "EMP001", Password: "Password123!"})
 	require.NoError(t, err)
 	assert.NotEmpty(t, res1.AccessToken)
 
@@ -123,9 +123,64 @@ func TestAuth_Logout_AllowsNextLogin(t *testing.T) {
 	require.NoError(t, err)
 
 	// Next login on Device B: now succeeds!
-	res2, err := authSvc.Login(context.Background(), "EMP001", "Password123!")
+	res2, err := authSvc.Login(context.Background(), service.LoginParams{EmployeeCode: "EMP001", Password: "Password123!"})
 	require.NoError(t, err)
 	assert.NotEmpty(t, res2.AccessToken)
+}
+
+func TestAuth_DeviceBinding_Policy2(t *testing.T) {
+	empRepo, officeRepo, _, emp, _ := setupTestEnvironment()
+	authSvc := service.NewAuthService(empRepo, "test-secret", 24*time.Hour)
+	empSvc := service.NewEmployeeService(empRepo, officeRepo)
+
+	ctx := context.Background()
+
+	// 1. First login on Phone 1: binds device
+	res1, err := authSvc.Login(ctx, service.LoginParams{
+		EmployeeCode: "EMP001",
+		Password:     "Password123!",
+		DeviceID:     "DEV-PHONE-1",
+		DeviceModel:  "Samsung Galaxy S23",
+	})
+	require.NoError(t, err)
+	assert.NotEmpty(t, res1.AccessToken)
+	assert.NotNil(t, res1.Employee.DeviceID)
+	assert.Equal(t, "DEV-PHONE-1", *res1.Employee.DeviceID)
+
+	// 2. Same Phone 1 logs in again (e.g. after token expiry): SUCCEEDS smoothly!
+	res2, err := authSvc.Login(ctx, service.LoginParams{
+		EmployeeCode: "EMP001",
+		Password:     "Password123!",
+		DeviceID:     "DEV-PHONE-1",
+		DeviceModel:  "Samsung Galaxy S23",
+	})
+	require.NoError(t, err)
+	assert.NotEmpty(t, res2.AccessToken)
+
+	// 3. Different Phone 2 attempts to log in: MUST BE STRICTLY BLOCKED!
+	_, errBlocked := authSvc.Login(ctx, service.LoginParams{
+		EmployeeCode: "EMP001",
+		Password:     "Password123!",
+		DeviceID:     "DEV-PHONE-2",
+		DeviceModel:  "OnePlus 12",
+	})
+	assert.ErrorIs(t, errBlocked, domain.ErrDeviceLockedToAnotherPhone)
+
+	// 4. Admin/HR resets device binding:
+	err = empSvc.ResetDeviceBinding(ctx, emp.ID)
+	require.NoError(t, err)
+
+	// 5. Now Phone 2 logs in: SUCCEEDS and binds Phone 2 as the new device!
+	res3, err := authSvc.Login(ctx, service.LoginParams{
+		EmployeeCode: "EMP001",
+		Password:     "Password123!",
+		DeviceID:     "DEV-PHONE-2",
+		DeviceModel:  "OnePlus 12",
+	})
+	require.NoError(t, err)
+	assert.NotEmpty(t, res3.AccessToken)
+	assert.Equal(t, "DEV-PHONE-2", *res3.Employee.DeviceID)
+	assert.Equal(t, "OnePlus 12", *res3.Employee.DeviceModel)
 }
 
 func TestAttendance_CheckIn_Success_InsideRadius(t *testing.T) {

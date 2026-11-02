@@ -23,6 +23,9 @@ type Employee struct {
 	OfficeID                  uuid.UUID  `json:"officeId"`
 	LocationAttendanceEnabled bool       `json:"locationAttendanceEnabled"`
 	ActiveSessionID           *uuid.UUID `json:"activeSessionId,omitempty"`
+	DeviceID                  *string    `json:"deviceId,omitempty"`
+	DeviceModel               *string    `json:"deviceModel,omitempty"`
+	DeviceBoundAt             *time.Time `json:"deviceBoundAt,omitempty"`
 	IsActive                  bool       `json:"isActive"`
 	CreatedAt                 time.Time  `json:"createdAt"`
 	UpdatedAt                 time.Time  `json:"updatedAt"`

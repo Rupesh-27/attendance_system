@@ -76,6 +76,45 @@ func (m *MockEmployeeRepo) UpdateActiveSessionID(ctx context.Context, id uuid.UU
 	return nil
 }
 
+func (m *MockEmployeeRepo) UpdateDeviceBinding(ctx context.Context, id uuid.UUID, deviceID, deviceModel *string) error {
+	m.Lock()
+	defer m.Unlock()
+	emp, ok := m.employeesByID[id]
+	if !ok {
+		return domain.ErrEmployeeNotFound
+	}
+	now := time.Now()
+	emp.DeviceID = deviceID
+	emp.DeviceModel = deviceModel
+	emp.DeviceBoundAt = &now
+	if byCode, exists := m.employeesByCode[emp.EmployeeCode]; exists {
+		byCode.DeviceID = deviceID
+		byCode.DeviceModel = deviceModel
+		byCode.DeviceBoundAt = &now
+	}
+	return nil
+}
+
+func (m *MockEmployeeRepo) ResetDeviceBinding(ctx context.Context, id uuid.UUID) error {
+	m.Lock()
+	defer m.Unlock()
+	emp, ok := m.employeesByID[id]
+	if !ok {
+		return domain.ErrEmployeeNotFound
+	}
+	emp.DeviceID = nil
+	emp.DeviceModel = nil
+	emp.DeviceBoundAt = nil
+	emp.ActiveSessionID = nil
+	if byCode, exists := m.employeesByCode[emp.EmployeeCode]; exists {
+		byCode.DeviceID = nil
+		byCode.DeviceModel = nil
+		byCode.DeviceBoundAt = nil
+		byCode.ActiveSessionID = nil
+	}
+	return nil
+}
+
 var _ repository.EmployeeRepository = (*MockEmployeeRepo)(nil)
 
 // MockOfficeRepo is an in-memory thread-safe implementation of repository.OfficeRepository

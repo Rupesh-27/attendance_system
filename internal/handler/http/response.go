@@ -89,6 +89,9 @@ func MapDomainError(c *gin.Context, err error) {
 	case errors.Is(err, domain.ErrDeviceAlreadyLoggedIn):
 		SendError(c, http.StatusConflict, "DEVICE_ALREADY_LOGGED_IN", err.Error(), nil)
 
+	case errors.Is(err, domain.ErrDeviceLockedToAnotherPhone):
+		SendError(c, http.StatusForbidden, "DEVICE_LOCKED_TO_ANOTHER_PHONE", err.Error(), nil)
+
 	case errors.Is(err, domain.ErrForbiddenRole):
 		SendError(c, http.StatusForbidden, "FORBIDDEN", err.Error(), nil)
 

@@ -54,3 +54,7 @@ func (s *employeeService) GetAssignedOffice(ctx context.Context, employeeID uuid
 
 	return office, nil
 }
+
+func (s *employeeService) ResetDeviceBinding(ctx context.Context, employeeID uuid.UUID) error {
+	return s.employeeRepo.ResetDeviceBinding(ctx, employeeID)
+}

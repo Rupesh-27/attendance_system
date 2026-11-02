@@ -57,6 +57,7 @@ func SetupRouter(cfg RouterConfig) *gin.Engine {
 			protected.GET("/me", cfg.EmployeeHandler.GetMe)
 
 			protected.GET("/offices/assigned", cfg.EmployeeHandler.GetAssignedOffice)
+			protected.POST("/admin/employees/:id/reset-device", cfg.EmployeeHandler.ResetDeviceBinding)
 
 			attGroup := protected.Group("/attendance")
 			attGroup.Use(middleware.RateLimit(attendanceLimiter))
