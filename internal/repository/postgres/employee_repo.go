@@ -22,7 +22,7 @@ func NewEmployeeRepository(db *DB) repository.EmployeeRepository {
 func (r *employeeRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.Employee, error) {
 	query := `
 		SELECT id, employee_code, password_hash, full_name, role, office_id, is_active, created_at, updated_at, COALESCE(email, ''), COALESCE(location_attendance_enabled, TRUE), active_session_id
-		FROM employees
+		FROM mob_employees
 		WHERE id = $1
 	`
 	var emp domain.Employee
@@ -53,7 +53,7 @@ func (r *employeeRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.Emplo
 func (r *employeeRepo) GetByCode(ctx context.Context, codeOrEmail string) (*domain.Employee, error) {
 	query := `
 		SELECT id, employee_code, password_hash, full_name, role, office_id, is_active, created_at, updated_at, COALESCE(email, ''), COALESCE(location_attendance_enabled, TRUE), active_session_id
-		FROM employees
+		FROM mob_employees
 		WHERE employee_code = $1 OR email = $1
 	`
 	var emp domain.Employee
@@ -83,7 +83,7 @@ func (r *employeeRepo) GetByCode(ctx context.Context, codeOrEmail string) (*doma
 
 func (r *employeeRepo) UpdateActiveSessionID(ctx context.Context, id uuid.UUID, sessionID *uuid.UUID) error {
 	query := `
-		UPDATE employees
+		UPDATE mob_employees
 		SET active_session_id = $2, updated_at = NOW()
 		WHERE id = $1
 	`

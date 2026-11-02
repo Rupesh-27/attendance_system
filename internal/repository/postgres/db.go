@@ -37,12 +37,22 @@ func NewDB(ctx context.Context, connString string) (*DB, error) {
 		return nil, fmt.Errorf("database ping failed: %w", err)
 	}
 
-	// Idempotently ensure attachment tables and columns are present
-	initCtx, initCancel := context.WithTimeout(ctx, 5*time.Second)
+	// Idempotently ensure tables are renamed with mob_ prefix and attachment tables are present
+	initCtx, initCancel := context.WithTimeout(ctx, 10*time.Second)
 	defer initCancel()
 	_, _ = pool.Exec(initCtx, `
-		ALTER TABLE leave_applications ADD COLUMN IF NOT EXISTS attachment_url VARCHAR(500) NULL;
-		CREATE TABLE IF NOT EXISTS leave_attachment_files (
+		ALTER TABLE IF EXISTS offices RENAME TO mob_offices;
+		ALTER TABLE IF EXISTS employees RENAME TO mob_employees;
+		ALTER TABLE IF EXISTS attendance_sessions RENAME TO mob_attendance_sessions;
+		ALTER TABLE IF EXISTS attendance_events RENAME TO mob_attendance_events;
+		ALTER TABLE IF EXISTS system_settings RENAME TO mob_system_settings;
+		ALTER TABLE IF EXISTS leave_types RENAME TO mob_leave_types;
+		ALTER TABLE IF EXISTS leave_applications RENAME TO mob_leave_applications;
+		ALTER TABLE IF EXISTS employee_leave_balances RENAME TO mob_employee_leave_balances;
+		ALTER TABLE IF EXISTS leave_attachment_files RENAME TO mob_leave_attachment_files;
+
+		ALTER TABLE IF EXISTS mob_leave_applications ADD COLUMN IF NOT EXISTS attachment_url VARCHAR(500) NULL;
+		CREATE TABLE IF NOT EXISTS mob_leave_attachment_files (
 			id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 			file_name VARCHAR(255) NOT NULL,
 			content_type VARCHAR(100) NOT NULL,
@@ -50,11 +60,11 @@ func NewDB(ctx context.Context, connString string) (*DB, error) {
 			file_data BYTEA NOT NULL,
 			created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 		);
-		ALTER TABLE leave_attachment_files ADD COLUMN IF NOT EXISTS employee_id UUID NULL REFERENCES employees(id) ON DELETE CASCADE;
-		ALTER TABLE leave_attachment_files ADD COLUMN IF NOT EXISTS leave_application_id UUID NULL REFERENCES leave_applications(id) ON DELETE SET NULL;
-		CREATE INDEX IF NOT EXISTS idx_leave_attachment_files_created_at ON leave_attachment_files(created_at);
-		CREATE INDEX IF NOT EXISTS idx_leave_attachment_files_employee_id ON leave_attachment_files(employee_id);
-		CREATE INDEX IF NOT EXISTS idx_leave_attachment_files_application_id ON leave_attachment_files(leave_application_id);
+		ALTER TABLE mob_leave_attachment_files ADD COLUMN IF NOT EXISTS employee_id UUID NULL REFERENCES mob_employees(id) ON DELETE CASCADE;
+		ALTER TABLE mob_leave_attachment_files ADD COLUMN IF NOT EXISTS leave_application_id UUID NULL REFERENCES mob_leave_applications(id) ON DELETE SET NULL;
+		CREATE INDEX IF NOT EXISTS idx_mob_leave_attachment_files_created_at ON mob_leave_attachment_files(created_at);
+		CREATE INDEX IF NOT EXISTS idx_mob_leave_attachment_files_employee_id ON mob_leave_attachment_files(employee_id);
+		CREATE INDEX IF NOT EXISTS idx_mob_leave_attachment_files_application_id ON mob_leave_attachment_files(leave_application_id);
 	`)
 
 	return &DB{Pool: pool}, nil

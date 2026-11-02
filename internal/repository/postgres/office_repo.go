@@ -22,7 +22,7 @@ func NewOfficeRepository(db *DB) repository.OfficeRepository {
 func (r *officeRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.Office, error) {
 	queryWithTz := `
 		SELECT id, name, latitude, longitude, radius_meters, timezone, is_active, created_at, updated_at
-		FROM offices
+		FROM mob_offices
 		WHERE id = $1
 	`
 	var office domain.Office
@@ -47,7 +47,7 @@ func (r *officeRepo) GetByID(ctx context.Context, id uuid.UUID) (*domain.Office,
 	// Fallback query for database instances where timezone column migration is not yet executed
 	queryLegacy := `
 		SELECT id, name, latitude, longitude, radius_meters, is_active, created_at, updated_at
-		FROM offices
+		FROM mob_offices
 		WHERE id = $1
 	`
 	errLegacy := r.db.Pool.QueryRow(ctx, queryLegacy, id).Scan(

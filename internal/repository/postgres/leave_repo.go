@@ -24,7 +24,7 @@ func NewLeaveRepository(db *DB) repository.LeaveRepository {
 func (r *leaveRepository) GetLeaveTypes(ctx context.Context) ([]*domain.LeaveType, error) {
 	query := `
 		SELECT id, name, code, description, annual_allowance, is_paid, is_active, created_at, updated_at
-		FROM leave_types
+		FROM mob_leave_types
 		WHERE is_active = TRUE
 		ORDER BY name ASC
 	`
@@ -52,7 +52,7 @@ func (r *leaveRepository) GetLeaveTypes(ctx context.Context) ([]*domain.LeaveTyp
 func (r *leaveRepository) GetLeaveTypeByID(ctx context.Context, id uuid.UUID) (*domain.LeaveType, error) {
 	query := `
 		SELECT id, name, code, description, annual_allowance, is_paid, is_active, created_at, updated_at
-		FROM leave_types
+		FROM mob_leave_types
 		WHERE id = $1
 	`
 	lt := &domain.LeaveType{}
@@ -76,8 +76,8 @@ func (r *leaveRepository) GetLeaveBalances(ctx context.Context, employeeID uuid.
 	query := `
 		SELECT b.id, b.employee_id, b.leave_type_id, lt.name, lt.code, b.year, 
 		       b.allocated_days, b.used_days, b.remaining_days, b.created_at, b.updated_at
-		FROM employee_leave_balances b
-		JOIN leave_types lt ON lt.id = b.leave_type_id
+		FROM mob_employee_leave_balances b
+		JOIN mob_leave_types lt ON lt.id = b.leave_type_id
 		WHERE b.employee_id = $1 AND b.year = $2
 		ORDER BY lt.name ASC
 	`
@@ -103,8 +103,8 @@ func (r *leaveRepository) GetLeaveBalance(ctx context.Context, employeeID, leave
 	query := `
 		SELECT b.id, b.employee_id, b.leave_type_id, lt.name, lt.code, b.year, 
 		       b.allocated_days, b.used_days, b.remaining_days, b.created_at, b.updated_at
-		FROM employee_leave_balances b
-		JOIN leave_types lt ON lt.id = b.leave_type_id
+		FROM mob_employee_leave_balances b
+		JOIN mob_leave_types lt ON lt.id = b.leave_type_id
 		WHERE b.employee_id = $1 AND b.leave_type_id = $2 AND b.year = $3
 	`
 	b := &domain.EmployeeLeaveBalance{}
@@ -123,7 +123,7 @@ func (r *leaveRepository) GetLeaveBalance(ctx context.Context, employeeID, leave
 
 func (r *leaveRepository) CreateApplication(ctx context.Context, app *domain.LeaveApplication) error {
 	query := `
-		INSERT INTO leave_applications (
+		INSERT INTO mob_leave_applications (
 			id, employee_id, leave_type_id, start_date, end_date, total_days,
 			is_half_day, half_day_session, reason, applying_to, cc, attachment_url, status, created_at, updated_at
 		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
@@ -155,10 +155,10 @@ func (r *leaveRepository) GetApplicationByID(ctx context.Context, id uuid.UUID) 
 		       a.start_date, a.end_date, a.total_days, a.is_half_day, a.half_day_session,
 		       a.reason, a.attachment_url, a.applying_to, a.cc, a.status, a.reviewed_by, rev.full_name, a.reviewed_at, a.manager_remarks,
 		       a.created_at, a.updated_at
-		FROM leave_applications a
-		JOIN employees e ON e.id = a.employee_id
-		JOIN leave_types lt ON lt.id = a.leave_type_id
-		LEFT JOIN employees rev ON rev.id = a.reviewed_by
+		FROM mob_leave_applications a
+		JOIN mob_employees e ON e.id = a.employee_id
+		JOIN mob_leave_types lt ON lt.id = a.leave_type_id
+		LEFT JOIN mob_employees rev ON rev.id = a.reviewed_by
 		WHERE a.id = $1
 	`
 	app := &domain.LeaveApplication{}
@@ -197,10 +197,10 @@ func (r *leaveRepository) GetApplicationsByEmployee(ctx context.Context, employe
 		       a.start_date, a.end_date, a.total_days, a.is_half_day, a.half_day_session,
 		       a.reason, a.attachment_url, a.applying_to, a.cc, a.status, a.reviewed_by, rev.full_name, a.reviewed_at, a.manager_remarks,
 		       a.created_at, a.updated_at
-		FROM leave_applications a
-		JOIN employees e ON e.id = a.employee_id
-		JOIN leave_types lt ON lt.id = a.leave_type_id
-		LEFT JOIN employees rev ON rev.id = a.reviewed_by
+		FROM mob_leave_applications a
+		JOIN mob_employees e ON e.id = a.employee_id
+		JOIN mob_leave_types lt ON lt.id = a.leave_type_id
+		LEFT JOIN mob_employees rev ON rev.id = a.reviewed_by
 		WHERE a.employee_id = $1
 	`
 	args := []interface{}{employeeID}
@@ -251,10 +251,10 @@ func (r *leaveRepository) GetPendingApplications(ctx context.Context) ([]*domain
 		       a.start_date, a.end_date, a.total_days, a.is_half_day, a.half_day_session,
 		       a.reason, a.attachment_url, a.applying_to, a.cc, a.status, a.reviewed_by, rev.full_name, a.reviewed_at, a.manager_remarks,
 		       a.created_at, a.updated_at
-		FROM leave_applications a
-		JOIN employees e ON e.id = a.employee_id
-		JOIN leave_types lt ON lt.id = a.leave_type_id
-		LEFT JOIN employees rev ON rev.id = a.reviewed_by
+		FROM mob_leave_applications a
+		JOIN mob_employees e ON e.id = a.employee_id
+		JOIN mob_leave_types lt ON lt.id = a.leave_type_id
+		LEFT JOIN mob_employees rev ON rev.id = a.reviewed_by
 		WHERE a.status = 'PENDING'
 		ORDER BY a.created_at ASC
 	`
@@ -302,7 +302,7 @@ func (r *leaveRepository) UpdateApplicationStatus(
 	remarks *string,
 ) error {
 	query := `
-		UPDATE leave_applications
+		UPDATE mob_leave_applications
 		SET status = $1, reviewed_by = $2, reviewed_at = $3, manager_remarks = $4, updated_at = NOW()
 		WHERE id = $5
 	`
@@ -318,7 +318,7 @@ func (r *leaveRepository) UpdateApplicationStatus(
 
 func (r *leaveRepository) DeductLeaveBalance(ctx context.Context, employeeID, leaveTypeID uuid.UUID, year int, days float64) error {
 	query := `
-		UPDATE employee_leave_balances
+		UPDATE mob_employee_leave_balances
 		SET used_days = used_days + $1,
 		    remaining_days = remaining_days - $1,
 		    updated_at = NOW()
@@ -336,7 +336,7 @@ func (r *leaveRepository) DeductLeaveBalance(ctx context.Context, employeeID, le
 
 func (r *leaveRepository) RefundLeaveBalance(ctx context.Context, employeeID, leaveTypeID uuid.UUID, year int, days float64) error {
 	query := `
-		UPDATE employee_leave_balances
+		UPDATE mob_employee_leave_balances
 		SET used_days = GREATEST(0.0, used_days - $1),
 		    remaining_days = remaining_days + $1,
 		    updated_at = NOW()
@@ -355,7 +355,7 @@ func (r *leaveRepository) RefundLeaveBalance(ctx context.Context, employeeID, le
 func (r *leaveRepository) HasOverlappingLeave(ctx context.Context, employeeID uuid.UUID, startDate, endDate time.Time) (bool, error) {
 	query := `
 		SELECT EXISTS (
-			SELECT 1 FROM leave_applications
+			SELECT 1 FROM mob_leave_applications
 			WHERE employee_id = $1
 			  AND status IN ('PENDING', 'APPROVED')
 			  AND start_date <= $3
@@ -376,10 +376,10 @@ func (r *leaveRepository) GetApprovedLeaveForDate(ctx context.Context, employeeI
 		       a.start_date, a.end_date, a.total_days, a.is_half_day, a.half_day_session,
 		       a.reason, a.attachment_url, a.applying_to, a.cc, a.status, a.reviewed_by, rev.full_name, a.reviewed_at, a.manager_remarks,
 		       a.created_at, a.updated_at
-		FROM leave_applications a
-		JOIN employees e ON e.id = a.employee_id
-		JOIN leave_types lt ON lt.id = a.leave_type_id
-		LEFT JOIN employees rev ON rev.id = a.reviewed_by
+		FROM mob_leave_applications a
+		JOIN mob_employees e ON e.id = a.employee_id
+		JOIN mob_leave_types lt ON lt.id = a.leave_type_id
+		LEFT JOIN mob_employees rev ON rev.id = a.reviewed_by
 		WHERE a.employee_id = $1
 		  AND a.status = 'APPROVED'
 		  AND $2::date BETWEEN a.start_date AND a.end_date
@@ -418,8 +418,8 @@ func (r *leaveRepository) GetApprovedLeaveForDate(ctx context.Context, employeeI
 func (r *leaveRepository) HasCasualLeaveInMonth(ctx context.Context, employeeID uuid.UUID, year int, month time.Month) (bool, error) {
 	query := `
 		SELECT EXISTS(
-			SELECT 1 FROM leave_applications a
-			JOIN leave_types t ON a.leave_type_id = t.id
+			SELECT 1 FROM mob_leave_applications a
+			JOIN mob_leave_types t ON a.leave_type_id = t.id
 			WHERE a.employee_id = $1
 			  AND t.code = 'CL'
 			  AND a.status IN ('PENDING', 'APPROVED', 'CANCELLATION_PENDING')
@@ -436,7 +436,7 @@ func (r *leaveRepository) HasCasualLeaveInMonth(ctx context.Context, employeeID 
 }
 
 func (r *leaveRepository) UpdateApplicationAttachment(ctx context.Context, id uuid.UUID, attachmentURL *string) error {
-	query := `UPDATE leave_applications SET attachment_url = $1, updated_at = NOW() WHERE id = $2`
+	query := `UPDATE mob_leave_applications SET attachment_url = $1, updated_at = NOW() WHERE id = $2`
 	_, err := r.db.Pool.Exec(ctx, query, attachmentURL, id)
 	if err != nil {
 		return fmt.Errorf("failed to update application attachment: %w", err)
@@ -446,7 +446,7 @@ func (r *leaveRepository) UpdateApplicationAttachment(ctx context.Context, id uu
 
 func (r *leaveRepository) LinkAttachment(ctx context.Context, attachmentID, applicationID, employeeID uuid.UUID) error {
 	query := `
-		UPDATE leave_attachment_files 
+		UPDATE mob_leave_attachment_files 
 		SET leave_application_id = $1, employee_id = COALESCE(employee_id, $2) 
 		WHERE id = $3
 	`

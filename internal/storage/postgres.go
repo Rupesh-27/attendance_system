@@ -42,7 +42,7 @@ func NewPostgresStorage(pool *pgxpool.Pool, baseURL string) *PostgresStorage {
 	}
 }
 
-// Save reads all file content and stores it directly into leave_attachment_files table.
+// Save reads all file content and stores it directly into mob_leave_attachment_files table.
 func (s *PostgresStorage) Save(ctx context.Context, originalFilename string, r io.Reader) (string, error) {
 	data, err := io.ReadAll(r)
 	if err != nil {
@@ -78,7 +78,7 @@ func (s *PostgresStorage) Save(ctx context.Context, originalFilename string, r i
 
 	id := uuid.New()
 	query := `
-		INSERT INTO leave_attachment_files (id, employee_id, leave_application_id, file_name, content_type, file_size, file_data, created_at)
+		INSERT INTO mob_leave_attachment_files (id, employee_id, leave_application_id, file_name, content_type, file_size, file_data, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
 	`
 
@@ -92,7 +92,7 @@ func (s *PostgresStorage) Save(ctx context.Context, originalFilename string, r i
 
 // LinkApplication updates the leave_application_id on a stored attachment.
 func (s *PostgresStorage) LinkApplication(ctx context.Context, attachmentID, applicationID uuid.UUID) error {
-	query := `UPDATE leave_attachment_files SET leave_application_id = $1 WHERE id = $2`
+	query := `UPDATE mob_leave_attachment_files SET leave_application_id = $1 WHERE id = $2`
 	_, err := s.pool.Exec(ctx, query, applicationID, attachmentID)
 	return err
 }
@@ -101,7 +101,7 @@ func (s *PostgresStorage) LinkApplication(ctx context.Context, attachmentID, app
 func (s *PostgresStorage) Get(ctx context.Context, id uuid.UUID) (*AttachmentFile, error) {
 	query := `
 		SELECT id, file_name, content_type, file_size, file_data
-		FROM leave_attachment_files
+		FROM mob_leave_attachment_files
 		WHERE id = $1
 	`
 
@@ -126,7 +126,7 @@ func (s *PostgresStorage) Delete(ctx context.Context, fileURL string) error {
 		return fmt.Errorf("invalid attachment id in url: %w", err)
 	}
 
-	query := `DELETE FROM leave_attachment_files WHERE id = $1`
+	query := `DELETE FROM mob_leave_attachment_files WHERE id = $1`
 	_, err = s.pool.Exec(ctx, query, id)
 	if err != nil {
 		return fmt.Errorf("failed to delete attachment from database: %w", err)

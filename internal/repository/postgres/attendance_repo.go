@@ -29,7 +29,7 @@ func (r *attendanceRepo) GetActiveSession(ctx context.Context, employeeID uuid.U
 			check_in_time, check_in_latitude, check_in_longitude, check_in_accuracy_meters, check_in_captured_at, check_in_distance_meters, check_in_address,
 			check_out_time, check_out_latitude, check_out_longitude, check_out_accuracy_meters, check_out_captured_at, check_out_distance_meters, check_out_address,
 			duration_seconds, checkout_reason, initial_out_of_radius_at, status, attendance_day, created_at, updated_at
-		FROM attendance_sessions
+		FROM mob_attendance_sessions
 		WHERE employee_id = $1 AND status IN ('CHECKED_IN', 'CARRIED_OVER')
 		LIMIT 1
 	`
@@ -83,7 +83,7 @@ func (r *attendanceRepo) CreateSession(ctx context.Context, s *domain.Attendance
 	}
 
 	query := `
-		INSERT INTO attendance_sessions (
+		INSERT INTO mob_attendance_sessions (
 			id, employee_id, office_id,
 			office_snapshot_name, office_snapshot_lat, office_snapshot_lon, office_snapshot_radius,
 			check_in_time, check_in_latitude, check_in_longitude, check_in_accuracy_meters, check_in_captured_at, check_in_distance_meters, check_in_address,
@@ -130,7 +130,7 @@ func (r *attendanceRepo) UpdateSession(ctx context.Context, s *domain.Attendance
 	}
 
 	query := `
-		UPDATE attendance_sessions
+		UPDATE mob_attendance_sessions
 		SET
 			check_out_time = $1,
 			check_out_latitude = $2,
@@ -173,7 +173,7 @@ func (r *attendanceRepo) UpdateSession(ctx context.Context, s *domain.Attendance
 
 func (r *attendanceRepo) UpdateSessionStatus(ctx context.Context, sessionID uuid.UUID, status domain.AttendanceStatus) error {
 	query := `
-		UPDATE attendance_sessions
+		UPDATE mob_attendance_sessions
 		SET status = $1, updated_at = NOW()
 		WHERE id = $2
 	`
@@ -189,7 +189,7 @@ func (r *attendanceRepo) UpdateSessionStatus(ctx context.Context, sessionID uuid
 
 func (r *attendanceRepo) UpdateInitialOutOfRadiusAt(ctx context.Context, sessionID uuid.UUID, breachTime *time.Time) error {
 	query := `
-		UPDATE attendance_sessions
+		UPDATE mob_attendance_sessions
 		SET initial_out_of_radius_at = $1, updated_at = NOW()
 		WHERE id = $2
 	`
@@ -211,7 +211,7 @@ func (r *attendanceRepo) GetExpiredBreachSessions(ctx context.Context, cutoff ti
 			check_in_time, check_in_latitude, check_in_longitude, check_in_accuracy_meters, check_in_captured_at, check_in_distance_meters, check_in_address,
 			check_out_time, check_out_latitude, check_out_longitude, check_out_accuracy_meters, check_out_captured_at, check_out_distance_meters, check_out_address,
 			duration_seconds, checkout_reason, initial_out_of_radius_at, status, attendance_day, created_at, updated_at
-		FROM attendance_sessions
+		FROM mob_attendance_sessions
 		WHERE status IN ('CHECKED_IN', 'CARRIED_OVER')
 		  AND initial_out_of_radius_at IS NOT NULL
 		  AND initial_out_of_radius_at <= $1
@@ -277,7 +277,7 @@ func (r *attendanceRepo) GetSessionsByAttendanceDay(ctx context.Context, employe
 			check_in_time, check_in_latitude, check_in_longitude, check_in_accuracy_meters, check_in_captured_at, check_in_distance_meters, check_in_address,
 			check_out_time, check_out_latitude, check_out_longitude, check_out_accuracy_meters, check_out_captured_at, check_out_distance_meters, check_out_address,
 			duration_seconds, checkout_reason, initial_out_of_radius_at, status, attendance_day, created_at, updated_at
-		FROM attendance_sessions
+		FROM mob_attendance_sessions
 		WHERE employee_id = $1 AND attendance_day = $2
 		ORDER BY check_in_time ASC
 	`
@@ -339,7 +339,7 @@ func (r *attendanceRepo) GetHistoryByEmployeeID(
 ) ([]*domain.AttendanceSession, int64, error) {
 	countQuery := `
 		SELECT COUNT(*)
-		FROM attendance_sessions
+		FROM mob_attendance_sessions
 		WHERE employee_id = $1
 		  AND ($3::timestamptz IS NULL OR check_in_time <= $3)
 		  AND ($2::timestamptz IS NULL OR check_in_time >= $2 OR check_out_time IS NULL OR check_out_time >= $2)
@@ -356,7 +356,7 @@ func (r *attendanceRepo) GetHistoryByEmployeeID(
 			check_in_time, check_in_latitude, check_in_longitude, check_in_accuracy_meters, check_in_captured_at, check_in_distance_meters, check_in_address,
 			check_out_time, check_out_latitude, check_out_longitude, check_out_accuracy_meters, check_out_captured_at, check_out_distance_meters, check_out_address,
 			duration_seconds, checkout_reason, initial_out_of_radius_at, status, attendance_day, created_at, updated_at
-		FROM attendance_sessions
+		FROM mob_attendance_sessions
 		WHERE employee_id = $1
 		  AND ($3::timestamptz IS NULL OR check_in_time <= $3)
 		  AND ($2::timestamptz IS NULL OR check_in_time >= $2 OR check_out_time IS NULL OR check_out_time >= $2)

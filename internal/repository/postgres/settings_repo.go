@@ -27,7 +27,7 @@ func (r *settingsRepo) GetSettings(ctx context.Context) (*domain.SystemSettings,
 			COALESCE(location_attendance_enabled, TRUE),
 			COALESCE(telegram_bot_token, ''), COALESCE(telegram_chat_id, ''),
 			updated_at
-		FROM system_settings
+		FROM mob_system_settings
 		WHERE id = 1
 		LIMIT 1
 	`
@@ -66,7 +66,7 @@ func (r *settingsRepo) GetSettings(ctx context.Context) (*domain.SystemSettings,
 
 func (r *settingsRepo) UpdateSettings(ctx context.Context, s *domain.SystemSettings) error {
 	query := `
-		INSERT INTO system_settings (
+		INSERT INTO mob_system_settings (
 			id, retry_interval_minutes, max_retries,
 			telegram_alerts_enabled, force_checkout_enabled,
 			location_attendance_enabled,
@@ -80,8 +80,8 @@ func (r *settingsRepo) UpdateSettings(ctx context.Context, s *domain.SystemSetti
 			telegram_alerts_enabled = EXCLUDED.telegram_alerts_enabled,
 			force_checkout_enabled = EXCLUDED.force_checkout_enabled,
 			location_attendance_enabled = EXCLUDED.location_attendance_enabled,
-			telegram_bot_token = CASE WHEN EXCLUDED.telegram_bot_token <> '' THEN EXCLUDED.telegram_bot_token ELSE system_settings.telegram_bot_token END,
-			telegram_chat_id = CASE WHEN EXCLUDED.telegram_chat_id <> '' THEN EXCLUDED.telegram_chat_id ELSE system_settings.telegram_chat_id END,
+			telegram_bot_token = CASE WHEN EXCLUDED.telegram_bot_token <> '' THEN EXCLUDED.telegram_bot_token ELSE mob_system_settings.telegram_bot_token END,
+			telegram_chat_id = CASE WHEN EXCLUDED.telegram_chat_id <> '' THEN EXCLUDED.telegram_chat_id ELSE mob_system_settings.telegram_chat_id END,
 			updated_at = NOW()
 	`
 	_, err := r.db.Pool.Exec(ctx, query,

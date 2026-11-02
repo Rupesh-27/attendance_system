@@ -1,5 +1,5 @@
 
-INSERT INTO offices (id, name, latitude, longitude, radius_meters, is_active)
+INSERT INTO mob_offices (id, name, latitude, longitude, radius_meters, is_active)
 VALUES (
     'a0000000-0000-0000-0000-000000000001',
     'Chennai Tech Hub',
@@ -9,7 +9,7 @@ VALUES (
     TRUE
 ) ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO employees (id, employee_code, password_hash, full_name, role, office_id, is_active)
+INSERT INTO mob_employees (id, employee_code, password_hash, full_name, role, office_id, is_active)
 VALUES (
     'b0000000-0000-0000-0000-000000000001',
     'EMP1001',
