@@ -964,46 +964,61 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
               children: [
                 Expanded(
                   flex: 3,
-                  child: Text(
-                    tr('ledger_date'),
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF475569),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      tr('ledger_date'),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF475569),
+                      ),
                     ),
                   ),
                 ),
                 Expanded(
                   flex: 3,
-                  child: Text(
-                    tr('first_check_in'),
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF475569),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      tr('first_check_in'),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF475569),
+                      ),
                     ),
                   ),
                 ),
                 Expanded(
                   flex: 3,
-                  child: Text(
-                    tr('last_check_out'),
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF475569),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      tr('last_check_out'),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF475569),
+                      ),
                     ),
                   ),
                 ),
                 SizedBox(
                   width: 44,
                   child: Center(
-                    child: Text(
-                      tr('view'),
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF475569),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        tr('view'),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF475569),
+                        ),
                       ),
                     ),
                   ),
@@ -1795,53 +1810,84 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: const Color(0xFFE2E8F0)),
               ),
-              child: Wrap(
-                crossAxisAlignment: WrapCrossAlignment.center,
-                alignment: WrapAlignment.spaceBetween,
-                runSpacing: 6,
-                children: [
-                  Row(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final badge = (totalDurationSec > 28800)
+                      ? Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEF3C7),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFFF59E0B)),
+                          ),
+                          child: Text(
+                            '⚡ ${tr('overtime_badge')}: +${(totalDurationSec - 28800) ~/ 3600}${tr('unit_hr')} ${((totalDurationSec - 28800) % 3600) ~/ 60}${tr('unit_min')}',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFFB45309),
+                            ),
+                          ),
+                        )
+                      : null;
+
+                  final workTimeContent = Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Icon(Icons.timer_outlined,
-                          size: 20, color: Color(0xFF475569)),
-                      const SizedBox(width: 10),
-                      Text(
-                        '${tr('total_work_time')}: ',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF334155),
-                        ),
-                      ),
-                      Text(
-                        _formatWorkHours(hours, mins),
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: primaryColor,
+                          size: 19, color: Color(0xFF475569)),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text.rich(
+                          TextSpan(
+                            children: [
+                              TextSpan(
+                                text: '${tr('total_work_time')}: ',
+                                style: const TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF334155),
+                                ),
+                              ),
+                              TextSpan(
+                                text: _formatWorkHours(hours, mins),
+                                style: const TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.bold,
+                                  color: primaryColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
-                  ),
-                  if (totalDurationSec > 28800)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFEF3C7),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFFF59E0B)),
-                      ),
-                      child: Text(
-                        '⚡ ${tr('overtime_badge')}: +${(totalDurationSec - 28800) ~/ 3600}${tr('unit_hr')} ${((totalDurationSec - 28800) % 3600) ~/ 60}${tr('unit_min')}',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFFB45309),
-                        ),
-                      ),
-                    ),
-                ],
+                  );
+
+                  if (badge != null && constraints.maxWidth < 340) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        workTimeContent,
+                        const SizedBox(height: 8),
+                        badge,
+                      ],
+                    );
+                  }
+
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Flexible(child: workTimeContent),
+                      if (badge != null) ...[
+                        const SizedBox(width: 8),
+                        badge,
+                      ],
+                    ],
+                  );
+                },
               ),
             ),
           ],
@@ -2993,14 +3039,18 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
             ],
           ),
           const SizedBox(height: 6),
-          Text(
-            timeValue,
-            maxLines: timeValue.contains('–') ? 2 : 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: timeValue.contains('–') ? 13 : 16,
-              fontWeight: FontWeight.bold,
-              color: const Color(0xFF1E293B),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              timeValue,
+              maxLines: timeValue.contains('–') ? 2 : 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: timeValue.contains('–') ? 13 : 15,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF1E293B),
+              ),
             ),
           ),
           if (location != null && location.isNotEmpty) ...[

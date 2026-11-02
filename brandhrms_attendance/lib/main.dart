@@ -37,13 +37,22 @@ class BrandHrmsApp extends StatelessWidget {
               elevation: 0,
               scrolledUnderElevation: 0,
             ),
+            navigationBarTheme: NavigationBarThemeData(
+              labelTextStyle: WidgetStateProperty.resolveWith((states) {
+                return const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  overflow: TextOverflow.ellipsis,
+                );
+              }),
+            ),
           ),
           builder: (context, child) {
             final mediaQuery = MediaQuery.of(context);
             // Safe sp clamping for Android accessibility text scaling
             final clampedScaler = mediaQuery.textScaler.clamp(
               minScaleFactor: 0.85,
-              maxScaleFactor: 1.25,
+              maxScaleFactor: 1.15,
             );
             return MediaQuery(
               data: mediaQuery.copyWith(textScaler: clampedScaler),

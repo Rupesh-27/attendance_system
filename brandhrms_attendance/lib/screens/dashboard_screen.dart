@@ -1210,7 +1210,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
           NavigationDestination(
             icon: const Icon(Icons.access_time_outlined),
             selectedIcon: const Icon(Icons.access_time),
-            label: tr('attendance'),
+            label: tr('nav_attendance'),
           ),
           NavigationDestination(
             icon: const Icon(Icons.calendar_month_outlined),
@@ -1934,15 +1934,19 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
               ),
               const SizedBox(width: 5),
               Expanded(
-                child: Text(
-                  title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.blueGrey.shade700,
-                    height: 1.15,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.blueGrey.shade700,
+                      height: 1.15,
+                    ),
                   ),
                 ),
               ),
