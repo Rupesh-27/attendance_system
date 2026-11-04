@@ -1235,7 +1235,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
           const NavigationDestination(
             icon: Icon(Icons.more_vert),
             selectedIcon: Icon(Icons.more_vert),
-            label: '⋮',
+            label: '',
           ),
         ],
       ),
@@ -1308,11 +1308,6 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                   ),
                 ),
             ],
-          ),
-          IconButton(
-            icon: const Icon(Icons.more_vert),
-            tooltip: 'Options',
-            onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
           ),
         ],
       ),

@@ -16,8 +16,8 @@ class ProfileScreen extends StatelessWidget {
 
 /// The Slide-In Side Navigation Panel (EndDrawer):
 /// - Slides in from right to left
-/// - Left Column: Vertical BRAND CROCK with logo theme (Deep Teal & Lime Green)
-/// - Right Column: Adaptable scrollable list (Currently displaying Profile card alone)
+/// - Uses the authentic BrandHR Logo Theme (Teal #0F9D8A, Lime Green #84B83C, Clean Light Surface)
+/// - Fully reactive to language changes via LanguageService.instance
 class BrandSideMenuDrawer extends StatelessWidget {
   final bool isEmbedded;
   const BrandSideMenuDrawer({super.key, this.isEmbedded = false});
@@ -58,7 +58,7 @@ class BrandSideMenuDrawer extends StatelessWidget {
         final content = SafeArea(
           child: Row(
             children: [
-              // LEFT COLUMN: Vertical B R A N D   C R O C K
+              // LEFT COLUMN: Vertical B R A N D   C R O C K (Teal-to-Lime Logo Gradient)
               Expanded(
                 flex: 4,
                 child: Container(
@@ -67,14 +67,14 @@ class BrandSideMenuDrawer extends StatelessWidget {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Color(0xFF0F9D8A),
-                        Color(0xFF085F53),
-                        Color(0xFF03332C),
+                        Color(0xFF0F9D8A), // BrandHR Primary Teal
+                        Color(0xFF0E8A79),
+                        Color(0xFF84B83C), // BrandHR Fresh Lime Green
                       ],
                     ),
                     border: Border(
                       right: BorderSide(
-                        color: Color(0xFF1E293B),
+                        color: Color(0xFFE2E8F0),
                         width: 1.5,
                       ),
                     ),
@@ -85,6 +85,22 @@ class BrandSideMenuDrawer extends StatelessWidget {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
+                          // Top Brand Emblem Badge
+                          Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.22),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.business_rounded,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
                           // B R A N D
                           _buildVerticalLetter('B'),
                           _buildVerticalLetter('R'),
@@ -92,17 +108,17 @@ class BrandSideMenuDrawer extends StatelessWidget {
                           _buildVerticalLetter('N'),
                           _buildVerticalLetter('D'),
 
-                          // Lime Green Separator Dot (from logo palette)
+                          // Separator Dot
                           const SizedBox(height: 12),
                           Container(
-                            width: 7,
-                            height: 7,
+                            width: 8,
+                            height: 8,
                             decoration: const BoxDecoration(
-                              color: brandAccent,
+                              color: Colors.white,
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: brandAccent,
+                                  color: Colors.white70,
                                   blurRadius: 6,
                                   spreadRadius: 1,
                                 ),
@@ -124,11 +140,11 @@ class BrandSideMenuDrawer extends StatelessWidget {
                 ),
               ),
 
-              // RIGHT COLUMN: Adaptable Scrollable Menu List
+              // RIGHT COLUMN: Clean Light Adaptable Menu List
               Expanded(
                 flex: 6,
                 child: Container(
-                  color: const Color(0xFF0A1B18),
+                  color: const Color(0xFFF8FAFC),
                   child: Column(
                     children: [
                       // Top bar with Close button (✕)
@@ -140,7 +156,7 @@ class BrandSideMenuDrawer extends StatelessWidget {
                             child: IconButton(
                               icon: const Icon(
                                 Icons.close_rounded,
-                                color: Colors.white70,
+                                color: Color(0xFF475569),
                                 size: 26,
                               ),
                               tooltip: tr('cancel'),
@@ -149,7 +165,7 @@ class BrandSideMenuDrawer extends StatelessWidget {
                           ),
                         ),
 
-                      // Adaptable Menu List
+                      // Adaptable Menu List (Supports future options seamlessly)
                       Expanded(
                         child: ListView(
                           padding: const EdgeInsets.symmetric(
@@ -157,7 +173,7 @@ class BrandSideMenuDrawer extends StatelessWidget {
                             vertical: 12,
                           ),
                           children: [
-                            // 1. Primary Item: Profile Card
+                            // 1. Primary Item: Profile Card (Light Logo Theme)
                             _buildProfileCard(
                               context,
                               initial: initial,
@@ -166,7 +182,7 @@ class BrandSideMenuDrawer extends StatelessWidget {
                               isEmbedded: isEmbedded,
                             ),
 
-                            // Future menu options (like Settings, Help, etc.) can be added here
+                            // Future menu options (like Settings, Help, etc.) can be plugged in here
                           ],
                         ),
                       ),
@@ -180,14 +196,14 @@ class BrandSideMenuDrawer extends StatelessWidget {
 
         if (isEmbedded) {
           return Scaffold(
-            backgroundColor: const Color(0xFF0A1B18),
+            backgroundColor: const Color(0xFFF8FAFC),
             body: content,
           );
         }
 
         return Drawer(
           width: MediaQuery.of(context).size.width * 0.88,
-          backgroundColor: const Color(0xFF0A1B18),
+          backgroundColor: const Color(0xFFF8FAFC),
           elevation: 16,
           child: content,
         );
@@ -221,22 +237,15 @@ class BrandSideMenuDrawer extends StatelessWidget {
           vertical: 24,
         ),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              brandPrimary.withValues(alpha: 0.28),
-              brandAccent.withValues(alpha: 0.08),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          color: Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: brandPrimary.withValues(alpha: 0.55),
+            color: brandPrimary.withValues(alpha: 0.25),
             width: 1.5,
           ),
           boxShadow: [
             BoxShadow(
-              color: brandPrimary.withValues(alpha: 0.15),
+              color: brandPrimary.withValues(alpha: 0.08),
               blurRadius: 16,
               offset: const Offset(0, 4),
             ),
@@ -245,98 +254,126 @@ class BrandSideMenuDrawer extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Deep Teal Avatar Circle
             Container(
-              width: 68,
-              height: 68,
+              width: 66,
+              height: 66,
               decoration: const BoxDecoration(
                 color: brandPrimary,
                 shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Color(0x330F9D8A),
+                    blurRadius: 8,
+                    offset: Offset(0, 3),
+                  ),
+                ],
               ),
               child: Center(
                 child: Text(
                   initial,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 28,
+                    fontSize: 26,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
+
+            // Profile Title (Localized)
             Text(
               tr('profile'),
               style: const TextStyle(
-                color: Colors.white,
-                fontSize: 20,
+                color: Color(0xFF0F172A),
+                fontSize: 19,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 4),
+
+            // Employee Name
             Text(
               name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                color: Color(0xFF5EEAD4),
+                color: brandPrimary,
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 4),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 7,
-                  height: 7,
-                  decoration: const BoxDecoration(
-                    color: brandAccent,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 5),
-                Flexible(
-                  child: Text(
-                    roleName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.7),
-                      fontSize: 12,
+            const SizedBox(height: 6),
+
+            // Role Badge with Logo Lime Green Accent (Localized)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3.5),
+              decoration: BoxDecoration(
+                color: brandAccent.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: brandAccent.withValues(alpha: 0.35)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: const BoxDecoration(
+                      color: brandAccent, // Logo Lime Green
+                      shape: BoxShape.circle,
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 5),
+                  Flexible(
+                    child: Text(
+                      roleName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFF4D7C0F), // High contrast dark lime
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 16),
+
+            // Details Button (Localized)
             Container(
               padding: const EdgeInsets.symmetric(
-                horizontal: 14,
+                horizontal: 16,
                 vertical: 8,
               ),
               decoration: BoxDecoration(
-                color: brandPrimary.withValues(alpha: 0.35),
+                color: brandPrimary,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: brandAccent.withValues(alpha: 0.4),
-                  width: 1,
-                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: brandPrimary.withValues(alpha: 0.28),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'Details',
-                    style: TextStyle(
+                    tr('details'),
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 12,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  SizedBox(width: 4),
-                  Icon(
+                  const SizedBox(width: 4),
+                  const Icon(
                     Icons.arrow_forward_rounded,
                     color: Colors.white,
                     size: 14,
@@ -439,13 +476,57 @@ class ProfileDetailsScreen extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 5),
-                      Text(
-                        roleName,
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontSize: 14,
-                        ),
+                      const SizedBox(height: 6),
+                      // Status & Role Badge
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 3.5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: accentColor.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: accentColor.withValues(alpha: 0.35),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 6,
+                                  height: 6,
+                                  decoration: const BoxDecoration(
+                                    color: accentColor,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  emp?.isActive == true
+                                      ? tr('active')
+                                      : tr('inactive'),
+                                  style: const TextStyle(
+                                    color: Color(0xFF4D7C0F),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            roleName,
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
