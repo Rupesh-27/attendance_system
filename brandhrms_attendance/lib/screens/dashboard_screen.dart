@@ -297,6 +297,9 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       LocationMonitorService.instance.refreshPermissionStatus();
+      if (_isCheckedIn && ApiService.isLocationAttendanceRequired) {
+        LocationMonitorService.instance.forceCheckLocation();
+      }
       if (mounted) setState(() {});
     }
   }
@@ -747,6 +750,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                 onForceCheckoutCallback: _showForceCheckoutDialog,
                 initialBreachTime: activeSession.initialOutOfRadiusAt,
               );
+              LocationMonitorService.instance.forceCheckLocation();
             } else {
               LocationMonitorService.instance.stopMonitoring();
             }
@@ -1124,20 +1128,24 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
           final isAccuracyError = rawMsg.toLowerCase().contains('accuracy');
           final isOutsideRadius = rawMsg.toLowerCase().contains('outside');
 
-          setState(() {
-            _locationStatus = 'Unavailable';
-            _locationStatusBadge = isAccuracyError
-                ? 'Weak GPS'
-                : (isOutsideRadius ? 'Outside Radius' : 'Failed');
-            _locationStatusSubtext =
-                result['message'] ?? '$actionAttempted failed. Please verify location.';
-            _locationStatusColor = const Color(0xFFDC2626);
-            _locationStatusBg = const Color(0xFFFEE2E2);
-            _locationStatusBorder = const Color(0xFFFCA5A5);
-            _locationStatusIcon = isAccuracyError
-                ? Icons.gps_not_fixed_rounded
-                : Icons.location_off;
-          });
+          if (_isCheckedIn && isOutsideRadius) {
+            LocationMonitorService.instance.processPosition(position);
+          } else {
+            setState(() {
+              _locationStatus = 'Unavailable';
+              _locationStatusBadge = isAccuracyError
+                  ? 'Weak GPS'
+                  : (isOutsideRadius ? 'Outside Radius' : 'Failed');
+              _locationStatusSubtext =
+                  result['message'] ?? '$actionAttempted failed. Please verify location.';
+              _locationStatusColor = const Color(0xFFDC2626);
+              _locationStatusBg = const Color(0xFFFEE2E2);
+              _locationStatusBorder = const Color(0xFFFCA5A5);
+              _locationStatusIcon = isAccuracyError
+                  ? Icons.gps_not_fixed_rounded
+                  : Icons.location_off;
+            });
+          }
 
           final errorMsg =
               result['message'] ?? '$actionAttempted verification failed.';

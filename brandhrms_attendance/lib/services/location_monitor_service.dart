@@ -143,6 +143,39 @@ class LocationMonitorService extends ChangeNotifier {
     _startPositionStream();
   }
 
+  /// Exposes location processing so external captures (e.g. check-out verification)
+  /// can feed directly into the breach monitoring engine.
+  void processPosition(Position position) {
+    _processPosition(position);
+  }
+
+  /// Forces an immediate live satellite GPS query, bypassing stale cache.
+  Future<void> forceCheckLocation() async {
+    if (!_isMonitoring) return;
+    await _pollLivePosition();
+  }
+
+  Future<void> _pollLivePosition() async {
+    try {
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 8),
+        ),
+      );
+      if (_isMonitoring) {
+        _processPosition(pos);
+      }
+    } catch (_) {
+      try {
+        final cached = await Geolocator.getLastKnownPosition();
+        if (cached != null && _isMonitoring) {
+          _processPosition(cached);
+        }
+      } catch (_) {}
+    }
+  }
+
   void _startPositionStream() {
     _positionStreamSubscription?.cancel();
 
@@ -150,7 +183,7 @@ class LocationMonitorService extends ChangeNotifier {
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
       locationSettings = AndroidSettings(
         accuracy: LocationAccuracy.high,
-        distanceFilter: 10,
+        distanceFilter: 0,
         intervalDuration: const Duration(seconds: 20),
         foregroundNotificationConfig: const ForegroundNotificationConfig(
           notificationTitle: 'BrandHRMS',
@@ -161,16 +194,12 @@ class LocationMonitorService extends ChangeNotifier {
     } else {
       locationSettings = const LocationSettings(
         accuracy: LocationAccuracy.high,
-        distanceFilter: 10,
+        distanceFilter: 0,
       );
     }
 
-    // Grab quick initial position for instantaneous UI display
-    Geolocator.getLastKnownPosition().then((pos) {
-      if (pos != null && _isMonitoring) {
-        _processPosition(pos);
-      }
-    }).catchError((_) {});
+    // Actively query live satellite GPS immediately upon startup
+    _pollLivePosition();
 
     // Listen to continuous position stream with persistent foreground service
     _positionStreamSubscription = Geolocator.getPositionStream(
