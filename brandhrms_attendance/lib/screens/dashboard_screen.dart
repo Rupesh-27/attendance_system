@@ -1233,8 +1233,8 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
             label: tr('leaves'),
           ),
           const NavigationDestination(
-            icon: Icon(Icons.more_vert),
-            selectedIcon: Icon(Icons.more_vert),
+            icon: Icon(Icons.more_vert, size: 28),
+            selectedIcon: Icon(Icons.more_vert, size: 28),
             label: '',
           ),
         ],
