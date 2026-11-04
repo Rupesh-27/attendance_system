@@ -1173,6 +1173,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
     }
   }
 
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _selectedTabIndex = 0;
   final GlobalKey<AttendanceHistoryScreenState> _historyKey =
       GlobalKey<AttendanceHistoryScreenState>();
@@ -1185,6 +1186,8 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
       listenable: LanguageService.instance,
       builder: (context, _) {
         return Scaffold(
+          key: _scaffoldKey,
+          drawer: const BrandSideMenuDrawer(),
           backgroundColor: const Color(0xFFF5F7F9),
           body: IndexedStack(
             index: _selectedTabIndex,
@@ -1198,6 +1201,10 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedTabIndex,
         onDestinationSelected: (index) {
+          if (index == 3) {
+            _scaffoldKey.currentState?.openDrawer();
+            return;
+          }
           setState(() {
             _selectedTabIndex = index;
           });
@@ -1246,6 +1253,11 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
       backgroundColor: const Color(0xFFF5F7F9),
       appBar: AppBar(
         automaticallyImplyLeading: false,
+        leading: IconButton(
+          icon: const Icon(Icons.menu),
+          tooltip: tr('menu'),
+          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+        ),
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
         title: const Text(

@@ -4,12 +4,22 @@ import '../main.dart';
 import '../services/api_service.dart';
 import '../services/language_service.dart';
 
-/// Screen displayed directly when the user selects the "Menu" bottom navigation tab.
-/// It displays the Split-Screen layout immediately:
-/// - Left Half: Vertical BRAND CROCK (each letter stacked one below the other)
-/// - Right Half: Only the Profile section alone
+/// Screen displayed if the 4th tab is embedded.
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const BrandSideMenuDrawer(isEmbedded: true);
+  }
+}
+
+/// The Slide-In Side Navigation Panel (Drawer):
+/// - Left Half: Vertical BRAND CROCK (each letter stacked one below the other)
+/// - Right Half: Only the Profile section alone
+class BrandSideMenuDrawer extends StatelessWidget {
+  final bool isEmbedded;
+  const BrandSideMenuDrawer({super.key, this.isEmbedded = false});
 
   static const Color brandPrimary = Color(0xFF0F9D8A);
 
@@ -42,207 +52,241 @@ class ProfileScreen extends StatelessWidget {
             : tr('Employee');
         final roleName = tr(emp?.role ?? 'EMPLOYEE');
 
-        return Scaffold(
-          backgroundColor: const Color(0xFF0F172A),
-          body: SafeArea(
-            child: Row(
-              children: [
-                // LEFT HALF: Vertical B R A N D   C R O C K
-                Expanded(
-                  flex: 4,
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Color(0xFF0F9D8A),
-                          Color(0xFF085F53),
-                          Color(0xFF04342E),
-                        ],
-                      ),
-                      border: Border(
-                        right: BorderSide(
-                          color: Color(0xFF1E293B),
-                          width: 1.5,
-                        ),
+        final content = SafeArea(
+          child: Row(
+            children: [
+              // LEFT HALF: Vertical B R A N D   C R O C K
+              Expanded(
+                flex: 4,
+                child: Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Color(0xFF0F9D8A),
+                        Color(0xFF085F53),
+                        Color(0xFF04342E),
+                      ],
+                    ),
+                    border: Border(
+                      right: BorderSide(
+                        color: Color(0xFF1E293B),
+                        width: 1.5,
                       ),
                     ),
-                    child: Center(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.symmetric(vertical: 24),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            // B R A N D
-                            _buildVerticalLetter('B'),
-                            _buildVerticalLetter('R'),
-                            _buildVerticalLetter('A'),
-                            _buildVerticalLetter('N'),
-                            _buildVerticalLetter('D'),
+                  ),
+                  child: Center(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(vertical: 24),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // B R A N D
+                          _buildVerticalLetter('B'),
+                          _buildVerticalLetter('R'),
+                          _buildVerticalLetter('A'),
+                          _buildVerticalLetter('N'),
+                          _buildVerticalLetter('D'),
 
-                            // Separator Dot
-                            const SizedBox(height: 12),
-                            Container(
-                              width: 6,
-                              height: 6,
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF5EEAD4),
-                                shape: BoxShape.circle,
-                              ),
+                          // Separator Dot
+                          const SizedBox(height: 12),
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF5EEAD4),
+                              shape: BoxShape.circle,
                             ),
-                            const SizedBox(height: 12),
+                          ),
+                          const SizedBox(height: 12),
 
-                            // C R O C K
-                            _buildVerticalLetter('C'),
-                            _buildVerticalLetter('R'),
-                            _buildVerticalLetter('O'),
-                            _buildVerticalLetter('C'),
-                            _buildVerticalLetter('K'),
-                          ],
-                        ),
+                          // C R O C K
+                          _buildVerticalLetter('C'),
+                          _buildVerticalLetter('R'),
+                          _buildVerticalLetter('O'),
+                          _buildVerticalLetter('C'),
+                          _buildVerticalLetter('K'),
+                        ],
                       ),
                     ),
                   ),
                 ),
+              ),
 
-                // RIGHT HALF: Only the Profile Section Alone
-                Expanded(
-                  flex: 6,
-                  child: Container(
-                    color: const Color(0xFF0F172A),
-                    padding: const EdgeInsets.all(16),
-                    child: Center(
-                      child: InkWell(
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => const ProfileDetailsScreen(),
+              // RIGHT HALF: Only the Profile Section Alone
+              Expanded(
+                flex: 6,
+                child: Container(
+                  color: const Color(0xFF0F172A),
+                  padding: const EdgeInsets.all(16),
+                  child: Stack(
+                    children: [
+                      // Close button (✕) at top right for the drawer
+                      if (!isEmbedded)
+                        Positioned(
+                          top: 0,
+                          right: 0,
+                          child: IconButton(
+                            icon: const Icon(
+                              Icons.close_rounded,
+                              color: Colors.white70,
+                              size: 26,
                             ),
-                          );
-                        },
-                        borderRadius: BorderRadius.circular(20),
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 28,
+                            tooltip: tr('cancel'),
+                            onPressed: () => Navigator.of(context).pop(),
                           ),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                brandPrimary.withValues(alpha: 0.25),
-                                brandPrimary.withValues(alpha: 0.08),
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: brandPrimary.withValues(alpha: 0.5),
-                              width: 1.5,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: brandPrimary.withValues(alpha: 0.15),
-                                blurRadius: 16,
-                                offset: const Offset(0, 4),
+                        ),
+
+                      Center(
+                        child: InkWell(
+                          onTap: () {
+                            if (!isEmbedded) {
+                              Navigator.of(context).pop(); // close drawer
+                            }
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const ProfileDetailsScreen(),
                               ),
-                            ],
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 68,
-                                height: 68,
-                                decoration: const BoxDecoration(
-                                  color: brandPrimary,
-                                  shape: BoxShape.circle,
+                            );
+                          },
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 28,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  brandPrimary.withValues(alpha: 0.25),
+                                  brandPrimary.withValues(alpha: 0.08),
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: brandPrimary.withValues(alpha: 0.5),
+                                width: 1.5,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: brandPrimary.withValues(alpha: 0.15),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 4),
                                 ),
-                                child: Center(
-                                  child: Text(
-                                    initial,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.bold,
+                              ],
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 68,
+                                  height: 68,
+                                  decoration: const BoxDecoration(
+                                    color: brandPrimary,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      initial,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                tr('profile'),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
+                                const SizedBox(height: 16),
+                                Text(
+                                  tr('profile'),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                name,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  color: Color(0xFF5EEAD4),
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
+                                const SizedBox(height: 6),
+                                Text(
+                                  name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: Color(0xFF5EEAD4),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 3),
-                              Text(
-                                roleName,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.6),
-                                  fontSize: 12,
+                                const SizedBox(height: 3),
+                                Text(
+                                  roleName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.6),
+                                    fontSize: 12,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 18),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 14,
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: brandPrimary.withValues(alpha: 0.3),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      'Details',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
+                                const SizedBox(height: 18),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: brandPrimary.withValues(alpha: 0.3),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        'Details',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                       ),
-                                    ),
-                                    SizedBox(width: 4),
-                                    Icon(
-                                      Icons.arrow_forward_rounded,
-                                      color: Colors.white,
-                                      size: 14,
-                                    ),
-                                  ],
+                                      SizedBox(width: 4),
+                                      Icon(
+                                        Icons.arrow_forward_rounded,
+                                        color: Colors.white,
+                                        size: 14,
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
+        );
+
+        if (isEmbedded) {
+          return Scaffold(
+            backgroundColor: const Color(0xFF0F172A),
+            body: content,
+          );
+        }
+
+        return Drawer(
+          width: MediaQuery.of(context).size.width * 0.88,
+          backgroundColor: const Color(0xFF0F172A),
+          elevation: 16,
+          child: content,
         );
       },
     );
