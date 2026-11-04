@@ -1226,9 +1226,9 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
             label: tr('leaves'),
           ),
           NavigationDestination(
-            icon: const Icon(Icons.person_outline),
-            selectedIcon: const Icon(Icons.person),
-            label: tr('profile'),
+            icon: const Icon(Icons.menu),
+            selectedIcon: const Icon(Icons.menu_open),
+            label: tr('menu'),
           ),
         ],
       ),
