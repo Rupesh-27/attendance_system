@@ -22,17 +22,17 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
 
   late DateTime _selectedDay;
 
-  bool _isCalendarExpanded = false;
+  // View mode: 0 = Calendar (default), 1 = Attendance Ledger
+  int _selectedViewIndex = 0;
 
   // Independent Ledger Section State
   late DateTime _ledgerMonth;
   List<AttendanceRecord> _ledgerRecords = [];
-  bool _isLedgerExpanded = false;
   bool _isLedgerLoading = false;
 
   void fetchHistory() {
     _fetchHistory();
-    if (_isLedgerExpanded) {
+    if (_selectedViewIndex == 1) {
       _fetchLedgerHistory();
     }
   }
@@ -44,6 +44,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     _currentMonth = DateTime(now.year, now.month, 1);
     _selectedDay = DateTime(now.year, now.month, now.day);
     _ledgerMonth = DateTime(now.year, now.month, 1);
+    _selectedViewIndex = 0; // Calendar displayed by default
     _fetchHistory();
   }
 
@@ -446,7 +447,12 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: _fetchHistory,
+        onRefresh: () async {
+          _fetchHistory();
+          if (_selectedViewIndex == 1) {
+            await _fetchLedgerHistory();
+          }
+        },
         color: primaryColor,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -454,25 +460,15 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
-              _buildCalendarSectionCard(),
-
-              if (_isCalendarExpanded) ...[
-                const SizedBox(height: 16),
+              _buildHorizontalSectionSelectors(),
+              const SizedBox(height: 16),
+              if (_selectedViewIndex == 0) ...[
                 _buildCalendarCard(),
                 const SizedBox(height: 16),
                 _buildDateDetailsCard(),
-              ],
-
-              const SizedBox(height: 16),
-
-              _buildLedgerSectionCard(),
-
-              if (_isLedgerExpanded) ...[
-                const SizedBox(height: 16),
+              ] else ...[
                 _buildLedgerDetailsCard(),
               ],
-
               const SizedBox(height: 30),
             ],
           ),
@@ -483,106 +479,95 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
 );
 }
 
-  Widget _buildCalendarSectionCard() {
+  void _selectView(int index) {
+    if (_selectedViewIndex == index) return;
+    setState(() {
+      _selectedViewIndex = index;
+    });
+    if (_selectedViewIndex == 1 && _ledgerRecords.isEmpty && !_isLedgerLoading) {
+      _fetchLedgerHistory();
+    }
+  }
+
+  Widget _buildHorizontalSectionSelectors() {
+    final isCalendar = _selectedViewIndex == 0;
+    final isLedger = _selectedViewIndex == 1;
+
+    return Row(
+      children: [
+        Expanded(
+          child: _buildSelectorCard(
+            title: tr('calendar'),
+            icon: Icons.calendar_month_rounded,
+            isSelected: isCalendar,
+            onTap: () => _selectView(0),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildSelectorCard(
+            title: tr('attendance_ledger'),
+            icon: Icons.format_list_bulleted_rounded,
+            isSelected: isLedger,
+            onTap: () => _selectView(1),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSelectorCard({
+    required String title,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () {
-          setState(() {
-            _isCalendarExpanded = !_isCalendarExpanded;
-          });
-        },
-        borderRadius: BorderRadius.circular(18),
-        child: Ink(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
+            color: isSelected ? primaryColor : Colors.white,
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: _isCalendarExpanded
-                  ? primaryColor.withValues(alpha: 0.4)
-                  : const Color(0xFFE2E8F0),
-              width: 1.2,
+              color: isSelected ? primaryColor : const Color(0xFFE2E8F0),
+              width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: _isCalendarExpanded
-                    ? primaryColor.withValues(alpha: 0.08)
+                color: isSelected
+                    ? primaryColor.withValues(alpha: 0.28)
                     : Colors.black.withValues(alpha: 0.03),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+                blurRadius: isSelected ? 10 : 6,
+                offset: const Offset(0, 3),
               ),
             ],
           ),
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: primaryColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.calendar_month_rounded,
-                  color: primaryColor,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      tr('calendar'),
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E293B),
-                        letterSpacing: -0.2,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      _isCalendarExpanded
-                          ? tr('tap_to_collapse')
-                          : '${_formatMonthYear(_currentMonth)} • ${tr('tap_to_view_calendar')}',
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        color: _isCalendarExpanded
-                            ? primaryColor
-                            : const Color(0xFF64748B),
-                        fontWeight: _isCalendarExpanded
-                            ? FontWeight.w600
-                            : FontWeight.w400,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
+              Icon(
+                icon,
+                color: isSelected ? Colors.white : const Color(0xFF64748B),
+                size: 20,
               ),
               const SizedBox(width: 8),
-              AnimatedRotation(
-                turns: _isCalendarExpanded ? 0.5 : 0.0,
-                duration: const Duration(milliseconds: 250),
-                curve: Curves.easeInOut,
-                child: Container(
-                  width: 34,
-                  height: 34,
-                  decoration: BoxDecoration(
-                    color: _isCalendarExpanded
-                        ? primaryColor.withValues(alpha: 0.12)
-                        : const Color(0xFFF1F5F9),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    color: _isCalendarExpanded
-                        ? primaryColor
-                        : const Color(0xFF475569),
-                    size: 22,
+              Flexible(
+                child: Text(
+                  title,
+                  maxLines: 2,
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.bold,
+                    color: isSelected ? Colors.white : const Color(0xFF334155),
+                    letterSpacing: -0.2,
                   ),
                 ),
               ),
@@ -604,119 +589,6 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
       7: 'SUN',
     };
     return tr(map[weekday] ?? 'SUN');
-  }
-
-  Widget _buildLedgerSectionCard() {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () {
-          setState(() {
-            _isLedgerExpanded = !_isLedgerExpanded;
-          });
-          if (_isLedgerExpanded && _ledgerRecords.isEmpty && !_isLedgerLoading) {
-            _fetchLedgerHistory();
-          }
-        },
-        borderRadius: BorderRadius.circular(18),
-        child: Ink(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: _isLedgerExpanded
-                  ? primaryColor.withValues(alpha: 0.4)
-                  : const Color(0xFFE2E8F0),
-              width: 1.2,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: _isLedgerExpanded
-                    ? primaryColor.withValues(alpha: 0.08)
-                    : Colors.black.withValues(alpha: 0.03),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: primaryColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.format_list_bulleted_rounded,
-                  color: primaryColor,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      tr('attendance_ledger'),
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E293B),
-                        letterSpacing: -0.2,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      _isLedgerExpanded
-                          ? tr('tap_to_collapse')
-                          : '${_formatMonthYear(_ledgerMonth)} • ${tr('tap_to_view_ledger')}',
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        color: _isLedgerExpanded
-                            ? primaryColor
-                            : const Color(0xFF64748B),
-                        fontWeight: _isLedgerExpanded
-                            ? FontWeight.w600
-                            : FontWeight.w400,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              AnimatedRotation(
-                turns: _isLedgerExpanded ? 0.5 : 0.0,
-                duration: const Duration(milliseconds: 250),
-                curve: Curves.easeInOut,
-                child: Container(
-                  width: 34,
-                  height: 34,
-                  decoration: BoxDecoration(
-                    color: _isLedgerExpanded
-                        ? primaryColor.withValues(alpha: 0.12)
-                        : const Color(0xFFF1F5F9),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.keyboard_arrow_down_rounded,
-                    color: _isLedgerExpanded
-                        ? primaryColor
-                        : const Color(0xFF475569),
-                    size: 22,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 
   void _showLedgerMonthPicker() {
