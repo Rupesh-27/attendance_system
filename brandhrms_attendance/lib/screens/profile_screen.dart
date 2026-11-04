@@ -54,6 +54,12 @@ class BrandSideMenuDrawer extends StatelessWidget {
             ? emp.fullName
             : tr('Employee');
         final roleName = tr(emp?.role ?? 'EMPLOYEE');
+        final brandPart1 = tr('brand_crock_part1').isNotEmpty && tr('brand_crock_part1') != 'brand_crock_part1'
+            ? tr('brand_crock_part1').toUpperCase()
+            : 'BRAND';
+        final brandPart2 = tr('brand_crock_part2').isNotEmpty && tr('brand_crock_part2') != 'brand_crock_part2'
+            ? tr('brand_crock_part2').toUpperCase()
+            : 'CROCK';
 
         final content = Row(
           children: [
@@ -85,12 +91,9 @@ class BrandSideMenuDrawer extends StatelessWidget {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          // B R A N D
-                          _buildVerticalLetter('B'),
-                          _buildVerticalLetter('R'),
-                          _buildVerticalLetter('A'),
-                          _buildVerticalLetter('N'),
-                          _buildVerticalLetter('D'),
+                          // Brand Part 1 (e.g., B R A N D / Б Р Э Н Д)
+                          for (final ch in brandPart1.characters)
+                            _buildVerticalLetter(ch),
 
                           // Separator Dot
                           const SizedBox(height: 12),
@@ -111,12 +114,9 @@ class BrandSideMenuDrawer extends StatelessWidget {
                           ),
                           const SizedBox(height: 12),
 
-                          // C R O C K
-                          _buildVerticalLetter('C'),
-                          _buildVerticalLetter('R'),
-                          _buildVerticalLetter('O'),
-                          _buildVerticalLetter('C'),
-                          _buildVerticalLetter('K'),
+                          // Brand Part 2 (e.g., C R O C K / К Р О К)
+                          for (final ch in brandPart2.characters)
+                            _buildVerticalLetter(ch),
                         ],
                       ),
                     ),

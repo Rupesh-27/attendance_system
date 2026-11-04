@@ -277,7 +277,7 @@ class _LocationVerificationScreenState
     return ListenableBuilder(
       listenable: LanguageService.instance,
       builder: (context, _) {
-        final officeName = ApiService.assignedOffice?.name ?? 'BrandCrock Office';
+        final officeName = ApiService.assignedOffice?.name ?? tr('brandcrock_office');
 
         return Scaffold(
           backgroundColor: const Color(0xFFF5F7F9),

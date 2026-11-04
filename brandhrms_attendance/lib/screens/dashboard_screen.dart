@@ -1246,7 +1246,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
 
   Widget _buildDashboardPage(BuildContext context) {
     final employeeName = ApiService.currentEmployee?.fullName ?? 'Employee';
-    final officeName = ApiService.assignedOffice?.name ?? 'BrandCrock Office';
+    final officeName = ApiService.assignedOffice?.name ?? tr('brandcrock_office');
     final quote = DashboardScreen.currentQuote;
 
     return Scaffold(
