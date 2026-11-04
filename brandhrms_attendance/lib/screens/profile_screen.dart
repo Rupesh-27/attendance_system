@@ -4,128 +4,12 @@ import '../main.dart';
 import '../services/api_service.dart';
 import '../services/language_service.dart';
 
-/// Landing screen displayed under the bottom navigation's 4th tab.
-/// Displays an AppBar with the Menu Bar icon, which opens the full-screen split panel.
+/// Screen displayed directly when the user selects the "Menu" bottom navigation tab.
+/// It displays the Split-Screen layout immediately:
+/// - Left Half: Vertical BRAND CROCK (each letter stacked one below the other)
+/// - Right Half: Only the Profile section alone
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
-
-  static const Color primaryColor = Color(0xFF0F9D8A);
-
-  void _openSplitMenu(BuildContext context) {
-    Navigator.of(context).push(
-      PageRouteBuilder(
-        opaque: true,
-        fullscreenDialog: true,
-        pageBuilder: (context, _, __) => const FullScreenSplitMenu(),
-        transitionsBuilder: (context, animation, _, child) {
-          final tween = Tween<Offset>(
-            begin: const Offset(-1.0, 0.0),
-            end: Offset.zero,
-          ).chain(CurveTween(curve: Curves.easeInOutCubic));
-          return SlideTransition(
-            position: animation.drive(tween),
-            child: child,
-          );
-        },
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: LanguageService.instance,
-      builder: (context, _) {
-        return Scaffold(
-          backgroundColor: const Color(0xFFF5F7F9),
-          appBar: AppBar(
-            backgroundColor: primaryColor,
-            foregroundColor: Colors.white,
-            leading: IconButton(
-              icon: const Icon(Icons.menu),
-              tooltip: tr('menu'),
-              onPressed: () => _openSplitMenu(context),
-            ),
-            title: Text(
-              tr('menu'),
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          body: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 90,
-                    height: 90,
-                    decoration: BoxDecoration(
-                      color: primaryColor.withValues(alpha: 0.12),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.menu_rounded,
-                      size: 46,
-                      color: primaryColor,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    tr('menu'),
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1E293B),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    tr('my_profile'),
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                  const SizedBox(height: 28),
-                  SizedBox(
-                    width: 220,
-                    height: 48,
-                    child: ElevatedButton.icon(
-                      onPressed: () => _openSplitMenu(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 2,
-                      ),
-                      icon: const Icon(Icons.menu),
-                      label: Text(
-                        tr('menu'),
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-/// Full-Screen Split Navigation Panel:
-/// - Left Half: BRAND CROCK vertically stacked one letter below the other
-/// - Right Half: Only the Profile section alone
-class FullScreenSplitMenu extends StatelessWidget {
-  const FullScreenSplitMenu({super.key});
 
   static const Color brandPrimary = Color(0xFF0F9D8A);
 
@@ -136,7 +20,7 @@ class FullScreenSplitMenu extends StatelessWidget {
         char,
         style: const TextStyle(
           color: Colors.white,
-          fontSize: 21,
+          fontSize: 22,
           fontWeight: FontWeight.w900,
           letterSpacing: 2.0,
         ),
@@ -161,219 +45,199 @@ class FullScreenSplitMenu extends StatelessWidget {
         return Scaffold(
           backgroundColor: const Color(0xFF0F172A),
           body: SafeArea(
-            child: Stack(
+            child: Row(
               children: [
-                // Split Screen: Left Half (Brand Crock) & Right Half (Profile Section)
-                Row(
-                  children: [
-                    // LEFT HALF: Vertical B R A N D   C R O C K
-                    Expanded(
-                      flex: 4,
-                      child: Container(
-                        decoration: const BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Color(0xFF0F9D8A),
-                              Color(0xFF085F53),
-                              Color(0xFF04342E),
-                            ],
-                          ),
-                          border: Border(
-                            right: BorderSide(
-                              color: Color(0xFF1E293B),
-                              width: 1.5,
-                            ),
-                          ),
-                        ),
-                        child: Center(
-                          child: SingleChildScrollView(
-                            padding: const EdgeInsets.symmetric(vertical: 24),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                // B R A N D
-                                _buildVerticalLetter('B'),
-                                _buildVerticalLetter('R'),
-                                _buildVerticalLetter('A'),
-                                _buildVerticalLetter('N'),
-                                _buildVerticalLetter('D'),
-
-                                // Separator dot
-                                const SizedBox(height: 12),
-                                Container(
-                                  width: 6,
-                                  height: 6,
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFF5EEAD4),
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-
-                                // C R O C K
-                                _buildVerticalLetter('C'),
-                                _buildVerticalLetter('R'),
-                                _buildVerticalLetter('O'),
-                                _buildVerticalLetter('C'),
-                                _buildVerticalLetter('K'),
-                              ],
-                            ),
-                          ),
+                // LEFT HALF: Vertical B R A N D   C R O C K
+                Expanded(
+                  flex: 4,
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Color(0xFF0F9D8A),
+                          Color(0xFF085F53),
+                          Color(0xFF04342E),
+                        ],
+                      ),
+                      border: Border(
+                        right: BorderSide(
+                          color: Color(0xFF1E293B),
+                          width: 1.5,
                         ),
                       ),
                     ),
+                    child: Center(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(vertical: 24),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            // B R A N D
+                            _buildVerticalLetter('B'),
+                            _buildVerticalLetter('R'),
+                            _buildVerticalLetter('A'),
+                            _buildVerticalLetter('N'),
+                            _buildVerticalLetter('D'),
 
-                    // RIGHT HALF: Only the Profile Section Alone
-                    Expanded(
-                      flex: 6,
-                      child: Container(
-                        color: const Color(0xFF0F172A),
-                        padding: const EdgeInsets.all(16),
-                        child: Center(
-                          child: InkWell(
-                            onTap: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => const ProfileDetailsScreen(),
-                                ),
-                              );
-                            },
+                            // Separator Dot
+                            const SizedBox(height: 12),
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF5EEAD4),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+
+                            // C R O C K
+                            _buildVerticalLetter('C'),
+                            _buildVerticalLetter('R'),
+                            _buildVerticalLetter('O'),
+                            _buildVerticalLetter('C'),
+                            _buildVerticalLetter('K'),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // RIGHT HALF: Only the Profile Section Alone
+                Expanded(
+                  flex: 6,
+                  child: Container(
+                    color: const Color(0xFF0F172A),
+                    padding: const EdgeInsets.all(16),
+                    child: Center(
+                      child: InkWell(
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const ProfileDetailsScreen(),
+                            ),
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(20),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 28,
+                          ),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                brandPrimary.withValues(alpha: 0.25),
+                                brandPrimary.withValues(alpha: 0.08),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
                             borderRadius: BorderRadius.circular(20),
-                            child: Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 24,
+                            border: Border.all(
+                              color: brandPrimary.withValues(alpha: 0.5),
+                              width: 1.5,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: brandPrimary.withValues(alpha: 0.15),
+                                blurRadius: 16,
+                                offset: const Offset(0, 4),
                               ),
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    brandPrimary.withValues(alpha: 0.22),
-                                    brandPrimary.withValues(alpha: 0.08),
-                                  ],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
+                            ],
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 68,
+                                height: 68,
+                                decoration: const BoxDecoration(
+                                  color: brandPrimary,
+                                  shape: BoxShape.circle,
                                 ),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: brandPrimary.withValues(alpha: 0.5),
-                                  width: 1.5,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: brandPrimary.withValues(alpha: 0.15),
-                                    blurRadius: 16,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    width: 60,
-                                    height: 60,
-                                    decoration: const BoxDecoration(
-                                      color: brandPrimary,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        initial,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 24,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 14),
-                                  Text(
-                                    tr('profile'),
+                                child: Center(
+                                  child: Text(
+                                    initial,
                                     style: const TextStyle(
                                       color: Colors.white,
-                                      fontSize: 18,
+                                      fontSize: 28,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    name,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                      color: Color(0xFF5EEAD4),
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    roleName,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: Colors.white.withValues(alpha: 0.6),
-                                      fontSize: 11,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 6,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: brandPrimary.withValues(alpha: 0.3),
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    child: const Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          'Details',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                        SizedBox(width: 4),
-                                        Icon(
-                                          Icons.arrow_forward_rounded,
-                                          color: Colors.white,
-                                          size: 14,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
+                                ),
                               ),
-                            ),
+                              const SizedBox(height: 16),
+                              Text(
+                                tr('profile'),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: Color(0xFF5EEAD4),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                roleName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.6),
+                                  fontSize: 12,
+                                ),
+                              ),
+                              const SizedBox(height: 18),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: brandPrimary.withValues(alpha: 0.3),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      'Details',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    SizedBox(width: 4),
+                                    Icon(
+                                      Icons.arrow_forward_rounded,
+                                      color: Colors.white,
+                                      size: 14,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
                     ),
-                  ],
-                ),
-
-                // Top Right Close (✕) Button
-                Positioned(
-                  top: 10,
-                  right: 12,
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.close_rounded,
-                      color: Colors.white,
-                      size: 28,
-                    ),
-                    tooltip: tr('cancel'),
-                    onPressed: () => Navigator.of(context).pop(),
                   ),
                 ),
               ],
@@ -511,7 +375,7 @@ class ProfileDetailsScreen extends StatelessWidget {
 
                 const SizedBox(height: 16),
 
-                // Work Information (Time Zone removed per previous request)
+                // Work Information (Time Zone removed)
                 _sectionCard(
                   title: tr('work_information'),
                   children: [
