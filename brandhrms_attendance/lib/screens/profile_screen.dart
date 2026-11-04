@@ -14,14 +14,17 @@ class ProfileScreen extends StatelessWidget {
   }
 }
 
-/// The Slide-In Side Navigation Panel (Drawer):
-/// - Left Half: Vertical BRAND CROCK (each letter stacked one below the other)
-/// - Right Half: Only the Profile section alone
+/// The Slide-In Side Navigation Panel (EndDrawer):
+/// - Slides in from right to left
+/// - Left Column: Vertical BRAND CROCK with logo theme (Deep Teal & Lime Green)
+/// - Right Column: Adaptable scrollable list (Currently displaying Profile card alone)
 class BrandSideMenuDrawer extends StatelessWidget {
   final bool isEmbedded;
   const BrandSideMenuDrawer({super.key, this.isEmbedded = false});
 
-  static const Color brandPrimary = Color(0xFF0F9D8A);
+  // Corporate Brand Theme Colors (from BrandHR logo)
+  static const Color brandPrimary = Color(0xFF0F9D8A); // Deep Teal
+  static const Color brandAccent = Color(0xFF84B83C); // Fresh Lime Green
 
   Widget _buildVerticalLetter(String char) {
     return Padding(
@@ -55,7 +58,7 @@ class BrandSideMenuDrawer extends StatelessWidget {
         final content = SafeArea(
           child: Row(
             children: [
-              // LEFT HALF: Vertical B R A N D   C R O C K
+              // LEFT COLUMN: Vertical B R A N D   C R O C K
               Expanded(
                 flex: 4,
                 child: Container(
@@ -66,7 +69,7 @@ class BrandSideMenuDrawer extends StatelessWidget {
                       colors: [
                         Color(0xFF0F9D8A),
                         Color(0xFF085F53),
-                        Color(0xFF04342E),
+                        Color(0xFF03332C),
                       ],
                     ),
                     border: Border(
@@ -89,14 +92,21 @@ class BrandSideMenuDrawer extends StatelessWidget {
                           _buildVerticalLetter('N'),
                           _buildVerticalLetter('D'),
 
-                          // Separator Dot
+                          // Lime Green Separator Dot (from logo palette)
                           const SizedBox(height: 12),
                           Container(
-                            width: 6,
-                            height: 6,
+                            width: 7,
+                            height: 7,
                             decoration: const BoxDecoration(
-                              color: Color(0xFF5EEAD4),
+                              color: brandAccent,
                               shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: brandAccent,
+                                  blurRadius: 6,
+                                  spreadRadius: 1,
+                                ),
+                              ],
                             ),
                           ),
                           const SizedBox(height: 12),
@@ -114,157 +124,50 @@ class BrandSideMenuDrawer extends StatelessWidget {
                 ),
               ),
 
-              // RIGHT HALF: Only the Profile Section Alone
+              // RIGHT COLUMN: Adaptable Scrollable Menu List
               Expanded(
                 flex: 6,
                 child: Container(
-                  color: const Color(0xFF0F172A),
-                  padding: const EdgeInsets.all(16),
-                  child: Stack(
+                  color: const Color(0xFF0A1B18),
+                  child: Column(
                     children: [
-                      // Close button (✕) at top right for the drawer
+                      // Top bar with Close button (✕)
                       if (!isEmbedded)
-                        Positioned(
-                          top: 0,
-                          right: 0,
-                          child: IconButton(
-                            icon: const Icon(
-                              Icons.close_rounded,
-                              color: Colors.white70,
-                              size: 26,
+                        Align(
+                          alignment: Alignment.topRight,
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 8, right: 8),
+                            child: IconButton(
+                              icon: const Icon(
+                                Icons.close_rounded,
+                                color: Colors.white70,
+                                size: 26,
+                              ),
+                              tooltip: tr('cancel'),
+                              onPressed: () => Navigator.of(context).pop(),
                             ),
-                            tooltip: tr('cancel'),
-                            onPressed: () => Navigator.of(context).pop(),
                           ),
                         ),
 
-                      Center(
-                        child: InkWell(
-                          onTap: () {
-                            if (!isEmbedded) {
-                              Navigator.of(context).pop(); // close drawer
-                            }
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) => const ProfileDetailsScreen(),
-                              ),
-                            );
-                          },
-                          borderRadius: BorderRadius.circular(20),
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 28,
-                            ),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  brandPrimary.withValues(alpha: 0.25),
-                                  brandPrimary.withValues(alpha: 0.08),
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: brandPrimary.withValues(alpha: 0.5),
-                                width: 1.5,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: brandPrimary.withValues(alpha: 0.15),
-                                  blurRadius: 16,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Container(
-                                  width: 68,
-                                  height: 68,
-                                  decoration: const BoxDecoration(
-                                    color: brandPrimary,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      initial,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 28,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  tr('profile'),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  name,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    color: Color(0xFF5EEAD4),
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(height: 3),
-                                Text(
-                                  roleName,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.6),
-                                    fontSize: 12,
-                                  ),
-                                ),
-                                const SizedBox(height: 18),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 14,
-                                    vertical: 8,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: brandPrimary.withValues(alpha: 0.3),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: const Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        'Details',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      SizedBox(width: 4),
-                                      Icon(
-                                        Icons.arrow_forward_rounded,
-                                        color: Colors.white,
-                                        size: 14,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
+                      // Adaptable Menu List
+                      Expanded(
+                        child: ListView(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
                           ),
+                          children: [
+                            // 1. Primary Item: Profile Card
+                            _buildProfileCard(
+                              context,
+                              initial: initial,
+                              name: name,
+                              roleName: roleName,
+                              isEmbedded: isEmbedded,
+                            ),
+
+                            // Future menu options (like Settings, Help, etc.) can be added here
+                          ],
                         ),
                       ),
                     ],
@@ -277,18 +180,173 @@ class BrandSideMenuDrawer extends StatelessWidget {
 
         if (isEmbedded) {
           return Scaffold(
-            backgroundColor: const Color(0xFF0F172A),
+            backgroundColor: const Color(0xFF0A1B18),
             body: content,
           );
         }
 
         return Drawer(
           width: MediaQuery.of(context).size.width * 0.88,
-          backgroundColor: const Color(0xFF0F172A),
+          backgroundColor: const Color(0xFF0A1B18),
           elevation: 16,
           child: content,
         );
       },
+    );
+  }
+
+  Widget _buildProfileCard(
+    BuildContext context, {
+    required String initial,
+    required String name,
+    required String roleName,
+    required bool isEmbedded,
+  }) {
+    return InkWell(
+      onTap: () {
+        if (!isEmbedded) {
+          Navigator.of(context).pop(); // close endDrawer
+        }
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => const ProfileDetailsScreen(),
+          ),
+        );
+      },
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 24,
+        ),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              brandPrimary.withValues(alpha: 0.28),
+              brandAccent.withValues(alpha: 0.08),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: brandPrimary.withValues(alpha: 0.55),
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: brandPrimary.withValues(alpha: 0.15),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 68,
+              height: 68,
+              decoration: const BoxDecoration(
+                color: brandPrimary,
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Text(
+                  initial,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            Text(
+              tr('profile'),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Color(0xFF5EEAD4),
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 7,
+                  height: 7,
+                  decoration: const BoxDecoration(
+                    color: brandAccent,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 5),
+                Flexible(
+                  child: Text(
+                    roleName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.7),
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 8,
+              ),
+              decoration: BoxDecoration(
+                color: brandPrimary.withValues(alpha: 0.35),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: brandAccent.withValues(alpha: 0.4),
+                  width: 1,
+                ),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Details',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  SizedBox(width: 4),
+                  Icon(
+                    Icons.arrow_forward_rounded,
+                    color: Colors.white,
+                    size: 14,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -298,6 +356,7 @@ class ProfileDetailsScreen extends StatelessWidget {
   const ProfileDetailsScreen({super.key});
 
   static const Color primaryColor = Color(0xFF0F9D8A);
+  static const Color accentColor = Color(0xFF84B83C);
 
   @override
   Widget build(BuildContext context) {

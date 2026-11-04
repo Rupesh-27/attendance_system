@@ -1187,7 +1187,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
       builder: (context, _) {
         return Scaffold(
           key: _scaffoldKey,
-          drawer: const BrandSideMenuDrawer(),
+          endDrawer: const BrandSideMenuDrawer(),
           backgroundColor: const Color(0xFFF5F7F9),
           body: IndexedStack(
             index: _selectedTabIndex,
@@ -1202,7 +1202,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
         selectedIndex: _selectedTabIndex,
         onDestinationSelected: (index) {
           if (index == 3) {
-            _scaffoldKey.currentState?.openDrawer();
+            _scaffoldKey.currentState?.openEndDrawer();
             return;
           }
           setState(() {
@@ -1232,10 +1232,10 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
             selectedIcon: const Icon(Icons.calendar_month),
             label: tr('leaves'),
           ),
-          NavigationDestination(
-            icon: const Icon(Icons.menu),
-            selectedIcon: const Icon(Icons.menu_open),
-            label: tr('menu'),
+          const NavigationDestination(
+            icon: Icon(Icons.more_vert),
+            selectedIcon: Icon(Icons.more_vert),
+            label: '⋮',
           ),
         ],
       ),
@@ -1253,11 +1253,6 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
       backgroundColor: const Color(0xFFF5F7F9),
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        leading: IconButton(
-          icon: const Icon(Icons.menu),
-          tooltip: tr('menu'),
-          onPressed: () => _scaffoldKey.currentState?.openDrawer(),
-        ),
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
         title: const Text(
@@ -1313,6 +1308,11 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                   ),
                 ),
             ],
+          ),
+          IconButton(
+            icon: const Icon(Icons.more_vert),
+            tooltip: 'Options',
+            onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
           ),
         ],
       ),
