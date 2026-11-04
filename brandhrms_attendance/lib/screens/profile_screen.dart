@@ -215,25 +215,25 @@ class BrandSideMenuDrawer extends StatelessWidget {
           ),
         );
       },
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(12),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 14,
+          horizontal: 10,
+          vertical: 10,
         ),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: brandPrimary.withValues(alpha: 0.22),
-            width: 1.5,
+            color: brandPrimary.withValues(alpha: 0.16),
+            width: 1.0,
           ),
           boxShadow: [
             BoxShadow(
-              color: brandPrimary.withValues(alpha: 0.08),
-              blurRadius: 12,
-              offset: const Offset(0, 3),
+              color: brandPrimary.withValues(alpha: 0.05),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
@@ -242,16 +242,16 @@ class BrandSideMenuDrawer extends StatelessWidget {
           children: [
             // Deep Teal Avatar Circle
             Container(
-              width: 46,
-              height: 46,
+              width: 36,
+              height: 36,
               decoration: const BoxDecoration(
                 color: brandPrimary,
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Color(0x330F9D8A),
-                    blurRadius: 6,
-                    offset: Offset(0, 2),
+                    color: Color(0x220F9D8A),
+                    blurRadius: 4,
+                    offset: Offset(0, 1.5),
                   ),
                 ],
               ),
@@ -260,24 +260,24 @@ class BrandSideMenuDrawer extends StatelessWidget {
                   initial,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 20,
+                    fontSize: 15,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 5),
 
             // Profile Title (Localized)
             Text(
               tr('profile'),
               style: const TextStyle(
                 color: Color(0xFF0F172A),
-                fontSize: 15,
+                fontSize: 12.5,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: 1),
 
             // Employee Name
             Text(
@@ -287,26 +287,29 @@ class BrandSideMenuDrawer extends StatelessWidget {
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: brandPrimary,
-                fontSize: 13,
+                fontSize: 11.5,
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 5),
+            const SizedBox(height: 3.5),
 
             // Role Badge with Logo Lime Green Accent (Localized)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
                 color: brandAccent.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: brandAccent.withValues(alpha: 0.35)),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: brandAccent.withValues(alpha: 0.3),
+                  width: 0.8,
+                ),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    width: 5,
-                    height: 5,
+                    width: 4,
+                    height: 4,
                     decoration: const BoxDecoration(
                       color: brandAccent, // Logo Lime Green
                       shape: BoxShape.circle,
@@ -320,7 +323,7 @@ class BrandSideMenuDrawer extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: Color(0xFF4D7C0F), // High contrast dark lime
-                        fontSize: 10.5,
+                        fontSize: 9.5,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -328,22 +331,22 @@ class BrandSideMenuDrawer extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 7),
 
             // Details Button (Localized)
             Container(
               padding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 6,
+                horizontal: 10,
+                vertical: 4,
               ),
               decoration: BoxDecoration(
                 color: brandPrimary,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(10),
                 boxShadow: [
                   BoxShadow(
-                    color: brandPrimary.withValues(alpha: 0.25),
-                    blurRadius: 5,
-                    offset: const Offset(0, 2),
+                    color: brandPrimary.withValues(alpha: 0.2),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1.5),
                   ),
                 ],
               ),
@@ -354,7 +357,7 @@ class BrandSideMenuDrawer extends StatelessWidget {
                     tr('details'),
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 11,
+                      fontSize: 10,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -362,7 +365,7 @@ class BrandSideMenuDrawer extends StatelessWidget {
                   const Icon(
                     Icons.arrow_forward_rounded,
                     color: Colors.white,
-                    size: 13,
+                    size: 11,
                   ),
                 ],
               ),
