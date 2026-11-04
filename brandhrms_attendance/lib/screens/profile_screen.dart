@@ -55,30 +55,30 @@ class BrandSideMenuDrawer extends StatelessWidget {
             : tr('Employee');
         final roleName = tr(emp?.role ?? 'EMPLOYEE');
 
-        final content = SafeArea(
-          child: Row(
-            children: [
-              // LEFT COLUMN: Vertical B R A N D   C R O C K (Teal-to-Lime Logo Gradient)
-              Expanded(
-                flex: 4,
-                child: Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Color(0xFF0F9D8A), // BrandHR Primary Teal
-                        Color(0xFF0E8A79),
-                        Color(0xFF84B83C), // BrandHR Fresh Lime Green
-                      ],
-                    ),
-                    border: Border(
-                      right: BorderSide(
-                        color: Color(0xFFE2E8F0),
-                        width: 1.5,
-                      ),
+        final content = Row(
+          children: [
+            // LEFT COLUMN: Vertical B R A N D   C R O C K (Covers 100% full height top-to-bottom)
+            Expanded(
+              flex: 4,
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Color(0xFF0F9D8A), // BrandHR Primary Teal
+                      Color(0xFF0E8A79),
+                      Color(0xFF84B83C), // BrandHR Fresh Lime Green
+                    ],
+                  ),
+                  border: Border(
+                    right: BorderSide(
+                      color: Color(0xFFE2E8F0),
+                      width: 1.5,
                     ),
                   ),
+                ),
+                child: SafeArea(
                   child: Center(
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.symmetric(vertical: 24),
@@ -139,12 +139,14 @@ class BrandSideMenuDrawer extends StatelessWidget {
                   ),
                 ),
               ),
+            ),
 
-              // RIGHT COLUMN: Clean Light Adaptable Menu List
-              Expanded(
-                flex: 6,
-                child: Container(
-                  color: const Color(0xFFF8FAFC),
+            // RIGHT COLUMN: Clean Light Adaptable Menu List (Full Height)
+            Expanded(
+              flex: 6,
+              child: Container(
+                color: const Color(0xFFF8FAFC),
+                child: SafeArea(
                   child: Column(
                     children: [
                       // Top bar with Close button (✕)
@@ -190,8 +192,8 @@ class BrandSideMenuDrawer extends StatelessWidget {
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         );
 
         if (isEmbedded) {
