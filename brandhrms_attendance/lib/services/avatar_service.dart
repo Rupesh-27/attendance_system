@@ -41,14 +41,13 @@ class AvatarService extends ChangeNotifier {
   /// Opens the device file picker to select a profile image (.jpg, .jpeg, .png, .webp).
   Future<bool> pickAndSaveAvatar(String? employeeId) async {
     try {
-      final result = await FilePicker.platform.pickFiles(
+      final file = await FilePicker.pickFile(
         type: FileType.custom,
         allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'],
-        allowMultiple: false,
       );
 
-      if (result != null && result.files.isNotEmpty && result.files.single.path != null) {
-        final pickedPath = result.files.single.path!;
+      if (file != null && file.path != null) {
+        final pickedPath = file.path!;
         if (File(pickedPath).existsSync()) {
           _avatarPath = pickedPath;
           notifyListeners();
