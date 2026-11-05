@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 import '../main.dart';
 import '../services/api_service.dart';
+import '../services/avatar_service.dart';
 import '../services/language_service.dart';
 
 /// Screen displayed if the 4th tab is embedded.
@@ -44,7 +47,10 @@ class BrandSideMenuDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: LanguageService.instance,
+      listenable: Listenable.merge([
+        LanguageService.instance,
+        AvatarService.instance,
+      ]),
       builder: (context, _) {
         final emp = ApiService.currentEmployee;
         final initial = (emp != null && emp.fullName.isNotEmpty)
@@ -240,14 +246,20 @@ class BrandSideMenuDrawer extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Deep Teal Avatar Circle
+            // Avatar Circle (Custom Photo or Deep Teal Initial)
             Container(
               width: 36,
               height: 36,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: brandPrimary,
                 shape: BoxShape.circle,
-                boxShadow: [
+                image: AvatarService.instance.hasCustomAvatar
+                    ? DecorationImage(
+                        image: FileImage(File(AvatarService.instance.avatarPath!)),
+                        fit: BoxFit.cover,
+                      )
+                    : null,
+                boxShadow: const [
                   BoxShadow(
                     color: Color(0x220F9D8A),
                     blurRadius: 4,
@@ -255,16 +267,18 @@ class BrandSideMenuDrawer extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Center(
-                child: Text(
-                  initial,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
+              child: AvatarService.instance.hasCustomAvatar
+                  ? null
+                  : Center(
+                      child: Text(
+                        initial,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
             ),
             const SizedBox(height: 5),
 
@@ -387,7 +401,10 @@ class ProfileDetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: LanguageService.instance,
+      listenable: Listenable.merge([
+        LanguageService.instance,
+        AvatarService.instance,
+      ]),
       builder: (context, _) {
         final emp = ApiService.currentEmployee;
         final office = ApiService.assignedOffice;
@@ -439,23 +456,85 @@ class ProfileDetailsScreen extends StatelessWidget {
                   ),
                   child: Column(
                     children: [
-                      Container(
-                        width: 90,
-                        height: 90,
-                        decoration: const BoxDecoration(
-                          color: primaryColor,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Center(
-                          child: Text(
-                            initial,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 36,
-                              fontWeight: FontWeight.bold,
+                      // Interactive Avatar with Camera Badge
+                      Stack(
+                        children: [
+                          InkWell(
+                            onTap: () => _showAvatarOptionsModal(context, emp?.id),
+                            borderRadius: BorderRadius.circular(45),
+                            child: Container(
+                              width: 90,
+                              height: 90,
+                              decoration: BoxDecoration(
+                                color: primaryColor,
+                                shape: BoxShape.circle,
+                                image: AvatarService.instance.hasCustomAvatar
+                                    ? DecorationImage(
+                                        image: FileImage(
+                                          File(AvatarService.instance.avatarPath!),
+                                        ),
+                                        fit: BoxFit.cover,
+                                      )
+                                    : null,
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Color(0x330F9D8A),
+                                    blurRadius: 10,
+                                    offset: Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: AvatarService.instance.hasCustomAvatar
+                                  ? null
+                                  : Center(
+                                      child: Text(
+                                        initial,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 36,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
                             ),
                           ),
-                        ),
+                          // Edit Floating Camera Badge Button
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () => _showAvatarOptionsModal(context, emp?.id),
+                                borderRadius: BorderRadius.circular(16),
+                                child: Container(
+                                  width: 32,
+                                  height: 32,
+                                  decoration: BoxDecoration(
+                                    color: primaryColor,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 2.5,
+                                    ),
+                                    boxShadow: const [
+                                      BoxShadow(
+                                        color: Colors.black26,
+                                        blurRadius: 5,
+                                        offset: Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Icon(
+                                    Icons.camera_alt_rounded,
+                                    color: Colors.white,
+                                    size: 16,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 14),
                       Text(
@@ -751,6 +830,126 @@ class ProfileDetailsScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  static void _showAvatarOptionsModal(BuildContext context, String? employeeId) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        final hasCustom = AvatarService.instance.hasCustomAvatar;
+
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  tr('profile_photo'),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // Option 1: Choose from Gallery / Files
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: primaryColor.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.photo_library_rounded,
+                      color: primaryColor,
+                      size: 22,
+                    ),
+                  ),
+                  title: Text(
+                    tr('choose_from_gallery'),
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  onTap: () async {
+                    Navigator.of(ctx).pop();
+                    final success = await AvatarService.instance.pickAndSaveAvatar(employeeId);
+                    if (success && context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(tr('photo_updated')),
+                          backgroundColor: primaryColor,
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    }
+                  },
+                ),
+
+                // Option 2: Remove Photo (only shown if custom photo is set)
+                if (hasCustom)
+                  ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.delete_outline_rounded,
+                        color: Colors.red,
+                        size: 22,
+                      ),
+                    ),
+                    title: Text(
+                      tr('remove_photo'),
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.red,
+                      ),
+                    ),
+                    onTap: () async {
+                      Navigator.of(ctx).pop();
+                      await AvatarService.instance.removeAvatar(employeeId);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(tr('photo_removed')),
+                            backgroundColor: const Color(0xFF475569),
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

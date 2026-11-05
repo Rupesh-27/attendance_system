@@ -3,12 +3,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'screens/dashboard_screen.dart';
 import 'services/api_service.dart';
+import 'services/avatar_service.dart';
 import 'services/language_service.dart';
 import 'services/device_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await LanguageService.instance.init();
+  await AvatarService.instance.init();
   runApp(const BrandHrmsApp());
 }
 
