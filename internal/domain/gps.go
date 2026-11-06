@@ -24,7 +24,7 @@ type GPSLocation struct {
 // Rules:
 // - Latitude between -90 and 90
 // - Longitude between -180 and 180
-// - Accuracy > 0 and <= 20 meters
+// - Accuracy > 0 and <= 100 meters
 // - capturedAt must not be later than serverTime (future timestamps rejected)
 // - serverTime - capturedAt <= 30 seconds (stale timestamps rejected, 30s boundary allowed)
 func (g *GPSLocation) Validate(serverTime time.Time) error {

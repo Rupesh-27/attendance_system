@@ -21,7 +21,7 @@ var (
 	ErrInvalidLatitude     = errors.New("latitude must be between -90 and 90 degrees")
 	ErrInvalidLongitude    = errors.New("longitude must be between -180 and 180 degrees")
 	ErrInvalidAccuracy     = errors.New("gps accuracy must be greater than zero")
-	ErrAccuracyTooLow      = errors.New("gps accuracy exceeds maximum allowed threshold of 20 meters")
+	ErrAccuracyTooLow      = errors.New("gps accuracy exceeds maximum allowed threshold of 100 meters")
 	ErrCaptureTimeStale    = errors.New("gps capture timestamp is older than 30 seconds")
 	ErrCaptureTimeInFuture = errors.New("gps capture timestamp cannot be in the future")
 

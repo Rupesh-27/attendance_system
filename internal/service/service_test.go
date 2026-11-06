@@ -249,7 +249,7 @@ func TestAttendance_CheckIn_Failure_OutsideRadius(t *testing.T) {
 	assert.ErrorIs(t, err, domain.ErrOutsideOfficeRadius)
 }
 
-func TestAttendance_CheckIn_Failure_AccuracyGreaterThan20m(t *testing.T) {
+func TestAttendance_CheckIn_Failure_AccuracyGreaterThan100m(t *testing.T) {
 	empRepo, officeRepo, attRepo, emp, office := setupTestEnvironment()
 
 	fixedTime := time.Date(2026, 9, 23, 10, 0, 0, 0, time.UTC)
@@ -259,7 +259,7 @@ func TestAttendance_CheckIn_Failure_AccuracyGreaterThan20m(t *testing.T) {
 	gps := domain.GPSLocation{
 		Latitude:       office.Latitude,
 		Longitude:      office.Longitude,
-		AccuracyMeters: 20.1,
+		AccuracyMeters: 100.1,
 		CapturedAt:     fixedTime,
 	}
 
@@ -754,11 +754,11 @@ func TestAttendance_WhenLocationAttendanceEnabled_StrictAccuracyEnforced(t *test
 	clock := func() time.Time { return currentTime }
 	attSvc := service.NewAttendanceService(empRepo, officeRepo, attRepo, clock)
 
-	// GPS inside office but weak accuracy of 35 meters
+	// GPS inside office but weak accuracy exceeding 100 meters
 	gps := domain.GPSLocation{
 		Latitude:       office.Latitude,
 		Longitude:      office.Longitude,
-		AccuracyMeters: 35.0,
+		AccuracyMeters: 105.0,
 		CapturedAt:     currentTime,
 	}
 

@@ -119,11 +119,11 @@ func TestGPSValidation_Accuracy(t *testing.T) {
 		wantErr  error
 	}{
 		{"Valid accuracy 5m", 5.0, nil},
-		{"Valid accuracy 20m boundary", 20.0, nil},
+		{"Valid accuracy 100m boundary", 100.0, nil},
 		{"Accuracy zero rejected", 0.0, domain.ErrInvalidAccuracy},
 		{"Negative accuracy rejected", -1.0, domain.ErrInvalidAccuracy},
-		{"Accuracy 20.01m rejected", 20.01, domain.ErrAccuracyTooLow},
-		{"Accuracy 50m rejected", 50.0, domain.ErrAccuracyTooLow},
+		{"Accuracy 100.01m rejected", 100.01, domain.ErrAccuracyTooLow},
+		{"Accuracy 150m rejected", 150.0, domain.ErrAccuracyTooLow},
 	}
 
 	for _, tt := range tests {
