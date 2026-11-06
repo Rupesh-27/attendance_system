@@ -2127,22 +2127,6 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                   ),
                                 ],
                               ],
-                                        const SizedBox(width: 4),
-                                        Expanded(
-                                          child: Text(
-                                            outLoc,
-                                            style: TextStyle(
-                                              fontSize: 11.5,
-                                              color: Colors.grey.shade700,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ],
                             ],
                           ),
                         );
