@@ -2270,7 +2270,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                                   style: const TextStyle(
                                       fontWeight: FontWeight.w600, fontSize: 13),
                                 ),
-                                Flexible(
+                                Expanded(
                                   child: Text(
                                     isOvernightSession || isSessionCarriedOver
                                         ? LanguageService.formatDateTimeWithDash(session.checkInTime)
@@ -2325,7 +2325,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                                     style: const TextStyle(
                                         fontWeight: FontWeight.w600, fontSize: 13),
                                   ),
-                                  Flexible(
+                                  Expanded(
                                     child: Text(
                                       isOvernightSession
                                           ? LanguageService.formatDateTimeWithDash(session.checkOutTime!)
@@ -2333,27 +2333,54 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                                       style: const TextStyle(fontSize: 13),
                                     ),
                                   ),
-                                  if (isOvernightSession) ...[
-                                    const SizedBox(width: 6),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFFEF3C7),
-                                        borderRadius: BorderRadius.circular(6),
-                                        border: Border.all(color: const Color(0xFFF59E0B)),
-                                      ),
-                                      child: Text(
-                                        tr('next_day'),
-                                        style: const TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.bold,
-                                          color: Color(0xFFB45309),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
                                 ],
                               ),
+                              if (isOvernightSession || session.checkoutReason == 'FORCE_CHECKOUT_OUT_OF_RADIUS') ...[
+                                const SizedBox(height: 4),
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 22),
+                                  child: Wrap(
+                                    spacing: 6,
+                                    runSpacing: 4,
+                                    children: [
+                                      if (isOvernightSession)
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFFEF3C7),
+                                            borderRadius: BorderRadius.circular(6),
+                                            border: Border.all(color: const Color(0xFFF59E0B)),
+                                          ),
+                                          child: Text(
+                                            tr('next_day'),
+                                            style: const TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFFB45309),
+                                            ),
+                                          ),
+                                        ),
+                                      if (session.checkoutReason == 'FORCE_CHECKOUT_OUT_OF_RADIUS')
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: Colors.red.shade50,
+                                            borderRadius: BorderRadius.circular(4),
+                                            border: Border.all(color: Colors.red.shade200),
+                                          ),
+                                          child: Text(
+                                            tr('out_of_radius'),
+                                            style: const TextStyle(
+                                              color: Colors.red,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                               if (outLoc.isNotEmpty) ...[
                                 const SizedBox(height: 2),
                                 Row(

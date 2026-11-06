@@ -1993,107 +1993,115 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                               ),
                               const SizedBox(height: 8),
                               Row(
-                                      children: [
-                                        const Icon(Icons.login,
-                                            size: 18, color: Colors.green),
-                                        const SizedBox(width: 8),
-                                        Text('${tr('check_in')}: ',
-                                            style: const TextStyle(
-                                                fontWeight: FontWeight.w600,
-                                                fontSize: 13)),
-                                        Flexible(
-                                          child: Text(
-                                            session.checkInTime.toLocal().day != date.day || isOvernightSession
-                                                ? LanguageService.formatDateTimeWithDash(session.checkInTime)
-                                                : _formatTime(session.checkInTime),
-                                            style: const TextStyle(fontSize: 13),
-                                          ),
-                                        ),
-                                      ],
+                                children: [
+                                  const Icon(Icons.login,
+                                      size: 18, color: Colors.green),
+                                  const SizedBox(width: 8),
+                                  Text('${tr('check_in')}: ',
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 13)),
+                                  Expanded(
+                                    child: Text(
+                                      session.checkInTime.toLocal().day != date.day || isOvernightSession
+                                          ? LanguageService.formatDateTimeWithDash(session.checkInTime)
+                                          : _formatTime(session.checkInTime),
+                                      style: const TextStyle(fontSize: 13),
                                     ),
-                                    if (inLoc.isNotEmpty) ...[
-                                      const SizedBox(height: 3),
-                                      Padding(
-                                        padding: const EdgeInsets.only(left: 26),
-                                        child: Row(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            const Icon(Icons.location_on_outlined,
-                                                size: 14, color: Colors.green),
-                                            const SizedBox(width: 4),
-                                            Expanded(
-                                              child: Text(
-                                                inLoc,
-                                                style: TextStyle(
-                                                  fontSize: 11.5,
-                                                  color: Colors.grey.shade700,
-                                                  fontWeight: FontWeight.w500,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                    if (session.checkOutTime != null) ...[
-                                      const SizedBox(height: 6),
-                                      Row(
-                                        children: [
-                                          const Icon(Icons.logout,
-                                              size: 18, color: Colors.orange),
-                                          const SizedBox(width: 8),
-                                          Text('${tr('check_out')}: ',
-                                              style: const TextStyle(
-                                                  fontWeight: FontWeight.w600,
-                                                  fontSize: 13)),
-                                          Flexible(
-                                            child: Text(
-                                              session.checkOutTime!.toLocal().day != date.day || isOvernightSession
-                                                  ? LanguageService.formatDateTimeWithDash(session.checkOutTime!)
-                                                  : _formatTime(session.checkOutTime!),
-                                              style: const TextStyle(fontSize: 13),
-                                            ),
-                                          ),
-                                          if (isOvernightSession) ...[
-                                            const SizedBox(width: 6),
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                              decoration: BoxDecoration(
-                                                color: const Color(0xFFFEF3C7),
-                                                borderRadius: BorderRadius.circular(6),
-                                                border: Border.all(color: const Color(0xFFF59E0B)),
-                                              ),
-                                              child: Text(
-                                                tr('next_day'),
-                                                style: const TextStyle(
-                                                  fontSize: 10,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Color(0xFFB45309),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                          if (session.checkoutReason == 'FORCE_CHECKOUT_OUT_OF_RADIUS') ...[
-                                      const SizedBox(width: 8),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: Colors.red.shade50,
-                                          borderRadius: BorderRadius.circular(4),
-                                          border: Border.all(color: Colors.red.shade200),
-                                        ),
+                                  ),
+                                ],
+                              ),
+                              if (inLoc.isNotEmpty) ...[
+                                const SizedBox(height: 3),
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 26),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Icon(Icons.location_on_outlined,
+                                          size: 14, color: Colors.green),
+                                      const SizedBox(width: 4),
+                                      Expanded(
                                         child: Text(
-                                          tr('out_of_radius'),
-                                          style: const TextStyle(
-                                            color: Colors.red,
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
+                                          inLoc,
+                                          style: TextStyle(
+                                            fontSize: 11.5,
+                                            color: Colors.grey.shade700,
+                                            fontWeight: FontWeight.w500,
                                           ),
                                         ),
                                       ),
                                     ],
+                                  ),
+                                ),
+                              ],
+                              if (session.checkOutTime != null) ...[
+                                const SizedBox(height: 6),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.logout,
+                                        size: 18, color: Colors.orange),
+                                    const SizedBox(width: 8),
+                                    Text('${tr('check_out')}: ',
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 13)),
+                                    Expanded(
+                                      child: Text(
+                                        session.checkOutTime!.toLocal().day != date.day || isOvernightSession
+                                            ? LanguageService.formatDateTimeWithDash(session.checkOutTime!)
+                                            : _formatTime(session.checkOutTime!),
+                                        style: const TextStyle(fontSize: 13),
+                                      ),
+                                    ),
                                   ],
                                 ),
+                                if (isOvernightSession || session.checkoutReason == 'FORCE_CHECKOUT_OUT_OF_RADIUS') ...[
+                                  const SizedBox(height: 4),
+                                  Padding(
+                                    padding: const EdgeInsets.only(left: 26),
+                                    child: Wrap(
+                                      spacing: 6,
+                                      runSpacing: 4,
+                                      children: [
+                                        if (isOvernightSession)
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFFEF3C7),
+                                              borderRadius: BorderRadius.circular(6),
+                                              border: Border.all(color: const Color(0xFFF59E0B)),
+                                            ),
+                                            child: Text(
+                                              tr('next_day'),
+                                              style: const TextStyle(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.bold,
+                                                color: Color(0xFFB45309),
+                                              ),
+                                            ),
+                                          ),
+                                        if (session.checkoutReason == 'FORCE_CHECKOUT_OUT_OF_RADIUS')
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: Colors.red.shade50,
+                                              borderRadius: BorderRadius.circular(4),
+                                              border: Border.all(color: Colors.red.shade200),
+                                            ),
+                                            child: Text(
+                                              tr('out_of_radius'),
+                                              style: const TextStyle(
+                                                color: Colors.red,
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                                 if (outLoc.isNotEmpty) ...[
                                   const SizedBox(height: 3),
                                   Padding(
@@ -2103,6 +2111,22 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                       children: [
                                         Icon(Icons.location_on_outlined,
                                             size: 14, color: Colors.orange.shade700),
+                                        const SizedBox(width: 4),
+                                        Expanded(
+                                          child: Text(
+                                            outLoc,
+                                            style: TextStyle(
+                                              fontSize: 11.5,
+                                              color: Colors.grey.shade700,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ],
                                         const SizedBox(width: 4),
                                         Expanded(
                                           child: Text(
