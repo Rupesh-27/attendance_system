@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	MaxAllowedGPSAccuracyMeters              = 20.0
+	MaxAllowedGPSAccuracyMeters              = 100.0
 	MaxAllowedForceCheckoutAccuracyMeters    = 100.0
 	MaxAllowedFlexibleLocationAccuracyMeters = 150.0
 	MaxGPSCaptureAgeSeconds                  = 30.0
