@@ -503,7 +503,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
             onTap: () => _selectView(0),
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 8),
         Expanded(
           child: _buildSelectorCard(
             title: tr('attendance_ledger'),
@@ -530,7 +530,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeInOut,
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
           decoration: BoxDecoration(
             color: isSelected ? primaryColor : Colors.white,
             borderRadius: BorderRadius.circular(16),
@@ -554,20 +554,22 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
               Icon(
                 icon,
                 color: isSelected ? Colors.white : const Color(0xFF64748B),
-                size: 20,
+                size: 18,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               Flexible(
-                child: Text(
-                  title,
-                  maxLines: 2,
-                  textAlign: TextAlign.center,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.bold,
-                    color: isSelected ? Colors.white : const Color(0xFF334155),
-                    letterSpacing: -0.2,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.bold,
+                      color: isSelected ? Colors.white : const Color(0xFF334155),
+                      letterSpacing: -0.2,
+                    ),
                   ),
                 ),
               ),
