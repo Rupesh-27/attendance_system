@@ -16,7 +16,7 @@ class DeviceService {
       String? deviceModel;
 
       if (Platform.isAndroid) {
-        // 1. Fetch permanent Android Hardware ID (MediaDrm Widevine or Settings.Secure.ANDROID_ID)
+        // 1. Fetch permanent Android Hardware ID (Settings.Secure.ANDROID_ID)
         try {
           final nativeId =
               await _hardwareChannel.invokeMethod<String>('getHardwareId');
