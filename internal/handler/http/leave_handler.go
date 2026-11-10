@@ -267,6 +267,71 @@ func (h *LeaveHandler) UpdateAttachment(c *gin.Context) {
 	})
 }
 
+func (h *LeaveHandler) AddAttachment(c *gin.Context) {
+	empIDVal, exists := c.Get(middleware.ContextKeyEmployeeID)
+	if !exists {
+		SendError(c, http.StatusUnauthorized, "AUTH_INVALID", "User not authenticated", nil)
+		return
+	}
+	empID := empIDVal.(uuid.UUID)
+
+	idStr := c.Param("id")
+	appID, err := uuid.Parse(idStr)
+	if err != nil {
+		SendError(c, http.StatusBadRequest, "INVALID_ID", "Invalid leave application ID", nil)
+		return
+	}
+
+	if h.storage == nil {
+		SendError(c, http.StatusServiceUnavailable, "STORAGE_UNAVAILABLE", "Storage provider not configured", nil)
+		return
+	}
+
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, h.maxUploadBytes)
+	file, header, err := c.Request.FormFile("file")
+	if err != nil {
+		SendError(c, http.StatusBadRequest, "INVALID_FILE", "Invalid file upload: please provide a file under 'file'", nil)
+		return
+	}
+	defer file.Close()
+
+	if header.Size > h.maxUploadBytes {
+		SendError(c, http.StatusBadRequest, "FILE_TOO_LARGE", "File exceeds maximum allowed size", nil)
+		return
+	}
+
+	ext := strings.ToLower(filepath.Ext(header.Filename))
+	allowedExtensions := map[string]bool{
+		".pdf":  true,
+		".png":  true,
+		".jpg":  true,
+		".jpeg": true,
+		".doc":  true,
+		".docx": true,
+	}
+	if !allowedExtensions[ext] {
+		SendError(c, http.StatusBadRequest, "INVALID_FILE_TYPE", "Unsupported format. Allowed: PDF, PNG, JPG, JPEG, DOC, DOCX", nil)
+		return
+	}
+
+	uploadCtx := storage.WithApplicationID(storage.WithEmployeeID(c.Request.Context(), empID), appID)
+	newURL, err := h.storage.Save(uploadCtx, header.Filename, file)
+	if err != nil {
+		SendError(c, http.StatusInternalServerError, "STORAGE_ERROR", "Failed to save file: "+err.Error(), nil)
+		return
+	}
+
+	if err := h.leaveService.AddAttachment(c.Request.Context(), empID, appID, newURL); err != nil {
+		MapDomainError(c, err)
+		return
+	}
+
+	SendSuccess(c, http.StatusOK, gin.H{
+		"attachmentUrl": newURL,
+		"message":       "Attachment added successfully",
+	})
+}
+
 func (h *LeaveHandler) DeleteAttachment(c *gin.Context) {
 	empIDVal, exists := c.Get(middleware.ContextKeyEmployeeID)
 	if !exists {
@@ -282,7 +347,8 @@ func (h *LeaveHandler) DeleteAttachment(c *gin.Context) {
 		return
 	}
 
-	if err := h.leaveService.DeleteAttachment(c.Request.Context(), empID, appID); err != nil {
+	targetURL := c.Query("url")
+	if err := h.leaveService.DeleteAttachment(c.Request.Context(), empID, appID, targetURL); err != nil {
 		MapDomainError(c, err)
 		return
 	}

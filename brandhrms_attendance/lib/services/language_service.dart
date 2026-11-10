@@ -706,7 +706,11 @@ class LanguageService extends ChangeNotifier {
       'removing_file': 'Removing file...',
       'attachment_updated': 'Attachment updated successfully',
       'attachment_removed': 'Attachment removed successfully',
+      'add_more_documents': 'Add More Documents',
+      'adding_document': 'Adding document...',
+      'document_added': 'Document added successfully',
       'confirm_remove_attachment': 'Are you sure you want to remove the supporting document from this application?',
+      'confirm_remove_this_attachment': 'Are you sure you want to remove this document?',
 
       // Leave Reasons & Manager Remarks
       'reason_doctor_appointment': 'Doctor appointment',
@@ -1222,7 +1226,11 @@ class LanguageService extends ChangeNotifier {
       'removing_file': 'Datei wird entfernt...',
       'attachment_updated': 'Anhang erfolgreich aktualisiert',
       'attachment_removed': 'Anhang erfolgreich entfernt',
+      'add_more_documents': 'Weitere Dokumente hinzufügen',
+      'adding_document': 'Dokument wird hinzugefügt...',
+      'document_added': 'Dokument erfolgreich hinzugefügt',
       'confirm_remove_attachment': 'Möchten Sie das Nachweisdokument wirklich aus diesem Antrag entfernen?',
+      'confirm_remove_this_attachment': 'Möchten Sie dieses Dokument wirklich entfernen?',
 
       // Leave Reasons & Manager Remarks
       'reason_doctor_appointment': 'Arzttermin',
@@ -1738,7 +1746,11 @@ class LanguageService extends ChangeNotifier {
       'removing_file': 'Выдаленне файла...',
       'attachment_updated': 'Далучэнне паспяхова абноўлена',
       'attachment_removed': 'Далучэнне паспяхова выдалена',
+      'add_more_documents': 'Дадаць больш дакументаў',
+      'adding_document': 'Даданне дакумента...',
+      'document_added': 'Дакумент паспяхова дададзены',
       'confirm_remove_attachment': 'Вы сапраўды хочаце выдаліць пацвярджальны дакумент з гэтай заяўкі?',
+      'confirm_remove_this_attachment': 'Вы сапраўды хочаце выдаліць гэты дакумент?',
 
       // Leave Reasons & Manager Remarks
       'reason_doctor_appointment': 'Візіт да лекара',

@@ -306,6 +306,15 @@ class LeaveApplication {
   final String? managerRemarks;
   final DateTime createdAt;
 
+  List<String> get attachmentUrls {
+    if (attachmentUrl == null || attachmentUrl!.trim().isEmpty) return [];
+    return attachmentUrl!
+        .split(',')
+        .map((u) => u.trim())
+        .where((u) => u.isNotEmpty)
+        .toList();
+  }
+
   LeaveApplication({
     required this.id,
     required this.employeeId,
@@ -834,6 +843,49 @@ class ApiService {
     }
   }
 
+  static Future<Map<String, dynamic>> addLeaveAttachment(String applicationId, PlatformFile file) async {
+    try {
+      final uri = Uri.parse('$baseUrl/leave/$applicationId/attachment');
+      final request = http.MultipartRequest('POST', uri);
+
+      if (authToken != null) {
+        request.headers['Authorization'] = 'Bearer $authToken';
+      }
+
+      final bytes = await file.readAsBytes();
+      if (bytes.isEmpty) {
+        return {'success': false, 'message': 'Selected file is empty'};
+      }
+
+      request.files.add(http.MultipartFile.fromBytes(
+        'file',
+        bytes,
+        filename: file.name,
+      ));
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      handleAuthError(response);
+
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 && data['success'] == true) {
+        final fileData = data['data'] as Map<String, dynamic>?;
+        return {
+          'success': true,
+          'attachmentUrl': fileData?['attachmentUrl'] ?? '',
+          'message': fileData?['message'] ?? 'Attachment added successfully',
+        };
+      } else {
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Failed to add attachment',
+        };
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: $e'};
+    }
+  }
+
   static Future<Map<String, dynamic>> replaceLeaveAttachment(String applicationId, PlatformFile file) async {
     try {
       final uri = Uri.parse('$baseUrl/leave/$applicationId/attachment');
@@ -877,9 +929,13 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> removeLeaveAttachment(String applicationId) async {
+  static Future<Map<String, dynamic>> removeLeaveAttachment(String applicationId, {String? attachmentUrl}) async {
     try {
-      final uri = Uri.parse('$baseUrl/leave/$applicationId/attachment');
+      String urlStr = '$baseUrl/leave/$applicationId/attachment';
+      if (attachmentUrl != null && attachmentUrl.isNotEmpty) {
+        urlStr += '?url=${Uri.encodeComponent(attachmentUrl)}';
+      }
+      final uri = Uri.parse(urlStr);
       final response = await http.delete(uri, headers: _authHeaders);
       handleAuthError(response);
 

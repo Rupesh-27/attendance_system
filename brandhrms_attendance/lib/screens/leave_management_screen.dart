@@ -995,73 +995,104 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
               ),
             ),
           ],
-          if (app.attachmentUrl != null && app.attachmentUrl!.isNotEmpty) ...[
+          if (app.attachmentUrls.isNotEmpty) ...[
             const SizedBox(height: 8),
-            Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: InkWell(
-                      onTap: () => _showAttachmentDialog(app.attachmentUrl!, app: app),
-                      borderRadius: BorderRadius.circular(8),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                        child: Row(
-                          children: [
-                            Icon(
-                              app.attachmentUrl!.toLowerCase().endsWith('.pdf')
-                                  ? Icons.picture_as_pdf_rounded
-                                  : Icons.image_rounded,
-                              size: 16,
-                              color: app.attachmentUrl!.toLowerCase().endsWith('.pdf')
-                                  ? const Color(0xFFDC2626)
-                                  : const Color(0xFF0284C7),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                app.attachmentUrl!.split('/').last,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF334155),
+            ...app.attachmentUrls.map((url) {
+              final fileName = url.split('/').last;
+              final isPdf = url.toLowerCase().endsWith('.pdf');
+              return Container(
+                margin: const EdgeInsets.only(bottom: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0FDFA),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFF99F6E4)),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => _showAttachmentDialog(url, app: app),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          child: Row(
+                            children: [
+                              Icon(
+                                isPdf ? Icons.picture_as_pdf_rounded : Icons.image_rounded,
+                                size: 16,
+                                color: isPdf ? const Color(0xFFDC2626) : const Color(0xFF0284C7),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  fileName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFF334155),
+                                  ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            const Icon(
-                              Icons.visibility_outlined,
-                              size: 18,
-                              color: Color(0xFF0D9488),
-                            ),
-                          ],
+                              const SizedBox(width: 8),
+                              const Icon(
+                                Icons.visibility_outlined,
+                                size: 18,
+                                color: Color(0xFF0D9488),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  if (app.status == 'PENDING') ...[
-                    Container(height: 20, width: 1, color: const Color(0xFFCBD5E1)),
-                    IconButton(
-                      icon: const Icon(Icons.edit_outlined, size: 16, color: Color(0xFF0F9D8A)),
-                      tooltip: tr('change_file'),
-                      splashRadius: 18,
-                      onPressed: () => _replaceAttachment(app),
-                    ),
+                    if (app.status == 'PENDING') ...[
+                      Container(height: 20, width: 1, color: const Color(0xFFCBD5E1)),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline_rounded, size: 16, color: Color(0xFFEF4444)),
+                        tooltip: tr('remove_file'),
+                        splashRadius: 18,
+                        onPressed: () => _confirmRemoveAttachment(app, targetUrl: url),
+                      ),
+                    ],
                   ],
-                ],
+                ),
+              );
+            }),
+            if (app.status == 'PENDING') ...[
+              const SizedBox(height: 2),
+              InkWell(
+                onTap: () => _addAttachment(app),
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFCBD5E1)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.add_circle_outline_rounded, size: 15, color: Color(0xFF0F9D8A)),
+                      const SizedBox(width: 6),
+                      Text(
+                        tr('add_more_documents'),
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF0F9D8A),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
+            ],
           ] else if (app.status == 'PENDING') ...[
             const SizedBox(height: 8),
             InkWell(
-              onTap: () => _replaceAttachment(app),
+              onTap: () => _addAttachment(app),
               borderRadius: BorderRadius.circular(8),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
@@ -1341,13 +1372,13 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
               if (app != null && app.status == 'PENDING') ...[
                 const SizedBox(width: 4),
                 IconButton(
-                  icon: const Icon(Icons.upload_file_outlined, color: primaryColor, size: 22),
-                  tooltip: tr('change_file'),
+                  icon: const Icon(Icons.add_circle_outline_rounded, color: primaryColor, size: 22),
+                  tooltip: tr('add_more_documents'),
                   padding: const EdgeInsets.all(8),
                   constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
                   onPressed: () {
                     Navigator.pop(ctx);
-                    _replaceAttachment(app);
+                    _addAttachment(app);
                   },
                 ),
                 const SizedBox(width: 4),
@@ -1358,7 +1389,7 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
                   constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
                   onPressed: () {
                     Navigator.pop(ctx);
-                    _confirmRemoveAttachment(app);
+                    _confirmRemoveAttachment(app, targetUrl: fullUrl);
                   },
                 ),
               ],
@@ -1367,6 +1398,79 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _addAttachment(LeaveApplication app) async {
+    try {
+      final file = await FilePicker.pickFile(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'png', 'jpg', 'jpeg'],
+      );
+      if (file == null) return;
+
+      final size = file.lengthSync() ?? (await file.length()) ?? 0;
+      if (size > 10 * 1024 * 1024) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(tr('error_file_too_large')),
+              backgroundColor: const Color(0xFFDC2626),
+            ),
+          );
+        }
+        return;
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                ),
+                const SizedBox(width: 10),
+                Text(tr('adding_document')),
+              ],
+            ),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+
+      final res = await ApiService.addLeaveAttachment(app.id, file);
+      if (res['success'] == true) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(tr('document_added')),
+              backgroundColor: primaryColor,
+            ),
+          );
+          refreshData();
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(res['message'] ?? tr('error_upload_failed')),
+              backgroundColor: const Color(0xFFDC2626),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${tr('error_upload_failed')}: $e'),
+            backgroundColor: const Color(0xFFDC2626),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _replaceAttachment(LeaveApplication app) async {
@@ -1442,12 +1546,12 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
     }
   }
 
-  Future<void> _confirmRemoveAttachment(LeaveApplication app) async {
+  Future<void> _confirmRemoveAttachment(LeaveApplication app, {String? targetUrl}) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(tr('remove_file')),
-        content: Text(tr('confirm_remove_attachment')),
+        content: Text(tr('confirm_remove_this_attachment')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -1482,7 +1586,7 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
         );
       }
 
-      final res = await ApiService.removeLeaveAttachment(app.id);
+      final res = await ApiService.removeLeaveAttachment(app.id, attachmentUrl: targetUrl);
       if (res['success'] == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

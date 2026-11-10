@@ -191,9 +191,13 @@ func (s *leaveService) UpdateAttachment(ctx context.Context, employeeID, applica
 		return domain.ErrLeaveNotPending
 	}
 
-	// Delete old file if present
+	// Delete old files if present
 	if app.AttachmentURL != nil && *app.AttachmentURL != "" && s.storage != nil {
-		_ = s.storage.Delete(ctx, *app.AttachmentURL)
+		for _, oldURL := range strings.Split(*app.AttachmentURL, ",") {
+			if trimmed := strings.TrimSpace(oldURL); trimmed != "" {
+				_ = s.storage.Delete(ctx, trimmed)
+			}
+		}
 	}
 
 	// Update leave application record
@@ -211,7 +215,7 @@ func (s *leaveService) UpdateAttachment(ctx context.Context, employeeID, applica
 	return nil
 }
 
-func (s *leaveService) DeleteAttachment(ctx context.Context, employeeID, applicationID uuid.UUID) error {
+func (s *leaveService) AddAttachment(ctx context.Context, employeeID, applicationID uuid.UUID, newAttachmentURL string) error {
 	app, err := s.leaveRepo.GetApplicationByID(ctx, applicationID)
 	if err != nil {
 		return err
@@ -225,18 +229,84 @@ func (s *leaveService) DeleteAttachment(ctx context.Context, employeeID, applica
 		return domain.ErrLeaveNotPending
 	}
 
-	// Check policy: Sick leave for more than 2 days requires attachment
-	lt, err := s.leaveRepo.GetLeaveTypeByID(ctx, app.LeaveTypeID)
-	if err == nil && lt != nil && lt.Code == "SL" && app.TotalDays > 2 {
-		return domain.ErrSickLeaveAttachmentRequired
+	// Combine existing URLs with the new one
+	var combined string
+	if app.AttachmentURL != nil && strings.TrimSpace(*app.AttachmentURL) != "" {
+		combined = strings.TrimSpace(*app.AttachmentURL) + "," + strings.TrimSpace(newAttachmentURL)
+	} else {
+		combined = strings.TrimSpace(newAttachmentURL)
 	}
 
-	// Delete file from storage
-	if app.AttachmentURL != nil && *app.AttachmentURL != "" && s.storage != nil {
-		_ = s.storage.Delete(ctx, *app.AttachmentURL)
+	if err := s.leaveRepo.UpdateApplicationAttachment(ctx, applicationID, &combined); err != nil {
+		return err
 	}
 
-	return s.leaveRepo.UpdateApplicationAttachment(ctx, applicationID, nil)
+	// Link new attachment to application & employee
+	raw := filepath.Base(newAttachmentURL)
+	clean := strings.TrimSuffix(raw, filepath.Ext(raw))
+	if attID, err := uuid.Parse(clean); err == nil {
+		_ = s.leaveRepo.LinkAttachment(ctx, attID, applicationID, employeeID)
+	}
+
+	return nil
+}
+
+func (s *leaveService) DeleteAttachment(ctx context.Context, employeeID, applicationID uuid.UUID, targetURL ...string) error {
+	app, err := s.leaveRepo.GetApplicationByID(ctx, applicationID)
+	if err != nil {
+		return err
+	}
+
+	if app.EmployeeID != employeeID {
+		return domain.ErrUnauthorized
+	}
+
+	if app.Status != domain.LeaveStatusPending {
+		return domain.ErrLeaveNotPending
+	}
+
+	toDelete := ""
+	if len(targetURL) > 0 {
+		toDelete = strings.TrimSpace(targetURL[0])
+	}
+
+	var remaining []string
+	if app.AttachmentURL != nil && *app.AttachmentURL != "" {
+		allUrls := strings.Split(*app.AttachmentURL, ",")
+		for _, u := range allUrls {
+			u = strings.TrimSpace(u)
+			if u == "" {
+				continue
+			}
+			if toDelete != "" && u == toDelete {
+				if s.storage != nil {
+					_ = s.storage.Delete(ctx, u)
+				}
+			} else if toDelete == "" {
+				if s.storage != nil {
+					_ = s.storage.Delete(ctx, u)
+				}
+			} else {
+				remaining = append(remaining, u)
+			}
+		}
+	}
+
+	// Check policy: Sick leave for more than 2 days requires at least one attachment
+	if len(remaining) == 0 {
+		lt, err := s.leaveRepo.GetLeaveTypeByID(ctx, app.LeaveTypeID)
+		if err == nil && lt != nil && lt.Code == "SL" && app.TotalDays > 2 {
+			return domain.ErrSickLeaveAttachmentRequired
+		}
+	}
+
+	var newAttachmentURL *string
+	if len(remaining) > 0 {
+		joined := strings.Join(remaining, ",")
+		newAttachmentURL = &joined
+	}
+
+	return s.leaveRepo.UpdateApplicationAttachment(ctx, applicationID, newAttachmentURL)
 }
 
 func (s *leaveService) GetMyApplications(ctx context.Context, employeeID uuid.UUID, status *domain.LeaveStatus) ([]*domain.LeaveApplication, error) {

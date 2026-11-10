@@ -52,6 +52,7 @@ func NewDB(ctx context.Context, connString string) (*DB, error) {
 		ALTER TABLE IF EXISTS leave_attachment_files RENAME TO mob_leave_attachment_files;
 
 		ALTER TABLE IF EXISTS mob_leave_applications ADD COLUMN IF NOT EXISTS attachment_url VARCHAR(500) NULL;
+		ALTER TABLE IF EXISTS mob_leave_applications ALTER COLUMN attachment_url TYPE TEXT;
 		CREATE TABLE IF NOT EXISTS mob_leave_attachment_files (
 			id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 			file_name VARCHAR(255) NOT NULL,
