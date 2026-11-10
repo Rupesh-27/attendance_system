@@ -1035,17 +1035,12 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 6),
-                            Text(
-                              tr('view_attachment'),
-                              style: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF0D9488),
-                              ),
+                            const SizedBox(width: 8),
+                            const Icon(
+                              Icons.visibility_outlined,
+                              size: 18,
+                              color: Color(0xFF0D9488),
                             ),
-                            const SizedBox(width: 2),
-                            const Icon(Icons.arrow_forward_ios_rounded, size: 10, color: Color(0xFF0D9488)),
                           ],
                         ),
                       ),
@@ -1194,29 +1189,10 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
               child: Text(
                 tr('attachment'),
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
-            IconButton(
-              icon: const Icon(Icons.file_download_outlined, color: primaryColor, size: 22),
-              tooltip: tr('download'),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-              onPressed: () => _downloadFile(fullUrl, fileName),
-            ),
-            if (isImage) ...[
-              const SizedBox(width: 6),
-              IconButton(
-                icon: const Icon(Icons.fullscreen_rounded, color: primaryColor, size: 24),
-                tooltip: tr('view_full_screen'),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  _openFullScreenViewer(fullUrl, fileName);
-                },
-              ),
-            ],
-            const SizedBox(width: 6),
             IconButton(
               icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B), size: 22),
               tooltip: tr('close'),
@@ -1337,38 +1313,58 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
             ],
           ),
         ),
-        actions: (app != null && app.status == 'PENDING')
-            ? [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton.icon(
-                      onPressed: () {
-                        Navigator.pop(ctx);
-                        _confirmRemoveAttachment(app);
-                      },
-                      icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4444), size: 16),
-                      label: Text(tr('remove_file'), style: const TextStyle(color: Color(0xFFEF4444), fontSize: 12)),
-                    ),
-                    const SizedBox(width: 8),
-                    OutlinedButton.icon(
-                      onPressed: () {
-                        Navigator.pop(ctx);
-                        _replaceAttachment(app);
-                      },
-                      icon: const Icon(Icons.upload_file_outlined, size: 15),
-                      label: Text(tr('change_file'), style: const TextStyle(fontSize: 12)),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: primaryColor,
-                        visualDensity: VisualDensity.compact,
-                        side: BorderSide(color: primaryColor.withValues(alpha: 0.5)),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                    ),
-                  ],
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        actions: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.file_download_outlined, color: primaryColor, size: 22),
+                tooltip: tr('download'),
+                padding: const EdgeInsets.all(8),
+                constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
+                onPressed: () => _downloadFile(fullUrl, fileName),
+              ),
+              if (isImage) ...[
+                const SizedBox(width: 4),
+                IconButton(
+                  icon: const Icon(Icons.fullscreen_rounded, color: primaryColor, size: 24),
+                  tooltip: tr('view_full_screen'),
+                  padding: const EdgeInsets.all(8),
+                  constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _openFullScreenViewer(fullUrl, fileName);
+                  },
                 ),
-              ]
-            : null,
+              ],
+              if (app != null && app.status == 'PENDING') ...[
+                const SizedBox(width: 4),
+                IconButton(
+                  icon: const Icon(Icons.upload_file_outlined, color: primaryColor, size: 22),
+                  tooltip: tr('change_file'),
+                  padding: const EdgeInsets.all(8),
+                  constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _replaceAttachment(app);
+                  },
+                ),
+                const SizedBox(width: 4),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline_rounded, color: Color(0xFFEF4444), size: 22),
+                  tooltip: tr('remove_file'),
+                  padding: const EdgeInsets.all(8),
+                  constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _confirmRemoveAttachment(app);
+                  },
+                ),
+              ],
+            ],
+          ),
+        ],
       ),
     );
   }

@@ -1232,10 +1232,10 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
             selectedIcon: const Icon(Icons.calendar_month),
             label: tr('leaves'),
           ),
-          const NavigationDestination(
-            icon: Icon(Icons.more_vert, size: 28),
-            selectedIcon: Icon(Icons.more_vert, size: 28),
-            label: '',
+          NavigationDestination(
+            icon: const Icon(Icons.more_vert_rounded),
+            selectedIcon: const Icon(Icons.more_vert_rounded),
+            label: tr('more'),
           ),
         ],
       ),
