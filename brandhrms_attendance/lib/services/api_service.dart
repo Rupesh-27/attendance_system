@@ -886,9 +886,13 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> replaceLeaveAttachment(String applicationId, PlatformFile file) async {
+  static Future<Map<String, dynamic>> replaceLeaveAttachment(String applicationId, PlatformFile file, {String? oldAttachmentUrl}) async {
     try {
-      final uri = Uri.parse('$baseUrl/leave/$applicationId/attachment');
+      String urlStr = '$baseUrl/leave/$applicationId/attachment';
+      if (oldAttachmentUrl != null && oldAttachmentUrl.trim().isNotEmpty) {
+        urlStr += '?oldUrl=${Uri.encodeComponent(oldAttachmentUrl.trim())}';
+      }
+      final uri = Uri.parse(urlStr);
       final request = http.MultipartRequest('PUT', uri);
 
       if (authToken != null) {

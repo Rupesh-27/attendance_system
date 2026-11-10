@@ -256,7 +256,8 @@ func (h *LeaveHandler) UpdateAttachment(c *gin.Context) {
 		return
 	}
 
-	if err := h.leaveService.UpdateAttachment(c.Request.Context(), empID, appID, newURL); err != nil {
+	oldURL := c.Query("oldUrl")
+	if err := h.leaveService.UpdateAttachment(c.Request.Context(), empID, appID, newURL, oldURL); err != nil {
 		MapDomainError(c, err)
 		return
 	}

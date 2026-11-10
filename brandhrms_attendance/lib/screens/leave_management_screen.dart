@@ -1372,13 +1372,13 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
               if (app != null && app.status == 'PENDING') ...[
                 const SizedBox(width: 4),
                 IconButton(
-                  icon: const Icon(Icons.add_circle_outline_rounded, color: primaryColor, size: 22),
-                  tooltip: tr('add_more_documents'),
+                  icon: const Icon(Icons.upload_file_outlined, color: primaryColor, size: 22),
+                  tooltip: tr('change_file'),
                   padding: const EdgeInsets.all(8),
                   constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
                   onPressed: () {
                     Navigator.pop(ctx);
-                    _addAttachment(app);
+                    _replaceAttachment(app, oldUrl: url);
                   },
                 ),
                 const SizedBox(width: 4),
@@ -1389,7 +1389,7 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
                   constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
                   onPressed: () {
                     Navigator.pop(ctx);
-                    _confirmRemoveAttachment(app, targetUrl: fullUrl);
+                    _confirmRemoveAttachment(app, targetUrl: url);
                   },
                 ),
               ],
@@ -1473,7 +1473,7 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
     }
   }
 
-  Future<void> _replaceAttachment(LeaveApplication app) async {
+  Future<void> _replaceAttachment(LeaveApplication app, {String? oldUrl}) async {
     try {
       final file = await FilePicker.pickFile(
         type: FileType.custom,
@@ -1513,7 +1513,7 @@ class LeaveManagementScreenState extends State<LeaveManagementScreen> {
         );
       }
 
-      final res = await ApiService.replaceLeaveAttachment(app.id, file);
+      final res = await ApiService.replaceLeaveAttachment(app.id, file, oldAttachmentUrl: oldUrl);
       if (res['success'] == true) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

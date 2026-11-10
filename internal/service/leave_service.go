@@ -177,7 +177,7 @@ func (s *leaveService) ApplyLeave(ctx context.Context, employeeID uuid.UUID, req
 	return app, nil
 }
 
-func (s *leaveService) UpdateAttachment(ctx context.Context, employeeID, applicationID uuid.UUID, newAttachmentURL string) error {
+func (s *leaveService) UpdateAttachment(ctx context.Context, employeeID, applicationID uuid.UUID, newAttachmentURL string, oldAttachmentURL ...string) error {
 	app, err := s.leaveRepo.GetApplicationByID(ctx, applicationID)
 	if err != nil {
 		return err
@@ -191,17 +191,48 @@ func (s *leaveService) UpdateAttachment(ctx context.Context, employeeID, applica
 		return domain.ErrLeaveNotPending
 	}
 
-	// Delete old files if present
-	if app.AttachmentURL != nil && *app.AttachmentURL != "" && s.storage != nil {
-		for _, oldURL := range strings.Split(*app.AttachmentURL, ",") {
-			if trimmed := strings.TrimSpace(oldURL); trimmed != "" {
-				_ = s.storage.Delete(ctx, trimmed)
+	oldTarget := ""
+	if len(oldAttachmentURL) > 0 {
+		oldTarget = strings.TrimSpace(oldAttachmentURL[0])
+	}
+
+	var updatedURLs []string
+	if app.AttachmentURL != nil && strings.TrimSpace(*app.AttachmentURL) != "" {
+		allURLs := strings.Split(*app.AttachmentURL, ",")
+		matched := false
+		for _, u := range allURLs {
+			trimmed := strings.TrimSpace(u)
+			if trimmed == "" {
+				continue
 			}
+			if oldTarget != "" && (trimmed == oldTarget || strings.HasSuffix(oldTarget, trimmed) || strings.HasSuffix(trimmed, oldTarget)) {
+				if s.storage != nil {
+					_ = s.storage.Delete(ctx, trimmed)
+				}
+				updatedURLs = append(updatedURLs, strings.TrimSpace(newAttachmentURL))
+				matched = true
+			} else if oldTarget == "" {
+				if s.storage != nil {
+					_ = s.storage.Delete(ctx, trimmed)
+				}
+			} else {
+				updatedURLs = append(updatedURLs, trimmed)
+			}
+		}
+		if oldTarget != "" && !matched {
+			updatedURLs = append(updatedURLs, strings.TrimSpace(newAttachmentURL))
 		}
 	}
 
+	var combined string
+	if len(updatedURLs) > 0 {
+		combined = strings.Join(updatedURLs, ",")
+	} else {
+		combined = strings.TrimSpace(newAttachmentURL)
+	}
+
 	// Update leave application record
-	if err := s.leaveRepo.UpdateApplicationAttachment(ctx, applicationID, &newAttachmentURL); err != nil {
+	if err := s.leaveRepo.UpdateApplicationAttachment(ctx, applicationID, &combined); err != nil {
 		return err
 	}
 
@@ -278,7 +309,7 @@ func (s *leaveService) DeleteAttachment(ctx context.Context, employeeID, applica
 			if u == "" {
 				continue
 			}
-			if toDelete != "" && u == toDelete {
+			if toDelete != "" && (u == toDelete || strings.HasSuffix(toDelete, u) || strings.HasSuffix(u, toDelete)) {
 				if s.storage != nil {
 					_ = s.storage.Delete(ctx, u)
 				}
