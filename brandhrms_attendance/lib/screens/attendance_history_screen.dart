@@ -1510,24 +1510,32 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                width: 36,
+                height: 36,
+                alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: primaryColor.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.event, color: primaryColor, size: 24),
+                child: const Icon(Icons.event, color: primaryColor, size: 20),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      _formatDateFull(_selectedDay),
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E293B),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        _formatDateFull(_selectedDay),
+                        maxLines: 1,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1E293B),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -1541,8 +1549,10 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                   : (status == 'WEEK_OFF'
                                       ? tr('scheduled_week_off')
                                       : tr('general_shift')))),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 11.5,
                         color: holidayName != null
                             ? const Color(0xFF4338CA)
                             : (isCarriedOverShift
@@ -1562,7 +1572,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                 children: [
                   _buildBadge(status),
                   if (daySessions.isNotEmpty) ...[
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                     InkWell(
                       onTap: () => _showSwipesBreakdownModal(
                         date: _selectedDay,
@@ -1572,18 +1582,18 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                             ? _formatDuration(totalDurationSec)
                             : '0 ${tr('unit_min')}',
                       ),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(8),
                       child: Container(
-                        width: 36,
-                        height: 36,
+                        width: 32,
+                        height: 32,
                         decoration: BoxDecoration(
                           color: const Color(0xFFE0F2FE),
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: const Color(0xFF7DD3FC)),
                         ),
                         child: const Icon(
                           Icons.visibility_outlined,
-                          size: 19,
+                          size: 17,
                           color: Color(0xFF0284C7),
                         ),
                       ),
@@ -3027,7 +3037,7 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(20),
@@ -3035,10 +3045,10 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
       ),
       child: Text(
         text,
-        maxLines: 2,
+        maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: TextStyle(
-          fontSize: 11,
+          fontSize: 10.5,
           fontWeight: FontWeight.bold,
           color: color,
         ),
