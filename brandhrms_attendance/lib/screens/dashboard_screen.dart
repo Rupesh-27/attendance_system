@@ -240,6 +240,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
   bool _isCheckedIn = false;
   bool _isSubmittingAttendance = false;
   bool _isTodayLogExpanded = false;
+  bool _isBackgroundWarningDismissed = false;
 
   String _locationStatus = 'Not Checked In';
   String _locationStatusBadge = 'Pending';
@@ -294,9 +295,9 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
+  void didChangeAppLifecycleState(AppLifecycleState state) async {
     if (state == AppLifecycleState.resumed) {
-      LocationMonitorService.instance.refreshPermissionStatus();
+      await LocationMonitorService.instance.refreshPermissionStatus();
       if (_isCheckedIn && ApiService.isLocationAttendanceRequired) {
         LocationMonitorService.instance.forceCheckLocation();
       }
@@ -1486,7 +1487,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
           ],
         ),
       );
-    } else if (_isCheckedIn && !monitor.hasBackgroundPermission) {
+    } else if (_isCheckedIn && !monitor.hasBackgroundPermission && !_isBackgroundWarningDismissed) {
       return Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -1505,7 +1506,7 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                 style: const TextStyle(fontSize: 12, color: Color(0xFF92400E)),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 4),
             TextButton(
               style: TextButton.styleFrom(
                 visualDensity: VisualDensity.compact,
@@ -1520,6 +1521,17 @@ class _DashboardScreenState extends State<DashboardScreen> with WidgetsBindingOb
                 tr('open_settings'),
                 style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFFD97706)),
               ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.close_rounded, size: 18, color: Color(0xFF92400E)),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+              tooltip: tr('close'),
+              onPressed: () {
+                setState(() {
+                  _isBackgroundWarningDismissed = true;
+                });
+              },
             ),
           ],
         ),

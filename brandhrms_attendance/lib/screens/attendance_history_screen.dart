@@ -1556,38 +1556,43 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                   ],
                 ),
               ),
-              if (daySessions.isNotEmpty) ...[
-                const SizedBox(width: 8),
-                InkWell(
-                  onTap: () => _showSwipesBreakdownModal(
-                    date: _selectedDay,
-                    officeName: officeName,
-                    sessions: daySessions,
-                    totalWorkFormatted: totalDurationSec > 0
-                        ? _formatDuration(totalDurationSec)
-                        : '0 ${tr('unit_min')}',
-                  ),
-                  borderRadius: BorderRadius.circular(10),
-                  child: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE0F2FE),
+              const SizedBox(width: 8),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildBadge(status),
+                  if (daySessions.isNotEmpty) ...[
+                    const SizedBox(width: 8),
+                    InkWell(
+                      onTap: () => _showSwipesBreakdownModal(
+                        date: _selectedDay,
+                        officeName: officeName,
+                        sessions: daySessions,
+                        totalWorkFormatted: totalDurationSec > 0
+                            ? _formatDuration(totalDurationSec)
+                            : '0 ${tr('unit_min')}',
+                      ),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFF7DD3FC)),
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE0F2FE),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFF7DD3FC)),
+                        ),
+                        child: const Icon(
+                          Icons.visibility_outlined,
+                          size: 19,
+                          color: Color(0xFF0284C7),
+                        ),
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.visibility_outlined,
-                      size: 19,
-                      color: Color(0xFF0284C7),
-                    ),
-                  ),
-                ),
-              ],
+                  ],
+                ],
+              ),
             ],
           ),
-          const SizedBox(height: 10),
-          _buildBadge(status),
 
           if (status == 'PRESENT_WEEK_OFF') ...[
             const SizedBox(height: 10),
@@ -1651,28 +1656,31 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
           const Divider(height: 1, color: Color(0xFFECEFF1)),
           const SizedBox(height: 16),
 
-          Row(
-            children: [
-              Expanded(
-                child: _buildTimeMetric(
-                  icon: Icons.login,
-                  iconColor: Colors.green,
-                  title: tr('check_in'),
-                  timeValue: firstCheckIn,
-                  location: firstCheckInLoc,
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: _buildTimeMetric(
+                    icon: Icons.login,
+                    iconColor: Colors.green,
+                    title: tr('check_in'),
+                    timeValue: firstCheckIn,
+                    location: firstCheckInLoc,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildTimeMetric(
-                  icon: Icons.logout,
-                  iconColor: Colors.orange,
-                  title: tr('check_out'),
-                  timeValue: lastCheckOut,
-                  location: lastCheckOutLoc,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildTimeMetric(
+                    icon: Icons.logout,
+                    iconColor: Colors.orange,
+                    title: tr('check_out'),
+                    timeValue: lastCheckOut,
+                    location: lastCheckOutLoc,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
 
           if (totalDurationSec > 0) ...[
@@ -2901,39 +2909,45 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, size: 17, color: iconColor),
-              const SizedBox(width: 6),
-              Expanded(
+              Row(
+                children: [
+                  Icon(icon, size: 17, color: iconColor),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
                 child: Text(
-                  title,
-                  maxLines: 1,
+                  timeValue,
+                  maxLines: timeValue.contains('–') ? 2 : 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.grey.shade600,
+                    fontSize: timeValue.contains('–') ? 13 : 15,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF1E293B),
                   ),
                 ),
               ),
             ],
-          ),
-          const SizedBox(height: 6),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              timeValue,
-              maxLines: timeValue.contains('–') ? 2 : 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: timeValue.contains('–') ? 13 : 15,
-                fontWeight: FontWeight.bold,
-                color: const Color(0xFF1E293B),
-              ),
-            ),
           ),
           if (location != null && location.isNotEmpty) ...[
             const SizedBox(height: 6),
@@ -2960,6 +2974,9 @@ class AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                 ),
               ],
             ),
+          ] else ...[
+            const SizedBox(height: 6),
+            const SizedBox(height: 15),
           ],
         ],
       ),
