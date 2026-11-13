@@ -29,21 +29,6 @@ class BrandSideMenuDrawer extends StatelessWidget {
   static const Color brandPrimary = Color(0xFF0F9D8A); // Deep Teal
   static const Color brandAccent = Color(0xFF84B83C); // Fresh Lime Green
 
-  Widget _buildVerticalLetter(String char) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3.5),
-      child: Text(
-        char,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 22,
-          fontWeight: FontWeight.w900,
-          letterSpacing: 2.0,
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
@@ -56,128 +41,52 @@ class BrandSideMenuDrawer extends StatelessWidget {
         final initial = (emp != null && emp.fullName.isNotEmpty)
             ? emp.fullName[0].toUpperCase()
             : 'E';
-        final brandPart1 = tr('brand_crock_part1').isNotEmpty && tr('brand_crock_part1') != 'brand_crock_part1'
-            ? tr('brand_crock_part1').toUpperCase()
-            : 'BRAND';
-        final brandPart2 = tr('brand_crock_part2').isNotEmpty && tr('brand_crock_part2') != 'brand_crock_part2'
-            ? tr('brand_crock_part2').toUpperCase()
-            : 'CROCK';
 
-        final content = Row(
-          children: [
-            // LEFT COLUMN: Vertical B R A N D   C R O C K (Covers 100% full height top-to-bottom)
-            Expanded(
-              flex: 4,
-              child: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Color(0xFF0F9D8A), // BrandHR Primary Teal
-                      Color(0xFF0E8A79),
-                      Color(0xFF84B83C), // BrandHR Fresh Lime Green
-                    ],
-                  ),
-                  border: Border(
-                    right: BorderSide(
-                      color: Color(0xFFE2E8F0),
-                      width: 1.5,
-                    ),
-                  ),
-                ),
-                child: SafeArea(
-                  child: Center(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(vertical: 24),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          // Brand Part 1 (e.g., B R A N D / Б Р Э Н Д)
-                          for (final ch in brandPart1.characters)
-                            _buildVerticalLetter(ch),
-
-                          // Separator Dot
-                          const SizedBox(height: 12),
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.white70,
-                                  blurRadius: 6,
-                                  spreadRadius: 1,
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-
-                          // Brand Part 2 (e.g., C R O C K / К Р О К)
-                          for (final ch in brandPart2.characters)
-                            _buildVerticalLetter(ch),
-                        ],
+        final content = Container(
+          color: const Color(0xFFF8FAFC),
+          child: SafeArea(
+            child: Column(
+              children: [
+                // Top bar with Close button (✕)
+                if (!isEmbedded)
+                  Align(
+                    alignment: Alignment.topRight,
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 8, right: 8),
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.close_rounded,
+                          color: Color(0xFF475569),
+                          size: 26,
+                        ),
+                        tooltip: tr('cancel'),
+                        onPressed: () => Navigator.of(context).pop(),
                       ),
                     ),
                   ),
-                ),
-              ),
-            ),
 
-            // RIGHT COLUMN: Clean Light Adaptable Menu List (Full Height)
-            Expanded(
-              flex: 6,
-              child: Container(
-                color: const Color(0xFFF8FAFC),
-                child: SafeArea(
-                  child: Column(
+                // Adaptable Menu List (Supports future options seamlessly)
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     children: [
-                      // Top bar with Close button (✕)
-                      if (!isEmbedded)
-                        Align(
-                          alignment: Alignment.topRight,
-                          child: Padding(
-                            padding: const EdgeInsets.only(top: 8, right: 8),
-                            child: IconButton(
-                              icon: const Icon(
-                                Icons.close_rounded,
-                                color: Color(0xFF475569),
-                                size: 26,
-                              ),
-                              tooltip: tr('cancel'),
-                              onPressed: () => Navigator.of(context).pop(),
-                            ),
-                          ),
-                        ),
-
-                      // Adaptable Menu List (Supports future options seamlessly)
-                      Expanded(
-                        child: ListView(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 12,
-                          ),
-                          children: [
-                            // 1. Primary Item: Profile Card (Light Logo Theme)
-                            _buildProfileCard(
-                              context,
-                              initial: initial,
-                              isEmbedded: isEmbedded,
-                            ),
-
-                            // Future menu options (like Settings, Help, etc.) can be plugged in here
-                          ],
-                        ),
+                      // 1. Primary Item: Profile Card (Light Logo Theme)
+                      _buildProfileCard(
+                        context,
+                        initial: initial,
+                        isEmbedded: isEmbedded,
                       ),
+
+                      // Future menu options (like Settings, Help, etc.) can be plugged in here
                     ],
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         );
 
         if (isEmbedded) {
