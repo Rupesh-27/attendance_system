@@ -56,10 +56,6 @@ class BrandSideMenuDrawer extends StatelessWidget {
         final initial = (emp != null && emp.fullName.isNotEmpty)
             ? emp.fullName[0].toUpperCase()
             : 'E';
-        final name = (emp != null && emp.fullName.isNotEmpty)
-            ? emp.fullName
-            : tr('Employee');
-        final roleName = tr(emp?.role ?? 'EMPLOYEE');
         final brandPart1 = tr('brand_crock_part1').isNotEmpty && tr('brand_crock_part1') != 'brand_crock_part1'
             ? tr('brand_crock_part1').toUpperCase()
             : 'BRAND';
@@ -169,8 +165,6 @@ class BrandSideMenuDrawer extends StatelessWidget {
                             _buildProfileCard(
                               context,
                               initial: initial,
-                              name: name,
-                              roleName: roleName,
                               isEmbedded: isEmbedded,
                             ),
 
@@ -206,8 +200,6 @@ class BrandSideMenuDrawer extends StatelessWidget {
   Widget _buildProfileCard(
     BuildContext context, {
     required String initial,
-    required String name,
-    required String roleName,
     required bool isEmbedded,
   }) {
     return InkWell(
@@ -226,7 +218,7 @@ class BrandSideMenuDrawer extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(
           horizontal: 10,
-          vertical: 10,
+          vertical: 12,
         ),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -248,8 +240,8 @@ class BrandSideMenuDrawer extends StatelessWidget {
           children: [
             // Avatar Circle (Custom Photo or Deep Teal Initial)
             Container(
-              width: 36,
-              height: 36,
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
                 color: brandPrimary,
                 shape: BoxShape.circle,
@@ -274,115 +266,34 @@ class BrandSideMenuDrawer extends StatelessWidget {
                         initial,
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 15,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
             ),
-            const SizedBox(height: 5),
+            const SizedBox(height: 8),
 
-            // Profile Title (Localized)
-            Text(
-              tr('profile'),
-              style: const TextStyle(
-                color: Color(0xFF0F172A),
-                fontSize: 12.5,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 1),
-
-            // Employee Name
-            Text(
-              name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: brandPrimary,
-                fontSize: 11.5,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 3.5),
-
-            // Role Badge with Logo Lime Green Accent (Localized)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: brandAccent.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: brandAccent.withValues(alpha: 0.3),
-                  width: 0.8,
+            // Profile Title and Arrow Mark (Option B)
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  tr('profile'),
+                  style: const TextStyle(
+                    color: Color(0xFF0F172A),
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 4,
-                    height: 4,
-                    decoration: const BoxDecoration(
-                      color: brandAccent, // Logo Lime Green
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Flexible(
-                    child: Text(
-                      roleName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xFF4D7C0F), // High contrast dark lime
-                        fontSize: 9.5,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 7),
-
-            // Details Button (Localized)
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 10,
-                vertical: 4,
-              ),
-              decoration: BoxDecoration(
-                color: brandPrimary,
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: [
-                  BoxShadow(
-                    color: brandPrimary.withValues(alpha: 0.2),
-                    blurRadius: 4,
-                    offset: const Offset(0, 1.5),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    tr('details'),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(width: 3),
-                  const Icon(
-                    Icons.arrow_forward_rounded,
-                    color: Colors.white,
-                    size: 11,
-                  ),
-                ],
-              ),
+                const SizedBox(width: 4),
+                const Icon(
+                  Icons.arrow_forward_rounded,
+                  color: brandPrimary,
+                  size: 15,
+                ),
+              ],
             ),
           ],
         ),
